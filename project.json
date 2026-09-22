@@ -68,42 +68,51 @@
       "window render visually verified with screenshot evidence",
       "restart loads the persisted run without rewriting it (smoke)",
       "M001 declaration with gate audit and design conformance ladder",
-      "map view captured with relation hierarchy (screenshot evidence)"
+      "map view captured with relation hierarchy (screenshot evidence)",
+      "search adapter boundary with an injectable transport and a SearXNG JSON adapter",
+      "SearXNG fixture decoding into ordered hits with content-derived stable identity",
+      "typed search failures (transport, status, malformed payload) and typed empty outcome"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
       "complete deterministic cited-answer slice",
       "ResearchCore extraction and IPC",
-      "live search, acquisition and models",
+      "live SearXNG response against a running instance",
+      "safe acquisition, robots, extraction and snapshots",
+      "live models and local inference",
       "packaging and second-machine reproduction"
     ]
   },
   "next_task": {
-    "id": "M002.1",
-    "title": "Search adapter boundary with a SearXNG JSON adapter and stub-transport tests",
-    "objective": "Open the live-acquisition milestone without a live dependency: define the search adapter boundary, implement a SearXNG JSON adapter over an injectable transport, and prove typed parsing and failure behavior with frozen fixtures and a stub transport only.",
+    "id": "M002.2",
+    "title": "Safe acquisition boundary: URL and address policy with policy-checked fetch",
+    "objective": "Turn the injectable transport into a safe acquisition boundary before any live page is opened: validate every outbound URL and redirect hop against an address policy with an injectable host resolver, enforce MIME and byte ceilings, and return typed acquisition outcomes proven with frozen fixtures and a stub transport only.",
     "prerequisites": [
-      "M001 complete (deterministic slice and gates)",
+      "M002.1 complete (search adapter boundary and stub-transport tests)",
       "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet",
-      "No test may perform real network access"
+      "No test may perform real network access or real DNS resolution",
+      "M001 deterministic slice evidence must remain byte-identical"
     ],
     "allowed_scope": [
-      "SearchTransport protocol (injectable HTTP boundary) and search adapter protocol",
-      "SearXNG JSON response decoding into ordered SearchHit values with stable identities",
-      "typed search failures: transport failure, non-200 status, malformed payload, empty results",
-      "frozen SearXNG response fixture and stub-transport tests"
+      "AcquisitionPolicy for scheme, credentials, port, host-literal and resolved-address rules",
+      "injectable HostResolver boundary plus a deterministic stub resolver for tests",
+      "policy-checked fetch over the existing injectable transport: redirect chain validation with a hop cap, MIME allow-list, byte ceiling and timeout",
+      "typed AcquisitionError outcomes and a bounded, immutable acquisition result",
+      "frozen acquisition fixtures and stub-transport tests"
     ],
     "forbidden_scope": [
-      "real network calls in tests or in the deterministic slice",
-      "Docker requirements for normal users",
+      "real network calls or real DNS resolution in tests",
+      "robots.txt policy, per-host concurrency and delay (deferred to the following task)",
+      "HTML extraction, snapshot or passage creation",
       "models, embeddings or rerankers",
       "copying sibling source while the licence gate is unmet",
       "UI work beyond the existing shell"
     ],
     "done_when": [
-      "the adapter converts a frozen SearXNG fixture into ordered SearchHits with stable identities",
-      "transport failure, non-200 status, malformed payload, and empty results produce typed errors or typed empty outcomes",
-      "no test performs network access (stub transport only)",
+      "private, loopback, link-local, multicast and metadata-service destinations are refused with typed errors, including when reached only through a redirect",
+      "scheme, credentials, port, redirect-hop, MIME and byte-ceiling violations each produce a distinct typed error",
+      "a permitted fetch returns bounded bytes plus the validated final URL and content type, and a transport timeout maps to a typed timeout error",
+      "no test performs network access or DNS resolution (stub transport and stub resolver only)",
       "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]
   },
@@ -266,7 +275,7 @@
     "current_command_status": {
       "validate-manifest": "verified_2026-09-22",
       "build": "verified_2026-09-22",
-      "verify": "verified_2026-09-22_4_tests_0_failures"
+      "verify": "verified_2026-09-22_43_tests_0_failures"
     },
     "proof_vocabulary": [
       "planned",

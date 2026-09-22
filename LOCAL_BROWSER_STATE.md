@@ -3,10 +3,10 @@
 Last updated: 2026-09-22 (Australia/Sydney)
 
 Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
-Milestone 002 (safe live acquisition) is next; M002.1 (search adapter
-boundary with a SearXNG JSON adapter and stub-transport tests) is the sole
-next task. Twenty-five deterministic tests pass and clean checkouts pass
-`make gate`.**
+Milestone 002 (safe live acquisition) is active; M002.2 (safe acquisition
+boundary: URL and address policy with policy-checked fetch) is the sole next
+task. M002.1 delivered the search adapter boundary with a SearXNG JSON adapter.
+Forty-three deterministic tests pass and clean checkouts pass `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -354,6 +354,64 @@ path has been tested. M001 remains active.
 - Commands and observed results: `make gate` pass; 25 tests, 0 failures.
 - Next eligible task: M002.1 search adapter boundary with a SearXNG JSON
   adapter and stub-transport tests.
+
+### 2026-09-22 - M002.1 search adapter boundary and SearXNG JSON adapter
+
+- An interrupted earlier run left two untracked drafts
+  (`Sources/LocalLensCore/SearchAdapter.swift`,
+  `Fixtures/search/searxng-quick-coffee.json`). Both were reviewed against the
+  M002.1 `done_when` and the frozen protocol v1 contracts and kept with two
+  repairs instead of being rewritten: the transport doc comment no longer
+  asserts a specific later task number, and JSON `null` in the optional
+  `title`/`content` display fields is now read as empty rather than malformed
+  (SearXNG emits `null` for fields it did not fill; a wrong *type* still fails
+  closed). No frozen contract was contradicted, so no rewrite was needed.
+- `SearchAdapter`/`SearchTransport` boundary implemented: an adapter exchanges
+  a query for a typed `SearchOutcome` (`.hits([SearchHit])` or
+  `.noResults(query:)`) and reaches the network only through the injected
+  `SearchTransport`. `URLSessionSearchTransport` is the only production
+  transport; it is unused by tests and unreferenced by the app target.
+- `SearXNGSearchAdapter` validates its configuration once, sends
+  `GET {endpoint}/search?q=...&format=json` (the JSON path is appended only for
+  a bare base URL), requires HTTP 200, and decodes the payload into ordered
+  `SearchHit` values whose identity is
+  `StableIdentity.make("hit", query, fragment-free URL, rank)`.
+- Typed outcomes: `invalidEndpoint`, `emptyQuery`, `transportFailure`,
+  `httpStatus`, and `malformedPayload` are errors; an empty but successful
+  response is the typed empty outcome `.noResults`, not a silent success;
+  cancellation is rethrown as `CancellationError` so the run state machine
+  still owns the terminal `cancelled` transition.
+- Frozen fixture `Fixtures/search/searxng-quick-coffee.json` is synthetic,
+  redistributable, and hosted on `example.invalid` so it cannot resolve and
+  cannot be mistaken for captured web content.
+- 18 new tests in `Tests/LocalLensCoreTests/SearchAdapterTests.swift` drive a
+  stub `SearchTransport` actor only: fixture decoding and ordering, fragment
+  stripping, identity stability across adapter instances and query variation,
+  request shape and trimming, 5 non-200 statuses, 16 malformed payload
+  variants, `.noResults`, empty-query rejection with zero transport calls,
+  cancellation passthrough, the `maxResults` bound (junk beyond the bound is
+  never parsed), configuration rejection, and two offline guards — the fixture
+  must stay on non-resolvable hosts, and no test or app source may reference
+  the production transport (the guard scans its own test target and the app
+  target, so the "no network in tests" rule cannot silently regress).
+- Commands and observed results: `make gate` pass; 43 tests, 0 failures
+  (18 new); `make validate-schemas` reports protocol parity
+  (run_status=15, research_mode=4, evidence_relation=3, error_code=6);
+  `make validate-manifest` pass. Commit `6d6e4a9`.
+- Decisions: D016 records the boundary, the typed outcome family, and hit
+  identity. `docs/ARCHITECTURE.md` search boundary now records the implemented
+  signatures; `docs/LEARNING_PATH.md` records what M002.1 practised.
+- Proof boundary: the adapter is **deterministically verified** against a
+  frozen fixture through a stub transport. No live SearXNG instance has been
+  contacted, so no live-provider claim is made, and `URLSessionSearchTransport`
+  itself remains unexercised.
+- Observations carried forward, not silently changed: the M001 fixture slice
+  keeps its own two-part hit identity so M001 evidence stays byte-identical
+  (unifying the schemes is a deferred cleanup, recorded in D016); the
+  pre-existing duplicate `D011`-`D014` headings in `docs/DECISIONS.md` were
+  observed and left untouched because they predate this task.
+- Next eligible task: M002.2 safe acquisition boundary (URL and address policy
+  with policy-checked fetch).
 
 ## Evidence append template
 
