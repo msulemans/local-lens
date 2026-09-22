@@ -3,12 +3,13 @@
 Last updated: 2026-09-22 (Australia/Sydney)
 
 Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
-Milestone 002 (safe live acquisition) is active; M002.3 (robots and politeness
-boundary: robots.txt policy with per-host concurrency and delay) is the sole
-next task. M002.1 delivered the search adapter boundary with a SearXNG JSON
-adapter, and M002.2 delivered the policy-checked acquisition boundary with a
-frozen refusal matrix. Fifty-eight deterministic tests pass and clean checkouts
-pass `make gate`.**
+Milestone 002 (safe live acquisition) is active; M002.4 (HTML extraction
+boundary: static HTML to Snapshot and Passages with typed extraction outcomes)
+is the sole next task. M002.1 delivered the search adapter boundary with a
+SearXNG JSON adapter, M002.2 delivered the policy-checked acquisition boundary
+with a frozen refusal matrix, and M002.3 delivered the robots and politeness
+boundary. Eighty-one deterministic tests pass and clean checkouts pass
+`make gate`.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -501,6 +502,149 @@ path has been tested. M001 remains active.
   because they predate this task.
 - Next eligible task: M002.3 robots and politeness boundary (robots.txt policy
   with per-host concurrency and delay).
+
+### 2026-09-22 - M002.3 robots and politeness boundary
+
+Scope actually executed: the third M002 task only. M002.3 adds robots.txt policy
+evaluation and per-host politeness on top of the M002.2 acquisition boundary.
+No HTML extraction, snapshot, passage, rendering, model, or UI work was done,
+and the M001 deterministic slice was not touched.
+
+Implementation:
+
+- `Sources/LocalLensCore/RobotsPolicy.swift` (new):
+  - `RobotsParser` reads the UTF-8 subset of the format that matters: comments,
+    `User-agent` groups where consecutive `User-agent` lines share one group,
+    `Allow`, `Disallow`, `Crawl-delay`, and `Sitemap`. Unknown and empty values
+    are skipped. A non-empty body with no directive at all is reported as a
+    parse failure instead of being treated as an empty policy.
+  - `RobotsFile.group(for:)` selects the group whose product token is the
+    longest prefix match of our agent, falling back to `*`, with the earliest
+    group winning a tie. `longestMatch(in:path:)` applies `*` wildcards and a
+    trailing `$` anchor, longest match wins, and `Allow` wins an equal-length
+    tie. Query strings are part of the path that is matched.
+  - `RobotsOutcome` is the typed outcome family (`rules`, `missing`,
+    `serverError`, `unparseable`, `unreachable`, `blocked`) with a stable `kind`
+    label per case. `RobotsRefusal` separates a refusal the origin published
+    (`published_rule`) from one we imposed (`fail_closed`), because those are
+    different things to show a user.
+  - `RobotsPolicy` holds the documented fallback table: 200 with rules and 200
+    with an empty body are `.rules` (an empty published body is a valid policy
+    with no rules); 4xx is `.missing`, an absent policy with no restriction;
+    5xx, an unparseable body, a transport failure, a timeout, and a destination
+    the acquisition policy refuses are all refused. An unreadable policy is not
+    permission.
+  - `RobotsLoader` builds `robots.txt` for an origin and reads it through
+    `SafeAcquisition.fetch`, so the robots URL and every redirect hop are
+    validated by the M002.2 policy with no second socket path. It deliberately
+    does not take the host gate: politeness must wrap the robots check and the
+    request that follows it as one unit, and a nested acquisition of the same
+    gate would deadlock against the caller that holds it.
+  - `RobotsCache` is keyed by scheme, host, and port and deliberately excludes
+    the user agent, because the agent selects a group inside the file rather
+    than selecting the file. Entries do not expire in-process.
+- `Sources/LocalLensCore/RobotsPolicy.swift` also carries the politeness
+  boundary: `PolitenessClock` (injected; `SystemPolitenessClock` is the only
+  implementation that waits on real time), `HostRequestGate` (one in-flight
+  request per host, a minimum spacing measured between request *starts*, a
+  continuation queue, and a release on throw and on cancellation), and
+  `HostRequestGates` (one gate per normalized host). Spacing is measured
+  start-to-start because that is what the origin observes; the gate is per host
+  and never global, so politeness does not become a throughput ceiling and one
+  slow origin cannot stall an unrelated one.
+- `Fixtures/robots/robots-scenarios.json` (new): the frozen decision table -
+  `user_agent`, 8 `selection_cases`, 15 `decision_cases`, 3
+  `parse_failure_cases`, and 12 `fetch_scenarios` carrying `expected_outcome`,
+  optional `expected_error_kind`, `expected_requests`, and a decision
+  assertion. Every body is hand-authored in this repository and no robots.txt
+  was captured from a live origin.
+- `Tests/LocalLensCoreTests/RobotsPolicyTests.swift` (new): 23 tests covering
+  fixture integrity, group selection, product-token extraction, the empty body,
+  every decision case, query-string matching, the refusal shape, the parse
+  failures, the full fallback table, every fetch scenario, single-fetch-per
+  origin with cache reuse, cancellation passthrough, robots URL construction,
+  cache keying, delay enforcement, gate release on throw, one-in-flight-per-
+  host, per-host independence, crawl-delay application, and the offline guard.
+  The stubs are `StubHostResolver`, `ScriptedSearchTransport`, `StubClock`
+  (virtual time that records requested intervals), `ConcurrencyProbe`, and
+  `Latch`.
+
+Commands and observed results:
+
+```text
+$ swift build --build-tests
+  (red first: RobotsPolicy.swift used Self.productToken where productToken is a
+   member of RobotsFile, and three assertions referenced actor-isolated
+   properties from a nonisolated autoclosure. Fixed; then clean.)
+
+$ swift test --filter RobotsPolicyTests
+  (red first: 23 tests, 41 failures. Root cause was one wrong fixture value:
+   the robots fixture resolved permitted names to 198.51.100.7, which
+   AcquisitionPolicy correctly classifies as a reserved address, so every
+   permitted fetch was refused before reaching the stub transport. The M002.2
+   acquisition fixture resolves permitted names to 93.184.216.34; the robots
+   fixture was corrected to match, and the fixture guard was narrowed from
+   "any TEST-NET address" to "the documented example.com address or a
+   deliberately refused loopback literal". Two further failures were wrong
+   assertions, not wrong behaviour: a forgotten cache entry must cause a
+   re-request, and the concurrency probe's peak across two independent hosts is
+   two, not one.)
+  After the fixes: Executed 23 tests, with 0 failures (0 unexpected) in
+  0.019 seconds.
+
+$ make gate
+  project.json conforms to its schema and handoff invariants.
+  protocol v1 schemas conform; Swift parity holds (run_status=15,
+    research_mode=4, evidence_relation=3, error_code=6)
+  Executed 81 tests, with 0 failures (0 unexpected)
+```
+
+Gate result: `make gate` passed at commit `19a9d1f` with 81 tests and 0
+failures (58 before this task, 23 added). The manifest validated and the
+protocol v1 schemas and Swift enum parity were unchanged.
+
+Failures preserved at: none outstanding. The two red runs above are recorded
+here with their causes. Both red runs were failures of the new code or the new
+tests, and no gate was weakened to clear them: the fixture value was corrected
+because the acquisition policy was right and the fixture was wrong, and the two
+test assertions were corrected because the assertions were wrong and the
+behaviour was right. No production rule was relaxed.
+
+Proof boundary: deterministically verified. Robots behaviour is verified
+against frozen fixtures through the stub transport, the stub resolver, and the
+stub clock. No live robots.txt has been fetched, no real DNS lookup has been
+made, and `SystemPolitenessClock` has never waited, so the real waiting path
+and any live robots.txt behaviour remain unverified. The robots fetch is
+verified to go through `SafeAcquisition.fetch`, which is verified to be
+policy-checked, so the boundary composition is verified but the live origin
+behaviour is not. Politeness is verified as per-host serialization against a
+virtual clock; it is not a measured rate against a real origin. Cache entries
+never expire in-process, so time-based revalidation is unverified and is not
+implied.
+
+Decisions: D018 in `docs/DECISIONS.md` (robots is fail-closed, politeness is per
+host). `docs/ARCHITECTURE.md` gains a "Robots and politeness boundary" section
+with the fallback table, and `docs/LEARNING_PATH.md` gains a "Practised in
+M002.3" block.
+
+Observations carried forward, not silently changed:
+
+- `RobotsLoader.load` does not take the host gate. This is deliberate: the
+  caller is expected to hold the gate across the robots check and the request
+  that follows, and a nested acquisition would deadlock. The consequence is
+  that a caller who uses `RobotsLoader.load` without holding a gate gets no
+  politeness, which is a composition rule rather than a property of the loader.
+- The M001 fixture slice keeps its own hit identity and the M002.1 adapter keeps
+  its three-part identity; unifying them is still deferred (D016).
+- The pre-existing duplicate `D011`-`D014` headings in `docs/DECISIONS.md` and
+  the out-of-numeric-order D017 remain untouched because they predate this task.
+- `example.com` genuinely resolves publicly, so fixture *addresses* - not only
+  fixture names - must stay reserved or explicitly documented. This was caught
+  here because the robots fixture initially used a TEST-NET address for a fetch
+  the policy is required to permit.
+
+Next eligible task: M002.4 HTML extraction boundary (static HTML to Snapshot and
+Passages with typed extraction outcomes).
 
 ## Evidence append template
 
