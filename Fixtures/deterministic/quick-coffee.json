@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0.0",
+  "synthetic": true,
+  "question": "Does cold brew contain less acid than hot drip coffee?",
+  "mode": "Quick",
+  "sources": [
+    {
+      "id": "brew-review",
+      "title": "Acidity in brewed coffee (synthetic test source)",
+      "publisher": "Local Lens synthetic corpus",
+      "canonicalURL": "https://example.invalid/brew-review",
+      "sourceType": "synthetic-document",
+      "paragraphs": [
+        {
+          "heading": "Extraction method",
+          "text": "Cold brew steeps ground coffee in room-temperature water for twelve to twenty hours, while hot drip passes water through the bed in minutes."
+        },
+        {
+          "heading": "Acidity measurements",
+          "text": "In the same controlled trial, cold brew measured pH 5.6 and hot drip measured pH 4.9, so cold brew was less acidic."
+        }
+      ]
+    },
+    {
+      "id": "sensory-panel",
+      "title": "Tasting panel notes (synthetic test source)",
+      "publisher": "Local Lens synthetic corpus",
+      "canonicalURL": "https://example.invalid/sensory-panel",
+      "sourceType": "synthetic-document",
+      "paragraphs": [
+        {
+          "heading": "Panel results",
+          "text": "A trained panel described cold brew as smoother with lower perceived acidity than hot drip in blinded tasting."
+        }
+      ]
+    },
+    {
+      "id": "chemistry-notes",
+      "title": "Compound profile notes (synthetic test source)",
+      "publisher": "Local Lens synthetic corpus",
+      "canonicalURL": "https://example.invalid/chemistry-notes",
+      "sourceType": "synthetic-document",
+      "paragraphs": [
+        {
+          "heading": "Compound profile",
+          "text": "Chlorogenic acid lactones increase with heat, which is one reason hot drip tastes more acidic than cold brew."
+        }
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "dimension": "Acidity",
+      "text": "Cold brew is measurably less acidic than hot drip coffee.",
+      "anchor": {
+        "sourceID": "brew-review",
+        "quote": "cold brew measured pH 5.6 and hot drip measured pH 4.9, so cold brew was less acidic"
+      }
+    },
+    {
+      "dimension": "Taste",
+      "text": "Cold brew is perceived as smoother by taste panels.",
+      "anchor": {
+        "sourceID": "sensory-panel",
+        "quote": "described cold brew as smoother with lower perceived acidity"
+      }
+    },
+    {
+      "dimension": "Chemistry",
+      "text": "Heat increases bitter-tasting lactones in drip coffee.",
+      "anchor": {
+        "sourceID": "chemistry-notes",
+        "quote": "Chlorogenic acid lactones increase with heat"
+      }
+    }
+  ]
+}

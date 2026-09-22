@@ -200,3 +200,37 @@ public struct PersistedRun: Codable, Equatable, Sendable {
         self.events = events
     }
 }
+
+extension RunEvent {
+    private enum CodingKeys: String, CodingKey {
+        case sequence
+        case status
+        case message
+    }
+
+    public init(from decoder: Decoder) throws {
+        try requireKnownKeys(decoder, allowed: ["sequence", "status", "message"], context: "run event")
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            sequence: try container.decode(Int.self, forKey: .sequence),
+            status: try container.decode(RunStatus.self, forKey: .status),
+            message: try container.decode(String.self, forKey: .message)
+        )
+    }
+}
+
+extension PersistedRun {
+    private enum CodingKeys: String, CodingKey {
+        case result
+        case events
+    }
+
+    public init(from decoder: Decoder) throws {
+        try requireKnownKeys(decoder, allowed: ["result", "events"], context: "persisted run")
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            result: try container.decode(ResearchResult.self, forKey: .result),
+            events: try container.decode([RunEvent].self, forKey: .events)
+        )
+    }
+}
