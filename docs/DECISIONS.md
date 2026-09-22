@@ -174,6 +174,42 @@ unnecessary network surface and port management).
 Review trigger: packaging constraints, or a second local consumer needs
 direct access to the research core.
 
+## D014 - UI verification approach
+
+Date: 2026-09-22
+
+Decision: Verify UI behavior with three layers now: (1) view-model and core
+tests; (2) scripted window capture with `screencapture` at defined
+checkpoints, stored under `docs/evidence/<milestone>/`; and (3) a manual
+interaction list for states automation cannot reach. XCUITest is deferred to
+the packaged application (M003/M009).
+
+Why: the SwiftPM-only workflow has no UI test target, and window capture plus
+view-model tests give repeatable visual evidence today without introducing an
+Xcode project early. `LOCAL_LENS_START_VIEW=map` makes either main view state
+capturable deterministically.
+
+Review trigger: packaging work begins, or a UI regression escapes capture.
+
+## D015 - M001 declaration and sibling-extraction disposition
+
+Date: 2026-09-22
+
+Decision: Declare M001 complete against its eight recorded gate items, all
+passing (`docs/evidence/M001/gate-audit.md`). The sibling `ResearchCore`
+extraction item stays BLOCKED by the licence gate (D011) and is tracked as the
+licence-gated reuse task R1; it is not a product-facing requirement of the
+deterministic slice, which is clean-room Swift and fully tested.
+
+Why: every gate item has recorded evidence on a clean checkout; the licence
+block is an owner action that implementation work cannot complete, and the
+plan explicitly anticipates porting instead of extraction when direct reuse is
+not possible.
+
+Carry-over items: R1 sibling reuse (blocked on licence); full Living Research
+Map design (M003, see `docs/design/CONFORMANCE.md`); UI automation (packaged
+app).
+
 This supersedes D009 only for the timing of sibling-code licensing: that issue
 must be resolved in M001. Selection of this repository's final public licence
 may still occur during public-release planning.

@@ -19,7 +19,7 @@ private enum LoadState {
 struct FixtureRunView: View {
     @State private var state: LoadState = .loading
     @State private var selectedCitationID: String?
-    @State private var showsMap = false
+    @State private var showsMap = ProcessInfo.processInfo.environment["LOCAL_LENS_START_VIEW"] == "map"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -114,22 +114,33 @@ struct FixtureRunView: View {
 
     private func mapGrid(map: EvidenceMap) -> some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(map.nodes) { node in
                     Button {
                         selectedCitationID = node.citationID
                     } label: {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(node.claim.dimension)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(node.claim.dimension)
+                                    .font(.subheadline.weight(.semibold))
+                                Spacer()
+                                relationBadge(node.relation)
+                            }
                             Text(node.claim.text)
                                 .font(.callout)
                                 .multilineTextAlignment(.leading)
-                            Divider()
-                            Text("\(node.relation.rawValue.replacingOccurrences(of: "_", with: " ")) · \(node.source.publisher)")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(relationColor(node.relation))
+                                    .frame(width: 8, height: 8)
+                                Text(node.source.title)
+                                    .font(.caption)
+                                    .lineLimit(1)
+                                Spacer()
+                                Text(relationLabel(node.relation))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         .padding(10)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -141,10 +152,37 @@ struct FixtureRunView: View {
                         )
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("\(node.claim.dimension): \(node.claim.text), relation \(node.relation.rawValue), source \(node.source.title)")
+                    .accessibilityLabel("\(node.claim.dimension): \(node.claim.text), relation \(relationLabel(node.relation)), source \(node.source.title)")
                 }
+                Text("\(map.nodes.count) claims · \(map.sources.count) sources · relations shown as colour and text")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private func relationLabel(_ relation: EvidenceRelation) -> String {
+        relation.rawValue.replacingOccurrences(of: "_", with: " ")
+    }
+
+    private func relationColor(_ relation: EvidenceRelation) -> Color {
+        switch relation {
+        case .supports:
+            .green
+        case .partiallySupports:
+            .orange
+        case .conflicts:
+            .red
+        }
+    }
+
+    private func relationBadge(_ relation: EvidenceRelation) -> some View {
+        Text(relationLabel(relation))
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(relationColor(relation).opacity(0.15), in: Capsule())
+            .foregroundStyle(relationColor(relation))
     }
 
     private func inspector(inspections: [CitationInspection]) -> some View {

@@ -76,16 +76,15 @@ Milestone 000 and its planning correction are complete. The plan now records
 the exact GitHub/research/X inputs, the code-reuse boundary, and the
 Evidence-Native Generative Search thesis.
 
-Milestone 001 is active. The package baseline builds, twenty-five
-deterministic tests pass, and the app renders and persists the offline fixture
-run with a citations/map toggle and exact-passage inspector (window
-screenshot: `docs/evidence/M001/app-first-run.png`); a clean checkout passes
-`make gate`. Reuse provenance and the ResearchCore boundary are frozen,
-protocol v1 schemas and envelopes are enforced against the Swift core, and the
-fixture slice proves identical evidence and exact-passage citations across
-runs. The next task is the M001 close-out: the UI-verification decision and
-the milestone declaration. Research-core extraction, live providers, models,
-and packaged distribution are not claimed yet.
+Milestone 001 is complete: twenty-five deterministic tests pass, the app
+renders and persists the offline fixture run with a citations/map toggle and
+exact-passage inspector (screenshots in `docs/evidence/M001/`), and clean
+checkouts pass `make gate`. The gate audit and declaration (D015) are
+recorded in `docs/evidence/M001/gate-audit.md`. Milestone 002 (safe live
+acquisition) is next, starting with the search adapter boundary and a SearXNG
+JSON adapter tested against a stub transport. Research-core extraction stays
+licence-gated (D011); live providers, models, and packaged distribution are
+not claimed yet.
 
 ## Working rules
 

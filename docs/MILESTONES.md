@@ -18,7 +18,7 @@ Gate: see `LOCAL_BROWSER_STATE.md`.
 
 ## M001 - Reuse foundation and deterministic native vertical slice
 
-Status: **active; package baseline and four core tests verified**
+Status: **complete** (gate audit `docs/evidence/M001/gate-audit.md`; declaration D015). Sibling extraction stays licence-gated (D011, task R1).
 
 Learn:
 
@@ -48,6 +48,8 @@ Build:
 Gate: recorded in `LOCAL_BROWSER_STATE.md`.
 
 ## M002 - Safe live acquisition
+
+Status: **next; first task M002.1 (search adapter boundary and SearXNG JSON adapter) is defined in `project.json`.**
 
 Learn:
 

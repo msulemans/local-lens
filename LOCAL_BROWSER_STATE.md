@@ -2,10 +2,11 @@
 
 Last updated: 2026-09-22 (Australia/Sydney)
 
-Status: **Milestone 001 is active. M001.1 through M001.5 are complete;
-M001.6 (UI-verification decision and M001 declaration) is the sole next task.
-Twenty-five deterministic tests pass, the window render is visually verified,
-and a clean checkout passes `make gate` on `912b563`.**
+Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
+Milestone 002 (safe live acquisition) is next; M002.1 (search adapter
+boundary with a SearXNG JSON adapter and stub-transport tests) is the sole
+next task. Twenty-five deterministic tests pass and clean checkouts pass
+`make gate`.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -103,11 +104,11 @@ Gate result:
 No runtime, app target, network integration, model, or benchmark result exists
 yet. M000 is documentation and design evidence only.
 
-## Sole next milestone
+## Milestone focus
 
 ### Milestone 001 - Deterministic native vertical slice
 
-Status: **active**
+Status: **complete** (declaration D015; audit in `docs/evidence/M001/gate-audit.md`)
 
 Build only:
 
@@ -337,6 +338,22 @@ path has been tested. M001 remains active.
   Commit `912b563`.
 - Next eligible task: M001.6 close-out (UI-verification decision and
   milestone declaration).
+
+### 2026-09-22 - M001.6 close-out and M001 declaration
+
+- UI verification decided (D014): view-model tests plus scripted window
+  capture into `docs/evidence/<milestone>/`, with `LOCAL_LENS_START_VIEW`
+  selecting the captured view; XCUITest is deferred to the packaged app.
+- Map view upgraded to the design's evidence-map hierarchy: claim cards with
+  relation badges, source rows, colour-plus-text relations, and selection
+  into the passage inspector. Captured as `docs/evidence/M001/app-map-view.png`.
+- M001 declared complete (D015) against gate items 1-8 with recorded
+  evidence. Carry-over: licence-gated sibling reuse (R1), full map design
+  (M003), UI automation (packaged app). Design conformance ladder recorded in
+  `docs/design/CONFORMANCE.md`.
+- Commands and observed results: `make gate` pass; 25 tests, 0 failures.
+- Next eligible task: M002.1 search adapter boundary with a SearXNG JSON
+  adapter and stub-transport tests.
 
 ## Evidence append template
 

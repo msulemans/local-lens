@@ -6,11 +6,11 @@
 M000 product + reuse plan    COMPLETE
   |
   v
-M001 reuse foundation +      NEXT
+M001 reuse foundation +      COMPLETE
      deterministic native
   |
   v
-M002 safe live acquisition
+M002 safe live acquisition   NEXT
   |
   v
 M003 useful Quick release

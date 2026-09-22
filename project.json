@@ -31,9 +31,10 @@
     "timezone": "Australia/Sydney",
     "completed_milestones": [
       "M000",
-      "M000A"
+      "M000A",
+      "M001"
     ],
-    "next_milestone": "M001",
+    "next_milestone": "M002",
     "proof_level": "deterministically_verified",
     "runtime_verified": false,
     "build_verified": true,
@@ -65,7 +66,9 @@
       "clean-checkout make gate proof",
       "minimal evidence map with relation and provenance nodes (view-model tests)",
       "window render visually verified with screenshot evidence",
-      "restart loads the persisted run without rewriting it (smoke)"
+      "restart loads the persisted run without rewriting it (smoke)",
+      "M001 declaration with gate audit and design conformance ladder",
+      "map view captured with relation hierarchy (screenshot evidence)"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
@@ -76,29 +79,32 @@
     ]
   },
   "next_task": {
-    "id": "M001.6",
-    "title": "M001 close-out: UI-verification decision and milestone declaration",
-    "objective": "Close the remaining M001 items with recorded decisions: choose the UI-verification approach, record the blocked extraction disposition, update the gate audit with final-revision proof, and either declare M001 complete or record the exact unmet list.",
+    "id": "M002.1",
+    "title": "Search adapter boundary with a SearXNG JSON adapter and stub-transport tests",
+    "objective": "Open the live-acquisition milestone without a live dependency: define the search adapter boundary, implement a SearXNG JSON adapter over an injectable transport, and prove typed parsing and failure behavior with frozen fixtures and a stub transport only.",
     "prerequisites": [
-      "M001.1 through M001.5 complete with evidence recorded",
-      "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet"
+      "M001 complete (deterministic slice and gates)",
+      "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet",
+      "No test may perform real network access"
     ],
     "allowed_scope": [
-      "decision entry selecting the UI-verification approach (XCUITest versus documented alternative)",
-      "gate audit update with the final revision and late evidence",
-      "milestone declaration or explicit unmet list in LOCAL_BROWSER_STATE.md"
+      "SearchTransport protocol (injectable HTTP boundary) and search adapter protocol",
+      "SearXNG JSON response decoding into ordered SearchHit values with stable identities",
+      "typed search failures: transport failure, non-200 status, malformed payload, empty results",
+      "frozen SearXNG response fixture and stub-transport tests"
     ],
     "forbidden_scope": [
-      "live network, models, embeddings or rerankers",
+      "real network calls in tests or in the deterministic slice",
+      "Docker requirements for normal users",
+      "models, embeddings or rerankers",
       "copying sibling source while the licence gate is unmet",
-      "feature work from later milestones",
-      "declaring M001 complete while an unmet item lacks a named reason and owner action"
+      "UI work beyond the existing shell"
     ],
     "done_when": [
-      "the UI-verification decision is recorded in docs/DECISIONS.md",
-      "the gate audit reflects the final revision proof",
-      "LOCAL_BROWSER_STATE.md and project.json agree on the declaration or the unmet list",
-      "make gate passes"
+      "the adapter converts a frozen SearXNG fixture into ordered SearchHits with stable identities",
+      "transport failure, non-200 status, malformed payload, and empty results produce typed errors or typed empty outcomes",
+      "no test performs network access (stub transport only)",
+      "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]
   },
   "architecture": {
