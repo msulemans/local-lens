@@ -476,3 +476,48 @@ Consequences:
   empty leading component, so `"; charset=utf-8"` reported the parameter as the
   media type; and the `<meta>` scan matched `charset` inside `charsetless`. All
   three are fixed in the source, not in the assertions.
+
+## D020 - The snapshot store deduplicates content without rewriting identity
+
+Decision: acquisition and extraction produce `ExtractedPage` values; the
+`SnapshotStore` actor turns them into evidence records. Deduplication is keyed
+by the extracted page's `contentHash` alone, so the same bytes reached by a
+different URL, a different attempt, or a different source are one snapshot.
+
+Rules:
+
+- The first stored snapshot keeps the identity it was first given. A later
+  duplicate updates that record's attempt counters and URL lists but never
+  rewrites `snapshot.id`, `passages`, or `extractedText`. An identity that has
+  been cited must not change meaning because the same page was fetched again.
+- Every offer is counted, not just the ones that stored bytes:
+  `totalAttempts` counts offers of that content, `duplicateAttempts` counts the
+  ones that did not store. `attempt` records the attempt number that actually
+  produced the bytes, not the last offer to arrive.
+- The store re-derives snapshot and passage identity from the source id,
+  content hash, ordinals, and text digests before storing. A caller that hands
+  in a hand-built snapshot with a mismatched id or passage set is refused with
+  `inconsistent_page` rather than trusted.
+- `record(forHit:)` resolves a hit only through the URLs actually requested for
+  a snapshot or its final URL. A hit whose URL was never acquired is refused
+  with `hit_is_not_evidence`; the snippet is never consulted. This is the
+  mechanical form of "search snippets never become evidence".
+- The store is an actor because bounded parallel fetch will offer pages
+  concurrently; the concurrency test requires that simultaneous offers of the
+  same bytes store exactly one snapshot and count the rest as duplicates.
+
+Consequences:
+
+- Duplicate detection is content-addressed, so it is independent of URL
+  aliasing, redirect chains, and retry order.
+- Three duplicate reasons are distinguished - `repeated_attempt`,
+  `same_content_from_another_url`, `same_bytes_from_another_source` - because
+  they are different facts about the run, and collapsing them would hide a
+  redirect loop or a shared CDN body.
+- The store is pure: no socket, no name resolution, no filesystem, no clock.
+  A guard test asserts that property over the source text.
+- The first run of the new suite was red with 3 failures, all in the tests
+  themselves: an assertion compared five attempt ids against two stored
+  records, and a duplicate-counter assertion read a stale value copy instead of
+  re-reading the record the store had updated in place. Both are fixed in the
+  assertions; no production behaviour was weakened.

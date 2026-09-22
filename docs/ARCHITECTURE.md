@@ -295,6 +295,30 @@ changes to a live page cannot silently modify old evidence.
 Private downloaded bodies do not enter Git. Redistributable deterministic
 fixtures are small, attributed, and frozen in the repository.
 
+## Snapshot store
+
+The `SnapshotStore` actor is where an approved, extracted page becomes evidence.
+It is a pure in-memory boundary: no socket, no name resolution, no filesystem,
+no clock. It is an actor because bounded parallel fetch will offer pages
+concurrently.
+
+Deduplication is keyed by the extracted page's content hash. The same bytes
+reached through a different URL, a different attempt, or a different source are
+one snapshot, and the record keeps the identity it was first given - a
+duplicate never rewrites a cited `snapshot.id`, its passages, or its text.
+Offers are still counted: `totalAttempts` counts every offer of that content,
+`duplicateAttempts` counts the ones that did not store, and `attempt` records
+the attempt that produced the bytes.
+
+Identity is re-derived before storing rather than trusted. A page whose
+snapshot id, passage ids, ordinals, or text digests do not match its own source
+id and content hash is refused with `inconsistent_page`.
+
+A hit resolves to evidence only through the URLs actually requested for a
+snapshot, or its final URL. A hit whose URL was never acquired is refused with
+`hit_is_not_evidence`; the search snippet is never consulted. This is the
+mechanical form of "search snippets never become evidence".
+
 ## Retrieval boundary
 
 The first baseline is:

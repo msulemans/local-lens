@@ -119,6 +119,23 @@ Practised in M002.4:
 - why a known loss (whitespace inside `<pre>`) belongs in the fixture table as a
   recorded case instead of a footnote.
 
+Practised in M002.5:
+
+- why deduplication keys on content hash rather than on URL, so redirect
+  chains, aliases, and retry order cannot create two snapshots of one page;
+- why a duplicate updates counters but never rewrites an identity that has
+  already been cited, and what would break if it did;
+- why every offer is counted even when it stores nothing, so a redirect loop
+  or a shared CDN body is visible in the record instead of invisible;
+- why the store re-derives snapshot and passage identity from source id,
+  content hash, ordinals, and text digests rather than trusting the caller;
+- why a hit resolves only through URLs that were actually acquired, making
+  "a snippet is never evidence" a property of the code rather than a promise;
+  and
+- why an actor is the right shape here: bounded parallel fetch will offer
+  pages at the same time, and the concurrency test requires that simultaneous
+  offers of the same bytes store exactly one snapshot.
+
 ## M003 - Retrieval and local generation
 
 Learn:

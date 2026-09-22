@@ -1,0 +1,153 @@
+{
+  "_fixture": {
+    "synthetic": true,
+    "license": "redistributable",
+    "note": "Hand-authored offer sequence for the M002.5 snapshot store. The bodies are written here, no page was captured from a live origin, and every host is a reserved non-resolvable name (example.invalid). The cases are ordered: each expected value describes the store after that offer.",
+    "shape": "SnapshotStoreFixture"
+  },
+  "cases": [
+    {
+      "id": "first-fetch-stores",
+      "why": "The first offer of a document stores it, and the stored snapshot keeps the identity the extractor derived.",
+      "source_id": "src-alpha",
+      "requested_url": "https://example.invalid/alpha",
+      "final_url": "https://example.invalid/alpha",
+      "content_type": "text/html; charset=utf-8",
+      "body": "<html><body><h1>Alpha</h1><p>Alpha body.</p></body></html>",
+      "attempt": 1,
+      "expected": {
+        "outcome": "stored",
+        "snapshot_source_id": "src-alpha",
+        "source_ids": ["src-alpha"],
+        "requested_urls": ["https://example.invalid/alpha"],
+        "passage_count": 2,
+        "total_attempts": 1,
+        "text": "Alpha\n\nAlpha body."
+      }
+    },
+    {
+      "id": "retry-of-the-same-url-stores-nothing",
+      "why": "A retry re-requests the same URL and gets the same bytes; that is a duplicate attempt, not a second document.",
+      "source_id": "src-alpha",
+      "requested_url": "https://example.invalid/alpha",
+      "final_url": "https://example.invalid/alpha",
+      "content_type": "text/html; charset=utf-8",
+      "body": "<html><body><h1>Alpha</h1><p>Alpha body.</p></body></html>",
+      "attempt": 2,
+      "expected": {
+        "outcome": "duplicate",
+        "duplicate_reason": "repeated_attempt",
+        "snapshot_source_id": "src-alpha",
+        "source_ids": ["src-alpha"],
+        "requested_urls": ["https://example.invalid/alpha"],
+        "passage_count": 2,
+        "total_attempts": 2,
+        "text": "Alpha\n\nAlpha body."
+      }
+    },
+    {
+      "id": "same-document-under-another-requested-url",
+      "why": "A second URL that resolves to the same source and the same bytes - here a tracking parameter that canonicalizes away - is the same document, and the URL that was actually requested stays recorded.",
+      "source_id": "src-alpha",
+      "requested_url": "https://example.invalid/alpha?utm_source=retry",
+      "final_url": "https://example.invalid/alpha",
+      "content_type": "text/html; charset=utf-8",
+      "body": "<html><body><h1>Alpha</h1><p>Alpha body.</p></body></html>",
+      "attempt": 1,
+      "expected": {
+        "outcome": "duplicate",
+        "duplicate_reason": "same_content_from_another_url",
+        "snapshot_source_id": "src-alpha",
+        "source_ids": ["src-alpha"],
+        "requested_urls": ["https://example.invalid/alpha", "https://example.invalid/alpha?utm_source=retry"],
+        "passage_count": 2,
+        "total_attempts": 3,
+        "text": "Alpha\n\nAlpha body."
+      }
+    },
+    {
+      "id": "identical-bytes-from-another-origin",
+      "why": "A second origin publishing identical bytes is reported as such rather than as a retry, and the first snapshot is not rewritten: its identity may already be cited.",
+      "source_id": "src-mirror",
+      "requested_url": "https://example.invalid/mirror",
+      "final_url": "https://example.invalid/mirror",
+      "content_type": "text/html; charset=utf-8",
+      "body": "<html><body><h1>Alpha</h1><p>Alpha body.</p></body></html>",
+      "attempt": 1,
+      "expected": {
+        "outcome": "duplicate",
+        "duplicate_reason": "same_bytes_from_another_source",
+        "snapshot_source_id": "src-alpha",
+        "source_ids": ["src-alpha", "src-mirror"],
+        "requested_urls": [
+          "https://example.invalid/alpha",
+          "https://example.invalid/alpha?utm_source=retry",
+          "https://example.invalid/mirror"
+        ],
+        "passage_count": 2,
+        "total_attempts": 4,
+        "text": "Alpha\n\nAlpha body."
+      }
+    },
+    {
+      "id": "different-bytes-store-a-second-snapshot",
+      "why": "Different bytes are a different document, so the store holds two snapshots and the second one carries its own identity.",
+      "source_id": "src-gamma",
+      "requested_url": "https://example.invalid/gamma",
+      "final_url": "https://example.invalid/gamma",
+      "content_type": "text/html; charset=utf-8",
+      "body": "<html><body><h1>Gamma</h1><p>Gamma body.</p></body></html>",
+      "attempt": 1,
+      "expected": {
+        "outcome": "stored",
+        "snapshot_source_id": "src-gamma",
+        "source_ids": ["src-gamma"],
+        "requested_urls": ["https://example.invalid/gamma"],
+        "passage_count": 2,
+        "total_attempts": 1,
+        "text": "Gamma\n\nGamma body."
+      }
+    }
+  ],
+  "refusals": [
+    {
+      "id": "invalid-attempt",
+      "why": "Attempt numbers are 1-based, and an impossible attempt number is refused before the bytes are even considered for deduplication.",
+      "operation": "store",
+      "source_id": "src-alpha",
+      "requested_url": "https://example.invalid/alpha",
+      "final_url": "https://example.invalid/alpha",
+      "content_type": "text/html; charset=utf-8",
+      "body": "<html><body><h1>Alpha</h1><p>Alpha body.</p></body></html>",
+      "attempt": 0,
+      "expected_kind": "invalid_attempt",
+      "expected_reason_contains": "attempts are numbered from one"
+    },
+    {
+      "id": "hit-that-was-never-fetched",
+      "why": "A search hit is a URL and a snippet. Until its bytes have been acquired and extracted it is discovery metadata, not evidence, even when other documents are already stored.",
+      "operation": "hit",
+      "hit_id": "hit-never-fetched",
+      "hit_url": "https://example.invalid/never-fetched",
+      "expected_kind": "hit_is_not_evidence",
+      "expected_reason_contains": "has not been acquired and extracted"
+    },
+    {
+      "id": "hit-whose-document-was-refused",
+      "why": "A document that was offered and refused by extraction leaves no snapshot, so a hit for it is still not evidence.",
+      "operation": "hit",
+      "hit_id": "hit-refused-document",
+      "hit_url": "https://example.invalid/refused",
+      "expected_kind": "hit_is_not_evidence",
+      "expected_reason_contains": "cannot be evidence"
+    },
+    {
+      "id": "unknown-snapshot-id",
+      "why": "A citation that points at a snapshot the store does not hold must fail closed rather than resolve to nothing.",
+      "operation": "record",
+      "snapshot_id": "snapshot-that-does-not-exist",
+      "expected_kind": "unknown_snapshot",
+      "expected_reason_contains": "is stored"
+    }
+  ]
+}
