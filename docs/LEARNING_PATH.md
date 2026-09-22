@@ -99,6 +99,26 @@ Practised in M002.3:
 - why a cache keyed by origin rather than by user agent is the correct key,
   because the agent chooses a group inside the file.
 
+Practised in M002.4:
+
+- why a refusal family is a set of facts rather than one error, and why the
+  order in which those facts are established is part of the contract (a PDF over
+  the ceiling is still a PDF);
+- why extraction is a pure function of already-approved bytes, and how a guard
+  test turns "no I/O" from an intention into a property;
+- why content-addressed identity has to reuse the existing part ordering
+  instead of inventing a second scheme: two identity schemes for the same
+  snapshot is how citations start lying;
+- why the transport's declared character set outranks the document's own
+  declaration, and why `charset` must be matched as a token so `charsetless`
+  cannot decide an encoding;
+- why entity resolution must happen before whitespace collapse, so `&nbsp;`
+  becomes a space while `&amp;nbsp;` stays the text a reader sees;
+- why heading context is attribution carried forward rather than decoration,
+  and why an empty heading is not a heading change; and
+- why a known loss (whitespace inside `<pre>`) belongs in the fixture table as a
+  recorded case instead of a footnote.
+
 ## M003 - Retrieval and local generation
 
 Learn:

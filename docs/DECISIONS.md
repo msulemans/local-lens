@@ -396,3 +396,83 @@ Consequences:
   decisions, 3 parse failures, 12 fetch scenarios), with a guard test that keeps
   every host name reserved and every address either the documented example.com
   address or a deliberately refused loopback literal.
+
+## D019 - HTML extraction is a typed, content-addressed boundary
+
+Date: 2026-09-23
+
+Status: accepted
+
+Context: acquisition can now approve and fetch an HTML document, but the
+pipeline still had nothing it could cite. The extraction step is where a hostile
+web actually bites: a page can be empty, served with the wrong declared type,
+encoded in something we cannot decode, larger than any ceiling we are willing to
+hold, or malformed in a way that silently swallows the rest of the document. If
+extraction returns "the text" in those cases, every later citation is built on a
+guess. `Sources/LocalLensCore/HTMLExtraction.swift` is therefore a boundary, not
+a helper: it either produces text a passage can be built from, or it refuses
+with a typed fact.
+
+Decision:
+
+- Extraction is a pure function of the bytes acquisition already approved. It
+  takes an `AcquisitionResult` and a policy, and it performs no I/O: no socket,
+  no DNS, no file read, no clock. A guard test scans the source for those
+  capabilities, so the property cannot regress silently.
+- Every refusal is a distinct fact, not a generic failure. The frozen family is
+  `unsupported_content_type`, `document_too_large`, `empty_document`,
+  `unsupported_charset`, `malformed_markup`, `no_readable_text`,
+  `missing_source_identifier`, and `invalid_policy`. A caller can tell an
+  origin that published nothing from a document we refused to guess at.
+- Refusal order is fixed and observable: source identifier, then media type,
+  then size, then character set, then markup, then readability. A PDF over the
+  ceiling is still a PDF; an oversized document is refused for its size before
+  its encoding is considered.
+- Identity is content-derived and reuses the M001 part ordering, so a live
+  snapshot and a fixture snapshot describe themselves the same way:
+  `StableIdentity.make("snapshot", sourceID, contentHash)` and
+  `StableIdentity.make("passage", snapshot.id, String(ordinal), digest(text))`.
+  The extractor does not invent a second identity scheme.
+- `ExtractionPolicy` follows the same checked/unchecked pattern as
+  `AcquisitionPolicy`: a private unchecked initializer for the default and a
+  throwing public initializer that rejects a non-positive ceiling or a blank
+  extractor version. The extraction ceiling is separate from the acquisition
+  ceiling because holding a document to parse it is a different cost from
+  streaming it.
+- Headings are attribution, not decoration: the heading a reader last saw is
+  carried on every block that follows it, and a heading is also emitted as its
+  own block so a document that is nothing but headings is still readable. An
+  empty heading is not a heading change.
+- The header is the transport's statement about the bytes and `<meta>` is the
+  document's statement about itself, so the header wins and `<meta>` is believed
+  only when the header said nothing. `charset` is matched as a token of its own,
+  so `charsetless` cannot decide an encoding. This is a scan, not a parser, and
+  is recorded as such.
+- Text is normalized once: character references are resolved *before*
+  whitespace is collapsed, so `&nbsp;` becomes an ordinary space while
+  `&amp;nbsp;` stays the literal text a reader sees. Unknown or malformed
+  references are text, not markup failures.
+
+Consequences:
+
+- The scenario table is frozen as data in
+  `Fixtures/html/extraction-scenarios.json`: 7 extraction cases and 17 refusals,
+  each with a `why`. Every host stays on a non-resolvable `.invalid` name and
+  the fixture declares itself synthetic and redistributable, so no captured page
+  enters Git.
+- A body that cannot be read is refused rather than truncated or lossily
+  decoded: a NUL byte, invalid UTF-8, an unclosed comment, an unclosed `<script>`
+  or `<title>` that would swallow the document, and a body with no markup at all
+  are all `malformed_markup` with a reason that names the specific failure.
+- Known losses are recorded as fixture cases rather than folklore: whitespace
+  inside `<pre>` is collapsed (`preformatted-whitespace-is-lost`), there is no
+  DOM, no attribute or `<base>` handling, and no full HTML5 named-entity table.
+- PDF extraction, rendering, and JavaScript execution are explicitly out of
+  scope: a PDF is refused as `unsupported_content_type` even though acquisition
+  allows the type.
+- The first run of the new suite was red with 5 failures and the failures were
+  diagnosed rather than accommodated: the `<title>` open tag jumped past the
+  title's characters, so no title was ever captured; `mediaType(of:)` dropped an
+  empty leading component, so `"; charset=utf-8"` reported the parameter as the
+  media type; and the `<meta>` scan matched `charset` inside `charsetless`. All
+  three are fixed in the source, not in the assertions.

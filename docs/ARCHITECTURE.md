@@ -249,6 +249,43 @@ so tests advance virtual time and no test sleeps. `RobotsCache` is keyed by
 scheme, host, and port, and deliberately not by user agent: the agent selects a
 group inside the file, it does not select the file.
 
+## HTML extraction boundary
+
+Extraction turns an acquisition-approved HTML response into text a passage can
+be built from, or refuses it. It is a pure function of the response bytes: it
+opens no socket, resolves no name, reads no file, and consults no clock.
+
+The refusal family is typed and ordered, because each case is a different fact
+about the origin rather than one generic failure:
+
+1. `missing_source_identifier` - a snapshot that cannot name its source could
+   never be cited;
+2. `unsupported_content_type` - only `text/html` and `application/xhtml+xml`;
+3. `document_too_large` - over the extraction ceiling, refused rather than
+   truncated;
+4. `unsupported_charset` - a declared character set we do not decode;
+5. `malformed_markup` - NUL byte, invalid UTF-8, an unclosed comment, tag,
+   `<script>`, or `<title>` that would swallow the document, or no markup at
+   all;
+6. `no_readable_text` - markup whose text is genuinely empty.
+
+The header's `charset` parameter wins over the document's own `<meta>`
+declaration, and a document that declares nothing is read as UTF-8. Character
+references are resolved before whitespace is collapsed, so `&nbsp;` becomes an
+ordinary space while `&amp;nbsp;` stays literal. Headings are attribution: the
+last heading a reader saw is carried on the blocks that follow it, and a heading
+is also emitted as its own block.
+
+Identity is content-derived and uses the same part ordering as the M001
+deterministic slice, so a snapshot taken from a live page and one taken from a
+fixture slice describe themselves identically. The frozen table lives in
+`Fixtures/html/extraction-scenarios.json`; every host in it is a reserved
+non-resolvable name.
+
+Known losses, recorded rather than hidden: whitespace inside `<pre>` is
+collapsed, there is no DOM, no attribute or `<base>` handling, no full HTML5
+named-entity table, and the character-set reader is a scan rather than a parser.
+
 ## Snapshot and passage boundary
 
 Snapshots are content-addressed and immutable within a completed run. A

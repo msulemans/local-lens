@@ -1,0 +1,295 @@
+{
+  "_fixture": {
+    "synthetic": true,
+    "license": "redistributable",
+    "note": "Hand-authored HTML for the M002.4 extraction boundary. No page was captured from a live origin, no bytes came off the wire, and every host is a reserved non-resolvable name (example.invalid). Bodies that must carry bytes JSON cannot hold as text are base64 encoded and labelled body_base64.",
+    "shape": "ExtractionFixture"
+  },
+  "source_id": "fixture-source-extraction",
+  "cases": [
+    {
+      "id": "article-with-headings",
+      "why": "The ordinary case: headings establish attribution, block elements establish runs, script/style/comment content never reaches the text, and entities are decoded once.",
+      "url": "https://example.invalid/research/coffee",
+      "requested_url": "https://example.invalid/research/coffee",
+      "content_type": "text/html; charset=utf-8",
+      "body": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Cold brew &amp; espresso</title>\n<style>body { color: red }</style>\n<script>window.tracker = 1;</script>\n</head>\n<body>\n<nav><a href=\"/\">Home</a></nav>\n<h1>Cold brew</h1>\n<p>Cold brew steeps for <strong>12 to 18 hours</strong> at room temperature.</p>\n<h2>Ratio</h2>\n<p>Use a 1:8 coffee-to-water ratio by weight.</p>\n<ul>\n<li>Coarse grind</li>\n<li>Filtered water</li>\n</ul>\n<h3>Grind&nbsp;size</h3>\n<p>Grind coarser than you would for a pour-over&#8217;s filter &mdash; roughly sea salt.</p>\n<!-- a comment that must not become text -->\n<footer>Copyright &#169; 2026 Example</footer>\n</body>\n</html>",
+      "expected": {
+        "outcome": "extracted",
+        "title": "Cold brew & espresso",
+        "text": "Home\n\nCold brew\n\nCold brew steeps for 12 to 18 hours at room temperature.\n\nRatio\n\nUse a 1:8 coffee-to-water ratio by weight.\n\nCoarse grind\n\nFiltered water\n\nGrind size\n\nGrind coarser than you would for a pour-over’s filter — roughly sea salt.\n\nCopyright © 2026 Example",
+        "blocks": [
+          { "heading": "", "text": "Home" },
+          { "heading": "Cold brew", "text": "Cold brew" },
+          { "heading": "Cold brew", "text": "Cold brew steeps for 12 to 18 hours at room temperature." },
+          { "heading": "Ratio", "text": "Ratio" },
+          { "heading": "Ratio", "text": "Use a 1:8 coffee-to-water ratio by weight." },
+          { "heading": "Ratio", "text": "Coarse grind" },
+          { "heading": "Ratio", "text": "Filtered water" },
+          { "heading": "Grind size", "text": "Grind size" },
+          { "heading": "Grind size", "text": "Grind coarser than you would for a pour-over’s filter — roughly sea salt." },
+          { "heading": "Grind size", "text": "Copyright © 2026 Example" }
+        ]
+      }
+    },
+    {
+      "id": "headings-only",
+      "why": "A document that is nothing but headings is still readable text, so a heading is emitted as its own block rather than only as attribution.",
+      "url": "https://example.invalid/research/steps",
+      "requested_url": "https://example.invalid/research/steps",
+      "content_type": "text/html",
+      "body": "<html><head><title>Brew steps</title></head><body><h2>Method</h2><h3>Step one</h3><h3>Step two</h3></body></html>",
+      "expected": {
+        "outcome": "extracted",
+        "title": "Brew steps",
+        "text": "Method\n\nStep one\n\nStep two",
+        "blocks": [
+          { "heading": "Method", "text": "Method" },
+          { "heading": "Step one", "text": "Step one" },
+          { "heading": "Step two", "text": "Step two" }
+        ]
+      }
+    },
+    {
+      "id": "entities-decoded-once",
+      "why": "Named and numeric references resolve; an unknown reference stays as the text a reader sees; a double-escaped reference is not decoded twice; a non-breaking space becomes an ordinary space.",
+      "url": "https://example.invalid/research/entities",
+      "requested_url": "https://example.invalid/research/entities",
+      "content_type": "text/html; charset=UTF-8",
+      "body": "<html><body><p>Tea &amp; coffee &mdash; 5&nbsp;&deg;C &lt;ready&gt; &#8212; caf&#233; &amp;amp; unknown &bogus; refs</p></body></html>",
+      "expected": {
+        "outcome": "extracted",
+        "title": "",
+        "text": "Tea & coffee — 5 °C <ready> — café &amp; unknown &bogus; refs",
+        "blocks": [
+          { "heading": "", "text": "Tea & coffee — 5 °C <ready> — café &amp; unknown &bogus; refs" }
+        ]
+      }
+    },
+    {
+      "id": "meta-declared-latin1",
+      "why": "When the header declares no character set, the document's own <meta> declaration decides, so a Latin-1 body is read as Latin-1 instead of being refused or mojibake'd.",
+      "url": "https://example.invalid/menu/creme",
+      "requested_url": "https://example.invalid/menu/creme",
+      "content_type": "text/html",
+      "body_base64": "PGh0bWw+PGhlYWQ+PG1ldGEgY2hhcnNldD0iaXNvLTg4NTktMSI+PHRpdGxlPkNhZuk8L3RpdGxlPjwvaGVhZD48Ym9keT48cD5DcuhtZSBicvts6WU8L3A+PC9ib2R5PjwvaHRtbD4=",
+      "expected": {
+        "outcome": "extracted",
+        "title": "Café",
+        "text": "Crème brûlée",
+        "blocks": [
+          { "heading": "", "text": "Crème brûlée" }
+        ]
+      }
+    },
+    {
+      "id": "xhtml-and-redirect-visible",
+      "why": "XHTML is an HTML document for this extractor, and a redirect stays visible: the requested URL and the final URL are both kept on the extracted page.",
+      "url": "https://example.invalid/xhtml/note",
+      "requested_url": "http://example.invalid/legacy/note",
+      "content_type": "application/xhtml+xml; charset=UTF-8",
+      "body": "<html xmlns=\"http://www.w3.org/1999/xhtml\"><body><h1>Note</h1><p>XHTML parses like HTML here.</p></body></html>",
+      "expected": {
+        "outcome": "extracted",
+        "title": "",
+        "text": "Note\n\nXHTML parses like HTML here.",
+        "blocks": [
+          { "heading": "Note", "text": "Note" },
+          { "heading": "Note", "text": "XHTML parses like HTML here." }
+        ]
+      }
+    },
+    {
+      "id": "preformatted-whitespace-is-lost",
+      "why": "A recorded loss, not a claim: whitespace inside <pre> is collapsed like any other run, so preformatted layout is not preserved. The case exists so the limitation is data rather than folklore.",
+      "url": "https://example.invalid/research/code",
+      "requested_url": "https://example.invalid/research/code",
+      "content_type": "text/html",
+      "body": "<html><body><pre>line one\n   line two</pre><p>after</p></body></html>",
+      "expected": {
+        "outcome": "extracted",
+        "title": "",
+        "text": "line one line two\n\nafter",
+        "blocks": [
+          { "heading": "", "text": "line one line two" },
+          { "heading": "", "text": "after" }
+        ]
+      }
+    },
+    {
+      "id": "empty-heading-keeps-attribution",
+      "why": "An empty heading is not a heading change: text that follows it stays attributed to the last heading a reader actually saw.",
+      "url": "https://example.invalid/research/empty-heading",
+      "requested_url": "https://example.invalid/research/empty-heading",
+      "content_type": "text/html",
+      "body": "<html><body><h2>Kept heading</h2><p>first</p><h2></h2><p>second</p></body></html>",
+      "expected": {
+        "outcome": "extracted",
+        "title": "",
+        "text": "Kept heading\n\nfirst\n\nsecond",
+        "blocks": [
+          { "heading": "Kept heading", "text": "Kept heading" },
+          { "heading": "Kept heading", "text": "first" },
+          { "heading": "Kept heading", "text": "second" }
+        ]
+      }
+    }
+  ],
+  "refusals": [
+    {
+      "id": "empty-document",
+      "why": "An empty body is a fact about the response, not a page with no words.",
+      "url": "https://example.invalid/empty",
+      "content_type": "text/html",
+      "body": "",
+      "expected_kind": "empty_document",
+      "expected_reason_contains": "returned an empty document"
+    },
+    {
+      "id": "whitespace-only-document",
+      "why": "A body of nothing but whitespace is the same fact as an empty body.",
+      "url": "https://example.invalid/blank",
+      "content_type": "text/html",
+      "body": "  \n\t ",
+      "expected_kind": "empty_document",
+      "expected_reason_contains": "returned an empty document"
+    },
+    {
+      "id": "unsupported-pdf",
+      "why": "A PDF is refused rather than half-parsed as text; PDF extraction is a separate boundary that does not exist yet.",
+      "url": "https://example.invalid/paper.pdf",
+      "content_type": "application/pdf",
+      "body": "%PDF-1.7 not really a pdf",
+      "expected_kind": "unsupported_content_type",
+      "expected_reason_contains": "which is not an HTML document"
+    },
+    {
+      "id": "unsupported-plain-text",
+      "why": "The declared type is authoritative: markup served as text/plain is still not an HTML document.",
+      "url": "https://example.invalid/notes.txt",
+      "content_type": "text/plain; charset=utf-8",
+      "body": "<p>markup but the wrong declared type</p>",
+      "expected_kind": "unsupported_content_type",
+      "expected_reason_contains": "which is not an HTML document"
+    },
+    {
+      "id": "missing-content-type",
+      "why": "A response that declares no media type cannot be assumed to be HTML.",
+      "url": "https://example.invalid/undeclared",
+      "content_type": "",
+      "body": "<p>declared nothing</p>",
+      "expected_kind": "unsupported_content_type",
+      "expected_reason_contains": "which is not an HTML document"
+    },
+    {
+      "id": "over-limit",
+      "why": "The extraction ceiling is separate from the acquisition ceiling and refuses the document instead of truncating it.",
+      "url": "https://example.invalid/huge",
+      "content_type": "text/html",
+      "maximum_bytes": 64,
+      "body": "<html><body><p>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</p></body></html>",
+      "expected_kind": "document_too_large",
+      "expected_reason_contains": "above the extraction ceiling of 64"
+    },
+    {
+      "id": "unterminated-tag",
+      "why": "Markup that cannot be read is refused rather than guessed at.",
+      "url": "https://example.invalid/broken-tag",
+      "content_type": "text/html",
+      "body": "<p>hello <b world",
+      "expected_kind": "malformed_markup",
+      "expected_reason_contains": "a tag was never closed"
+    },
+    {
+      "id": "unclosed-comment",
+      "why": "An unclosed comment would silently swallow the rest of the document.",
+      "url": "https://example.invalid/broken-comment",
+      "content_type": "text/html",
+      "body": "<p>hi</p><!-- never closed",
+      "expected_kind": "malformed_markup",
+      "expected_reason_contains": "a comment was never closed"
+    },
+    {
+      "id": "unclosed-script",
+      "why": "An unclosed script element would swallow the rest of the document, so it is a markup failure rather than a page with no text.",
+      "url": "https://example.invalid/broken-script",
+      "content_type": "text/html",
+      "body": "<html><body><script>var a = 1;</body></html>",
+      "expected_kind": "malformed_markup",
+      "expected_reason_contains": "an unclosed <script> element swallowed the rest of the document"
+    },
+    {
+      "id": "unclosed-title",
+      "why": "An unclosed title element swallows the body the same way an unclosed script does.",
+      "url": "https://example.invalid/broken-title",
+      "content_type": "text/html",
+      "body": "<html><head><title>Open",
+      "expected_kind": "malformed_markup",
+      "expected_reason_contains": "an unclosed <title> element swallowed the rest of the document"
+    },
+    {
+      "id": "nul-byte",
+      "why": "A NUL byte means the body is not the text it claims to be.",
+      "url": "https://example.invalid/binary",
+      "content_type": "text/html",
+      "body_base64": "PHA+aGkAPC9wPg==",
+      "expected_kind": "malformed_markup",
+      "expected_reason_contains": "the body contained a NUL byte"
+    },
+    {
+      "id": "no-markup",
+      "why": "A body with no markup at all is not an HTML document this extractor can attest to.",
+      "url": "https://example.invalid/plain",
+      "content_type": "text/html",
+      "body": "just words, no tags",
+      "expected_kind": "malformed_markup",
+      "expected_reason_contains": "the body contained no markup"
+    },
+    {
+      "id": "invalid-utf8",
+      "why": "Bytes that are not valid UTF-8 are refused rather than replaced with lossy characters.",
+      "url": "https://example.invalid/not-utf8",
+      "content_type": "text/html",
+      "body_base64": "PHA+aGkgwyg8L3A+",
+      "expected_kind": "malformed_markup",
+      "expected_reason_contains": "the body was not valid utf-8"
+    },
+    {
+      "id": "no-readable-text",
+      "why": "Markup with a title and nothing else readable is a typed outcome, not an empty page.",
+      "url": "https://example.invalid/title-only",
+      "content_type": "text/html",
+      "body": "<html><head><title>Only a title</title></head><body><script>x</script></body></html>",
+      "expected_kind": "no_readable_text",
+      "expected_reason_contains": "contained no readable text"
+    },
+    {
+      "id": "unsupported-charset-header",
+      "why": "A declared character set this extractor does not decode is refused rather than decoded as something else.",
+      "url": "https://example.invalid/shift-jis",
+      "content_type": "text/html; charset=shift_jis",
+      "body": "<html><body><p>text</p></body></html>",
+      "expected_kind": "unsupported_charset",
+      "expected_reason_contains": "declared the unsupported character set shift_jis"
+    },
+    {
+      "id": "unsupported-charset-meta",
+      "why": "A document that declares an undecodable character set is refused on the document's own statement, not only on the header's.",
+      "url": "https://example.invalid/meta-charset",
+      "content_type": "text/html",
+      "body": "<html><head><meta charset=\"windows-1252\"></head><body><p>text</p></body></html>",
+      "expected_kind": "unsupported_charset",
+      "expected_reason_contains": "declared the unsupported character set windows-1252"
+    },
+    {
+      "id": "missing-source-identifier",
+      "why": "A snapshot that cannot name its source could never be cited, so extraction refuses before producing one.",
+      "url": "https://example.invalid/unattributed",
+      "content_type": "text/html",
+      "source_id": "   ",
+      "body": "<html><body><p>readable but unattributable</p></body></html>",
+      "expected_kind": "missing_source_identifier",
+      "expected_reason_contains": "without a source identifier"
+    }
+  ]
+}
