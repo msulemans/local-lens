@@ -41,4 +41,31 @@ final class FixtureWorkspaceTests: XCTestCase {
             XCTAssertEqual(error as? IntegrityError, .unknownReference(kind: "citation", id: "missing-citation"))
         }
     }
+
+    func testEvidenceMapBuildsOneNodePerCitationWithRelationAndSource() async throws {
+        let persisted = try await runFixture()
+        let map = try FixtureWorkspace.evidenceMap(in: persisted.result)
+
+        XCTAssertEqual(map.question, persisted.result.run.question)
+        XCTAssertEqual(map.nodes.count, persisted.result.citations.count)
+        XCTAssertEqual(Set(map.nodes.map(\.relation)), [.supports])
+        XCTAssertEqual(map.sources.count, Set(map.nodes.map(\.source.id)).count)
+        for node in map.nodes {
+            XCTAssertEqual(persisted.result.passage(for: node.citationID)?.id, node.passage.id)
+            let link = try XCTUnwrap(persisted.result.evidenceLinks.first { $0.claimID == node.claim.id })
+            XCTAssertTrue(node.passage.text.contains(link.quote))
+            XCTAssertFalse(node.source.title.isEmpty)
+        }
+    }
+
+    func testMapNodeSelectionResolvesToTheSamePassageAsInspection() async throws {
+        let persisted = try await runFixture()
+        let map = try FixtureWorkspace.evidenceMap(in: persisted.result)
+        let node = try XCTUnwrap(map.nodes.first)
+
+        let inspection = try FixtureWorkspace.inspection(for: node.citationID, in: persisted.result)
+        XCTAssertEqual(inspection.passage.id, node.passage.id)
+        XCTAssertEqual(inspection.source.id, node.source.id)
+        XCTAssertEqual(inspection.claim.id, node.id)
+    }
 }

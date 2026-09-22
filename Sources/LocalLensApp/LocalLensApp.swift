@@ -12,13 +12,14 @@ struct LocalLensApp: App {
 
 private enum LoadState {
     case loading
-    case loaded(PersistedRun, [CitationInspection])
+    case loaded(PersistedRun, [CitationInspection], EvidenceMap)
     case failed(String)
 }
 
 struct FixtureRunView: View {
     @State private var state: LoadState = .loading
     @State private var selectedCitationID: String?
+    @State private var showsMap = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -61,17 +62,17 @@ struct FixtureRunView: View {
             }
             .padding(20)
             Spacer()
-        case let .loaded(persisted, inspections):
+        case let .loaded(persisted, inspections, map):
             HStack(alignment: .top, spacing: 0) {
-                citationList(persisted: persisted, inspections: inspections)
-                    .frame(minWidth: 320, idealWidth: 360, maxWidth: 420)
+                leftPane(persisted: persisted, inspections: inspections, map: map)
+                    .frame(minWidth: 340, idealWidth: 400, maxWidth: 480)
                 Divider()
                 inspector(inspections: inspections)
             }
         }
     }
 
-    private func citationList(persisted: PersistedRun, inspections: [CitationInspection]) -> some View {
+    private func leftPane(persisted: PersistedRun, inspections: [CitationInspection], map: EvidenceMap) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(persisted.result.run.question)
                 .font(.headline)
@@ -81,19 +82,69 @@ struct FixtureRunView: View {
             Text(persisted.result.summary)
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
-            List(inspections, id: \.citation.id, selection: $selectedCitationID) { inspection in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(inspection.claim.dimension)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(inspection.claim.text)
-                        .font(.body)
-                }
-                .tag(inspection.citation.id)
+            Picker("View", selection: $showsMap) {
+                Text("Citations").tag(false)
+                Text("Map").tag(true)
             }
-            .listStyle(.sidebar)
+            .pickerStyle(.segmented)
+            .labelsHidden()
+
+            if showsMap {
+                mapGrid(map: map)
+            } else {
+                citationListBody(inspections: inspections)
+            }
         }
         .padding(16)
+    }
+
+    private func citationListBody(inspections: [CitationInspection]) -> some View {
+        List(inspections, id: \.citation.id, selection: $selectedCitationID) { inspection in
+            VStack(alignment: .leading, spacing: 4) {
+                Text(inspection.claim.dimension)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(inspection.claim.text)
+                    .font(.body)
+            }
+            .tag(inspection.citation.id)
+        }
+        .listStyle(.sidebar)
+    }
+
+    private func mapGrid(map: EvidenceMap) -> some View {
+        ScrollView {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                ForEach(map.nodes) { node in
+                    Button {
+                        selectedCitationID = node.citationID
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(node.claim.dimension)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(node.claim.text)
+                                .font(.callout)
+                                .multilineTextAlignment(.leading)
+                            Divider()
+                            Text("\(node.relation.rawValue.replacingOccurrences(of: "_", with: " ")) · \(node.source.publisher)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            selectedCitationID == node.citationID
+                                ? Color.accentColor.opacity(0.18)
+                                : Color.secondary.opacity(0.08),
+                            in: RoundedRectangle(cornerRadius: 8)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(node.claim.dimension): \(node.claim.text), relation \(node.relation.rawValue), source \(node.source.title)")
+                }
+            }
+        }
     }
 
     private func inspector(inspections: [CitationInspection]) -> some View {
@@ -144,8 +195,9 @@ struct FixtureRunView: View {
             }
 
             let inspections = try FixtureWorkspace.inspections(in: persisted.result)
+            let map = try FixtureWorkspace.evidenceMap(in: persisted.result)
             selectedCitationID = inspections.first?.citation.id
-            state = .loaded(persisted, inspections)
+            state = .loaded(persisted, inspections, map)
         } catch {
             state = .failed(String(describing: error))
         }
