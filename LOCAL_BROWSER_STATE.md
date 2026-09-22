@@ -2,8 +2,10 @@
 
 Last updated: 2026-09-22 (Australia/Sydney)
 
-Status: **Milestone 000 planning correction complete. Milestone 001 is active;
-the native package baseline builds and its four initial core tests pass.**
+Status: **Milestone 001 is active. M001.1 (reuse provenance, ResearchCore
+boundary, protocol v1 schemas) is complete; M001.2 (deterministic offline
+fixture slice) is the sole next task. The native baseline builds, four core
+tests pass, and the app shell launches as a smoke test.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -233,6 +235,22 @@ deterministically verified. The minimal app shell launches (process smoke
 test only), the selected visual direction has not been implemented,
 ResearchCore has not been extracted, and no live search or model/provider
 path has been tested. M001 remains active.
+
+### 2026-09-22 - M001.1 reuse provenance and protocol boundary
+
+- Sibling audit at revision `1b1a698579ea6840f328c7ea6b9a288a4f26c2d9`:
+  89 commits, sole author `msulemans`, clean tree, no `LICENSE` file, and 184
+  test functions across 18 files. Recorded in `docs/REUSE_PROVENANCE.md`;
+  code transfer stays blocked until a sibling licence exists (D011).
+- Extraction list, exclusions, protocol surface, test mapping, and Swift WIP
+  audit frozen in `docs/RESEARCH_CORE_BOUNDARY.md` (D012).
+- Protocol v1 schemas added under `schemas/protocol/v1/` with a standard
+  library validator; `make validate-schemas` and `make gate` expose the new
+  checks.
+- Commands and observed results: `make validate-schemas` pass (run_status=15,
+  research_mode=4, evidence_relation=3); `make verify` pass; commits `762cf55`
+  and `2522780`.
+- Next eligible task: M001.2 deterministic offline fixture slice.
 
 ## Evidence append template
 

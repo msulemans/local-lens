@@ -52,7 +52,8 @@
       "stable identity determinism",
       "legal and illegal state transitions",
       "terminal cancellation",
-      "minimal app shell launch (process smoke test)"
+      "minimal app shell launch (process smoke test)",
+      "protocol v1 schema conformance and Swift enum parity"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
@@ -63,36 +64,34 @@
     ]
   },
   "next_task": {
-    "id": "M001.1",
-    "title": "Resolve reusable-core provenance and freeze the ResearchCore extraction boundary",
-    "objective": "Make the proven sibling research engine legally and technically reusable without copying its web product or rebuilding its mature pipeline.",
+    "id": "M001.2",
+    "title": "Deterministic offline fixture slice with exact-passage citations",
+    "objective": "Prove the citation contract offline before any live provider: one frozen fixture runs twice with identical normalized evidence and citation graph, every citation resolves to an exact passage in an immutable snapshot, broken references fail closed, and a completed run survives restart.",
     "prerequisites": [
-      "Confirm ownership of ../deep-research-agent",
-      "Choose or record a licence that permits the intended Local Lens distribution",
-      "Record the source revision and copied module provenance"
+      "Protocol v1 schemas frozen (M001.1)",
+      "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet"
     ],
     "allowed_scope": [
-      "licence and provenance records",
-      "ResearchCore package-boundary design",
-      "versioned command, event, entity and error schemas",
-      "deterministic sibling test inventory",
-      "audit of existing Swift WIP against the frozen schemas"
+      "frozen fixture question and synthetic redistributable source corpus",
+      "deterministic fake search, fetch, extractor and model adapters in Swift",
+      "content-addressed snapshot, passage, claim, evidence and citation identities",
+      "citation integrity validation with typed failures",
+      "file persistence round-trip for restart of a completed run",
+      "deterministic unit tests for every behavior above"
     ],
     "forbidden_scope": [
-      "live web integration",
-      "real model evaluation",
-      "embedding or reranker experiments",
+      "live network, models, embeddings or rerankers",
+      "copying sibling source while the licence gate is unmet",
       "Deep, Academic or News implementation",
-      "rewriting the sibling acquisition or citation engine in Swift",
       "claiming M001 complete before its full gate passes"
     ],
     "done_when": [
-      "the reuse licence and provenance decision is recorded",
-      "the ResearchCore extraction list and exclusions are frozen",
-      "the local protocol schemas are versioned",
-      "relevant sibling tests are mapped to the extracted boundary",
-      "the existing Swift WIP is kept, amended or superseded with reasons",
-      "LOCAL_BROWSER_STATE.md and project.json agree on the next eligible task"
+      "the fixture runs with no network, keys, Docker or model weights",
+      "two runs produce identical normalized evidence and citation graph",
+      "every citation resolves to the exact saved passage and quote",
+      "broken references and unknown fields fail closed with typed errors",
+      "a completed run persists and reloads unchanged",
+      "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]
   },
   "architecture": {

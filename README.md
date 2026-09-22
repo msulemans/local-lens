@@ -53,6 +53,8 @@ declare their own unsupported output verified.
 - [Machine-readable project handoff](project.json)
 - [AI and contributor handoff](docs/AI_HANDOFF.md)
 - [Complete product and build plan](docs/COMPLETE_PLAN.md)
+- [Reuse provenance and licence gate](docs/REUSE_PROVENANCE.md)
+- [ResearchCore extraction boundary](docs/RESEARCH_CORE_BOUNDARY.md)
 - [Adopt, adapt, build ledger](docs/ADOPT_ADAPT_BUILD.md)
 - [Innovation thesis](docs/INNOVATION_THESIS.md)
 - [Project map](docs/PROJECT_MAP.md)
@@ -74,11 +76,12 @@ Milestone 000 and its planning correction are complete. The plan now records
 the exact GitHub/research/X inputs, the code-reuse boundary, and the
 Evidence-Native Generative Search thesis.
 
-Milestone 001 is active. Its package baseline builds and four initial core tests
-pass. It continues by resolving sibling-code licence/provenance,
-extracting the already-proven research core, and connecting it to a
-deterministic native vertical slice. No app launch, research-core extraction,
-live provider, or model result is claimed yet.
+Milestone 001 is active. Its package baseline builds, four initial core tests
+pass, and the app shell launches (`make run`, smoke test only). Reuse
+provenance and the ResearchCore boundary are frozen, and protocol v1 schemas
+are validated against the Swift core. The next task is the deterministic
+offline fixture slice. Research-core extraction, live providers, models, and
+packaged distribution are not claimed yet.
 
 ## Working rules
 
