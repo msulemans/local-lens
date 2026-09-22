@@ -141,7 +141,9 @@ Before a live request, trusted code must:
 6. avoid login, form submission, CAPTCHA solving, and paywall bypass.
 
 Rules 1, 2, and the redirect/byte/MIME part of rule 5 are implemented in
-M002.2; rules 3 and 4 are still planned for the next task.
+M002.2; rules 3 and 4 are implemented in M002.3 (see below). Rule 6 is a
+standing product commitment, not a mechanism: nothing in this codebase submits
+a form, solves a challenge, or authenticates to reach content.
 
 ```swift
 protocol HostResolver {                                     // the only DNS boundary
@@ -185,6 +187,67 @@ assertions.
 returns both the requested and the final URL so that leaving the origin stays
 visible. Static HTTP is the default. Browser rendering is a separately recorded
 fallback. PDF extraction has its own adapter and page-aware passage identifiers.
+
+## Robots and politeness boundary
+
+An origin's published policy is read through the same validated boundary as any
+other fetch, and politeness is enforced per host rather than globally.
+
+```swift
+struct RobotsPolicy {                                        // the fail-closed table
+    func decision(for path: String, userAgent: String) -> RobotsDecision
+}
+
+struct RobotsLoader {                                        // reads and caches the file
+    static func load(origin: URL, userAgent: String,
+                     transport: any SearchTransport,
+                     resolver: any HostResolver,
+                     cache: RobotsCache = .shared) async throws -> RobotsOutcome
+}
+
+actor HostRequestGate {                                      // one host, one request
+    func perform<T>(_ body: () async throws -> T) async throws -> T
+}
+
+actor HostRequestGates {                                     // one gate per host
+    func gate(for url: URL) -> HostRequestGate
+}
+```
+
+`RobotsParser` reads the UTF-8 subset of the format that matters: comments,
+`User-agent` groups (consecutive `User-agent` lines share one group), `Allow`,
+`Disallow`, `Crawl-delay`, and `Sitemap`. `RobotsFile.group(for:)` picks the
+group whose product token is the longest prefix match of our agent, falling back
+to `*`, and `longestMatch(in:path:)` applies `*` wildcards and a trailing `$`
+anchor with the longest match winning and `Allow` winning an equal-length tie.
+
+The substance of the boundary is the fallback table, which is deliberately not
+"assume allowed when unsure":
+
+| robots.txt response | Outcome | Decision |
+| --- | --- | --- |
+| 200 with rules | `.rules` | the origin's own decision |
+| 200 with an empty body | `.rules` | allowed, no group matches |
+| 200 that does not parse | `.unparseable` | refused, fail closed |
+| 4xx | `.missing` | allowed, no published policy |
+| 5xx | `.serverError` | refused, fail closed |
+| no response / timeout | `.unreachable` | refused, fail closed |
+| refused by `AcquisitionPolicy` | `.blocked` | refused, fail closed |
+
+Each outcome carries a stable `kind` label, and the table is frozen as data in
+`Fixtures/robots/robots-scenarios.json` rather than as scattered assertions.
+`RobotsRefusal` distinguishes a refusal the origin published (`published_rule`)
+from one we imposed because the policy could not be read (`fail_closed`),
+because those are different things to show a user.
+
+`RobotsLoader.load` fetches through `SafeAcquisition.fetch`, so the robots URL
+is validated and every redirect hop re-validated with no second socket path.
+`HostRequestGate` serializes requests to one host and enforces a minimum spacing
+measured between request *starts*, which is what the origin observes; it is a
+per-host limit, never a global throughput ceiling. `PolitenessClock` is injected
+so tests advance virtual time and no test sleeps. `RobotsCache` is keyed by
+scheme, host, and port, and deliberately not by user agent: the agent selects a
+group inside the file, it does not select the file.
 
 ## Snapshot and passage boundary
 

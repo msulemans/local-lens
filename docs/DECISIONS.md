@@ -345,3 +345,54 @@ Consequences:
 - Robots policy, per-host concurrency, and politeness delay are explicitly NOT
   in this decision; they are the next task in M002 and the acquisition boundary
   is shaped so they can be added as a gate on the same validated URL.
+
+## D018 - Robots is fail-closed, politeness is per host
+
+Date: 2026-09-22
+
+Decision: an origin's robots.txt is read through `SafeAcquisition.fetch`, its
+rules are applied by `RobotsPolicy`, and requests to one host are serialized by
+a per-host `HostRequestGate` with a minimum spacing measured between request
+starts. An unreadable policy refuses the request.
+
+Why: M002.1 could talk to a provider and M002.2 could refuse a private
+destination, but nothing yet respected what an origin had published, and
+nothing stopped the pipeline from hammering one host. Politeness is part of the
+product claim, not an afterthought: this tool is meant to be pointed at the open
+web, and being a well-behaved client is a precondition for that.
+
+Consequences:
+
+- The fallback table is explicit and deliberately not "assume allowed when
+  unsure": 200 with rules and 200 with an *empty* body are `.rules`; 4xx is
+  `.missing` (an absent policy, no restriction); 5xx, an unparseable body, a
+  transport failure, a timeout, and a destination refused by
+  `AcquisitionPolicy` are all refused. An unreadable policy is not permission.
+- An empty published body is a valid policy with no rules, while a non-empty
+  body with no directives is `.unparseable`. Those are different facts about the
+  origin and are reported differently.
+- `RobotsRefusal` separates a rule the origin published (`published_rule`) from
+  a refusal we imposed (`fail_closed`), because a user asked to stop by the
+  site's own rules is in a different position from a user blocked by our
+  caution.
+- `RobotsLoader.load` does not take the host gate. Politeness has to wrap the
+  robots check and the request that follows it as one unit, and a nested
+  acquisition of the same gate would deadlock against the caller that holds it.
+- The gate is per normalized host, never global. Politeness must not become a
+  global throughput ceiling, and one slow origin must not stall an unrelated
+  one.
+- Spacing is measured between request *starts*, which is what the origin
+  observes, rather than between completions. The gate is released on throw and
+  on cancellation so a failing request cannot wedge a host.
+- `PolitenessClock` is injected. Production uses `SystemPolitenessClock`; tests
+  advance virtual time and record the requested intervals, so no test sleeps and
+  no test touches a real clock.
+- The cache is keyed by scheme, host, and port and deliberately excludes the
+  user agent: the agent selects a group *inside* the file, it does not select
+  the file. Entries do not expire in-process; time-based revalidation is a later
+  concern and is recorded as unverified rather than implied.
+- The decision table is frozen as data in
+  `Fixtures/robots/robots-scenarios.json` (8 group-selection cases, 15 path
+  decisions, 3 parse failures, 12 fetch scenarios), with a guard test that keeps
+  every host name reserved and every address either the documented example.com
+  address or a deliberately refused loopback literal.

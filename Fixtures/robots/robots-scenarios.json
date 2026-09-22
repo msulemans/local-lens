@@ -1,0 +1,409 @@
+{
+  "_fixture": {
+    "synthetic": true,
+    "authored": "hand-written in this repository for the Local Lens test suite",
+    "license": "redistributable",
+    "note": "No robots.txt here was captured from a live origin. Every body is hand-authored, and every host name is a reserved documentation or internal-use name (example.com, example.invalid, *.internal, *.local), and every address is either the documented example.com address the stub resolver invents for a permitted name (93.184.216.34) or a loopback literal used deliberately to provoke a policy refusal (127.0.0.1). Nothing in this file was measured against the public internet; it is a decision table for the robots and politeness boundary.",
+    "shape": "Frozen scenario table for RobotsParser, RobotsFile.group(for:), RobotsPolicy.decision(for:), and RobotsLoader.outcome. `expected_outcome` is a RobotsOutcome.kind string. `expected_error_kind` is an AcquisitionError.kind string.",
+    "protocol_version": "v1"
+  },
+  "user_agent": "LocalLensBot/1.0 (+https://locallens.invalid/bot)",
+  "selection_cases": [
+    {
+      "id": "wildcard-only",
+      "robots": "User-agent: *\nDisallow: /\n",
+      "expected_agents": ["*"],
+      "expected_crawl_delay": null,
+      "expected_rule_count": 1,
+      "expected_sitemaps": [],
+      "why": "A single wildcard group is the fallback when nothing more specific exists."
+    },
+    {
+      "id": "specific-group-wins-over-wildcard",
+      "robots": "User-agent: *\nDisallow: /\n\nUser-agent: LocalLensBot\nDisallow: /private/\n",
+      "expected_agents": ["locallensbot"],
+      "expected_crawl_delay": null,
+      "expected_rule_count": 1,
+      "expected_sitemaps": [],
+      "why": "A group naming the crawler overrides the wildcard group entirely, including its broader Disallow."
+    },
+    {
+      "id": "wildcard-fallback-when-no-specific-group",
+      "robots": "User-agent: OtherBot\nDisallow: /\n\nUser-agent: *\nDisallow: /tmp/\n",
+      "expected_agents": ["*"],
+      "expected_crawl_delay": null,
+      "expected_rule_count": 1,
+      "expected_sitemaps": [],
+      "why": "A group for a different crawler does not apply, so the wildcard group is used."
+    },
+    {
+      "id": "longest-agent-prefix-wins",
+      "robots": "User-agent: *\nDisallow: /\n\nUser-agent: LocalLens\nDisallow: /a/\n\nUser-agent: LocalLensBot\nDisallow: /b/\n",
+      "expected_agents": ["locallensbot"],
+      "expected_crawl_delay": null,
+      "expected_rule_count": 1,
+      "expected_sitemaps": [],
+      "why": "Both LocalLens and LocalLensBot are prefixes of the product token; the longer, more specific match wins."
+    },
+    {
+      "id": "consecutive-agent-lines-share-one-group",
+      "robots": "User-agent: OtherBot\nUser-agent: LocalLensBot\nDisallow: /x/\n",
+      "expected_agents": ["otherbot", "locallensbot"],
+      "expected_crawl_delay": null,
+      "expected_rule_count": 1,
+      "expected_sitemaps": [],
+      "why": "Consecutive user-agent lines form one group, which is how a shared rule set is expressed."
+    },
+    {
+      "id": "crawl-delay-is-read",
+      "robots": "User-agent: *\nCrawl-delay: 2.5\nDisallow: /x\n",
+      "expected_agents": ["*"],
+      "expected_crawl_delay": 2.5,
+      "expected_rule_count": 1,
+      "expected_sitemaps": [],
+      "why": "A fractional crawl-delay is parsed and offered to the per-host gate."
+    },
+    {
+      "id": "unrecognised-and-commented-lines-are-ignored",
+      "robots": "# a comment\nSitemap: https://example.invalid/sitemap.xml\nUser-agent: *\nUnknown-Field: value\nDisallow: /x\nNoColonHere\n",
+      "expected_agents": ["*"],
+      "expected_crawl_delay": null,
+      "expected_rule_count": 1,
+      "expected_sitemaps": ["https://example.invalid/sitemap.xml"],
+      "why": "Comments, sitemaps, unknown fields, and lines without a colon are skipped without losing the rules that are valid."
+    },
+    {
+      "id": "rules-after-an-agent-line-start-a-new-group",
+      "robots": "User-agent: A\nDisallow: /a/\nUser-agent: LocalLensBot\nDisallow: /b/\n",
+      "expected_agents": ["locallensbot"],
+      "expected_crawl_delay": null,
+      "expected_rule_count": 1,
+      "expected_sitemaps": [],
+      "why": "A user-agent line after rules starts a new group instead of appending to the previous one."
+    }
+  ],
+  "decision_cases": [
+    {
+      "id": "longest-match-disallow-beats-shorter-allow",
+      "robots": "User-agent: *\nDisallow: /private/\nAllow: /private/public/\n",
+      "path": "/private/secret",
+      "allowed": false,
+      "reason_contains": "Disallow: /private/ (line 2)",
+      "why": "Only the shorter pattern matches, so the disallow applies and the refusal names the rule and its line."
+    },
+    {
+      "id": "longest-match-allow-carves-a-hole",
+      "robots": "User-agent: *\nDisallow: /private/\nAllow: /private/public/\n",
+      "path": "/private/public/notes",
+      "allowed": true,
+      "reason_contains": "Allow: /private/public/ (line 3)",
+      "why": "The longer Allow pattern wins over the shorter Disallow, so a narrow allowance can carve a hole."
+    },
+    {
+      "id": "equal-length-tie-goes-to-allow",
+      "robots": "User-agent: *\nDisallow: /a\nAllow: /a\n",
+      "path": "/a/b",
+      "allowed": true,
+      "reason_contains": "Allow: /a (line 3)",
+      "why": "Equal-length patterns are decided in favour of Allow, so a policy cannot be disallowed twice by accident."
+    },
+    {
+      "id": "no-rule-matches-allows",
+      "robots": "User-agent: *\nDisallow: /private/\n",
+      "path": "/open",
+      "allowed": true,
+      "reason_contains": "no rule matches /open",
+      "why": "Access is allowed by default when no pattern matches."
+    },
+    {
+      "id": "empty-disallow-value-is-not-a-rule",
+      "robots": "User-agent: *\nDisallow:\n",
+      "path": "/anything",
+      "allowed": true,
+      "reason_contains": "no rule matches /anything",
+      "why": "An empty Disallow value restricts nothing, so it must not be read as a match-everything pattern."
+    },
+    {
+      "id": "anchored-dollar-pattern-matches-only-the-exact-suffix",
+      "robots": "User-agent: *\nDisallow: /*.pdf$\n",
+      "path": "/docs/paper.pdf",
+      "allowed": false,
+      "reason_contains": "Disallow: /*.pdf$ (line 2)",
+      "why": "The trailing $ anchors the pattern to the end of the path."
+    },
+    {
+      "id": "anchored-dollar-pattern-does-not-match-a-longer-path",
+      "robots": "User-agent: *\nDisallow: /*.pdf$\n",
+      "path": "/docs/paper.pdf.bak",
+      "allowed": true,
+      "reason_contains": "no rule matches",
+      "why": "Without the anchor the same pattern would match; the $ is what makes it exact."
+    },
+    {
+      "id": "unanchored-star-pattern-matches-a-longer-path",
+      "robots": "User-agent: *\nDisallow: /*.pdf\n",
+      "path": "/docs/paper.pdf.bak",
+      "allowed": false,
+      "reason_contains": "Disallow: /*.pdf (line 2)",
+      "why": "An unanchored star pattern matches anywhere in the path, so the same path is refused here."
+    },
+    {
+      "id": "query-string-is-part-of-the-matched-path",
+      "robots": "User-agent: *\nDisallow: /*?\n",
+      "path": "/search?q=coffee",
+      "allowed": false,
+      "reason_contains": "Disallow: /*? (line 2)",
+      "why": "robots.txt patterns may match query strings, so a query-bearing path can be refused."
+    },
+    {
+      "id": "path-without-a-query-is-not-refused-by-a-query-pattern",
+      "robots": "User-agent: *\nDisallow: /*?\n",
+      "path": "/search",
+      "allowed": true,
+      "reason_contains": "no rule matches",
+      "why": "The same policy allows the query-free path, which shows the query really is part of the match."
+    },
+    {
+      "id": "disallow-root-refuses-everything",
+      "robots": "User-agent: *\nDisallow: /\n",
+      "path": "/anything/here",
+      "allowed": false,
+      "reason_contains": "Disallow: / (line 2)",
+      "why": "The shortest possible pattern still matches every path as a prefix."
+    },
+    {
+      "id": "no-group-matches-the-crawler",
+      "robots": "User-agent: OtherBot\nDisallow: /\n",
+      "path": "/",
+      "allowed": true,
+      "reason_contains": "no user-agent group matches",
+      "why": "A policy written for a different crawler does not restrict this one, and the reason says why."
+    },
+    {
+      "id": "agent-value-must-be-a-prefix-not-a-substring",
+      "robots": "User-agent: LensBot\nDisallow: /\n",
+      "path": "/",
+      "allowed": true,
+      "reason_contains": "no user-agent group matches",
+      "why": "LensBot appears inside LocalLensBot but is not a prefix of the product token, so the group does not apply."
+    },
+    {
+      "id": "path-matching-is-case-sensitive",
+      "robots": "User-agent: *\nDisallow: /Private/\n",
+      "path": "/private/x",
+      "allowed": true,
+      "reason_contains": "no rule matches",
+      "why": "Path patterns are case-sensitive, so a differently cased path is not covered by the rule."
+    },
+    {
+      "id": "rule-in-a-later-group-is-not-borrowed",
+      "robots": "User-agent: *\nDisallow: /wild/\n\nUser-agent: OtherBot\nDisallow: /\n",
+      "path": "/secret",
+      "allowed": true,
+      "reason_contains": "no rule matches",
+      "why": "Only the selected group's rules are evaluated; a later group's rules never leak into the decision."
+    }
+  ],
+  "parse_failure_cases": [
+    {
+      "id": "html-error-page-served-with-200",
+      "body": "<html><body>Not found</body></html>",
+      "expected_reason_contains": "no robots directives found",
+      "why": "A non-empty body that yields no directives is not a policy, so it must not be read as permission."
+    },
+    {
+      "id": "comment-only-body",
+      "body": "# nothing here\n",
+      "expected_reason_contains": "no robots directives found",
+      "why": "A body with no directives at all carries no information about permissions."
+    },
+    {
+      "id": "undecodable-bytes",
+      "body_base64": "//4AAP8A",
+      "expected_reason_contains": "not valid UTF-8",
+      "why": "Reading a policy through the wrong encoding could change which paths are disallowed, so it is refused rather than guessed."
+    }
+  ],
+  "fetch_scenarios": [
+    {
+      "id": "rules-from-http-200",
+      "origin": "https://example.com",
+      "resolved_addresses": {"example.com": ["93.184.216.34"]},
+      "responses": [
+        {
+          "status": 200,
+          "headers": {"Content-Type": "text/plain; charset=utf-8"},
+          "body": "User-agent: *\nDisallow: /private/\n"
+        }
+      ],
+      "expected_outcome": "rules",
+      "expected_requests": 1,
+      "decision_path": "/private/secret",
+      "decision_allowed": false,
+      "reason_contains": "Disallow: /private/ (line 2)",
+      "why": "A permitted robots.txt is fetched once through the injected transport and its rules decide the path."
+    },
+    {
+      "id": "missing-on-http-404",
+      "origin": "https://example.com",
+      "resolved_addresses": {"example.com": ["93.184.216.34"]},
+      "responses": [
+        {"status": 404, "headers": {"Content-Type": "text/plain"}, "body": "Not Found"}
+      ],
+      "expected_outcome": "missing",
+      "expected_requests": 1,
+      "decision_path": "/private/secret",
+      "decision_allowed": true,
+      "reason_contains": "HTTP 404",
+      "why": "A 4xx means the origin published no policy, which states no restriction rather than an implicit refusal."
+    },
+    {
+      "id": "missing-on-http-410",
+      "origin": "https://example.com",
+      "resolved_addresses": {"example.com": ["93.184.216.34"]},
+      "responses": [
+        {"status": 410, "headers": {"Content-Type": "text/plain"}, "body": "Gone"}
+      ],
+      "expected_outcome": "missing",
+      "expected_requests": 1,
+      "decision_path": "/",
+      "decision_allowed": true,
+      "reason_contains": "HTTP 410",
+      "why": "Every 4xx is treated as an absent policy, not only 404."
+    },
+    {
+      "id": "server-error-on-http-503",
+      "origin": "https://example.com",
+      "resolved_addresses": {"example.com": ["93.184.216.34"]},
+      "responses": [
+        {"status": 503, "headers": {"Content-Type": "text/plain"}, "body": "Service Unavailable"}
+      ],
+      "expected_outcome": "server_error",
+      "expected_requests": 1,
+      "decision_path": "/anything",
+      "decision_allowed": false,
+      "reason_contains": "HTTP 503",
+      "why": "A 5xx means the policy exists but is unreadable right now, so the boundary fails closed instead of assuming permission."
+    },
+    {
+      "id": "unreachable-on-transport-failure",
+      "origin": "https://example.com",
+      "resolved_addresses": {"example.com": ["93.184.216.34"]},
+      "transport_error": "connection refused",
+      "expected_outcome": "unreachable",
+      "expected_requests": 1,
+      "decision_path": "/anything",
+      "decision_allowed": false,
+      "reason_contains": "failing closed",
+      "why": "No HTTP response at all is an unreadable policy, which is refused rather than treated as permission."
+    },
+    {
+      "id": "unreachable-on-timeout",
+      "origin": "https://example.com",
+      "resolved_addresses": {"example.com": ["93.184.216.34"]},
+      "transport_error": "timeout_wrapped",
+      "expected_outcome": "unreachable",
+      "expected_requests": 1,
+      "decision_path": "/anything",
+      "decision_allowed": false,
+      "reason_contains": "timed out",
+      "why": "A timeout is distinguished from a published refusal but resolves to the same fail-closed decision."
+    },
+    {
+      "id": "unparseable-on-html-with-200",
+      "origin": "https://example.com",
+      "resolved_addresses": {"example.com": ["93.184.216.34"]},
+      "responses": [
+        {
+          "status": 200,
+          "headers": {"Content-Type": "text/plain"},
+          "body": "<html><body>Welcome</body></html>"
+        }
+      ],
+      "expected_outcome": "unparseable",
+      "expected_requests": 1,
+      "decision_path": "/anything",
+      "decision_allowed": false,
+      "reason_contains": "unparseable",
+      "why": "A 200 that carries no directives is an unreadable policy, so it fails closed even though the status was a success."
+    },
+    {
+      "id": "empty-robots-body-allows-everything",
+      "origin": "https://example.com",
+      "resolved_addresses": {"example.com": ["93.184.216.34"]},
+      "responses": [
+        {"status": 200, "headers": {"Content-Type": "text/plain"}, "body": ""}
+      ],
+      "expected_outcome": "rules",
+      "expected_requests": 1,
+      "decision_path": "/anything",
+      "decision_allowed": true,
+      "reason_contains": "no user-agent group matches",
+      "why": "An empty published policy is a real answer and states no restriction, unlike a body that merely has no directives."
+    },
+    {
+      "id": "blocked-before-any-request-when-the-port-is-refused",
+      "origin": "https://example.com:9443",
+      "resolved_addresses": {},
+      "responses": [],
+      "expected_outcome": "blocked",
+      "expected_error_kind": "blocked_port",
+      "expected_requests": 0,
+      "decision_path": "/anything",
+      "decision_allowed": false,
+      "reason_contains": "blocked_port",
+      "why": "The acquisition policy refuses the robots URL itself, so nothing is fetched and the outcome says the policy blocked it."
+    },
+    {
+      "id": "blocked-when-a-redirect-hop-is-refused",
+      "origin": "https://example.com",
+      "resolved_addresses": {"example.com": ["93.184.216.34"]},
+      "responses": [
+        {
+          "status": 302,
+          "headers": {"Location": "http://127.0.0.1/robots.txt", "Content-Type": "text/plain"},
+          "body": ""
+        }
+      ],
+      "expected_outcome": "blocked",
+      "expected_error_kind": "loopback_address",
+      "expected_requests": 1,
+      "decision_path": "/anything",
+      "decision_allowed": false,
+      "reason_contains": "loopback_address",
+      "why": "The robots fetch shares the acquisition boundary, so a redirect into a loopback address is refused before the hop is requested."
+    },
+    {
+      "id": "blocked-when-robots-is-not-text",
+      "origin": "https://example.com",
+      "resolved_addresses": {"example.com": ["93.184.216.34"]},
+      "responses": [
+        {
+          "status": 200,
+          "headers": {"Content-Type": "application/octet-stream"},
+          "body": "User-agent: *\nDisallow: /private/\n"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "expected_error_kind": "unsupported_content_type",
+      "expected_requests": 1,
+      "decision_path": "/private/secret",
+      "decision_allowed": false,
+      "reason_contains": "unsupported_content_type",
+      "why": "A media type outside the policy allow-list is refused, so an unverified body can never become the policy."
+    },
+    {
+      "id": "blocked-when-the-origin-has-no-http-robots-url",
+      "origin": "file:///tmp/example",
+      "resolved_addresses": {},
+      "responses": [],
+      "expected_outcome": "blocked",
+      "expected_error_kind": "invalid_url",
+      "expected_requests": 0,
+      "decision_path": "/anything",
+      "decision_allowed": false,
+      "reason_contains": "invalid_url",
+      "why": "A non-HTTP origin has no robots.txt to read, so the boundary refuses rather than inventing one."
+    }
+  ]
+}

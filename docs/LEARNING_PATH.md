@@ -79,6 +79,26 @@ Practised in M002.2:
 - why a frozen JSON decision table beats scattered assertions for a security
   matrix.
 
+Practised in M002.3:
+
+- why "we could not read the policy" is not the same as "there is no policy",
+  and why only one of those may be treated as permission;
+- why robots group selection is a longest-prefix match on the product token
+  while path matching is a longest-match wildcard match, and why `Allow` wins an
+  equal-length tie;
+- why politeness belongs on a per-host gate rather than a global limiter, and
+  why the interval is measured between request *starts* (what the origin sees)
+  rather than completions;
+- why a politeness gate must be released on throw and on cancellation, or one
+  failed request wedges a host forever;
+- why a nested acquisition of the same gate deadlocks, which is why the robots
+  fetch itself is not gated;
+- why the clock is injected: a test that sleeps to prove a delay is a slow,
+  flaky test, while a test that records requested intervals is fast and exact;
+  and
+- why a cache keyed by origin rather than by user agent is the correct key,
+  because the agent chooses a group inside the file.
+
 ## M003 - Retrieval and local generation
 
 Learn:
