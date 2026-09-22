@@ -53,7 +53,11 @@
       "legal and illegal state transitions",
       "terminal cancellation",
       "minimal app shell launch (process smoke test)",
-      "protocol v1 schema conformance and Swift enum parity"
+      "protocol v1 schema conformance and Swift enum parity",
+      "deterministic fixture slice: identical evidence and citation graph across runs",
+      "exact-passage citation resolution with fail-closed integrity validation",
+      "fixture and persisted-run unknown-field rejection",
+      "completed-run persistence round-trip"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
@@ -64,20 +68,19 @@
     ]
   },
   "next_task": {
-    "id": "M001.2",
-    "title": "Deterministic offline fixture slice with exact-passage citations",
-    "objective": "Prove the citation contract offline before any live provider: one frozen fixture runs twice with identical normalized evidence and citation graph, every citation resolves to an exact passage in an immutable snapshot, broken references fail closed, and a completed run survives restart.",
+    "id": "M001.3",
+    "title": "Protocol boundary enforcement and typed stop transitions",
+    "objective": "Make the frozen protocol v1 enforceable at the native boundary and complete the state machine's terminal paths so failure, budget, and user-input stops are typed, tested, and cannot be bypassed.",
     "prerequisites": [
       "Protocol v1 schemas frozen (M001.1)",
+      "Deterministic slice passing (M001.2)",
       "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet"
     ],
     "allowed_scope": [
-      "frozen fixture question and synthetic redistributable source corpus",
-      "deterministic fake search, fetch, extractor and model adapters in Swift",
-      "content-addressed snapshot, passage, claim, evidence and citation identities",
-      "citation integrity validation with typed failures",
-      "file persistence round-trip for restart of a completed run",
-      "deterministic unit tests for every behavior above"
+      "strict Swift decoding of command, event, and error envelopes with schema_version enforcement",
+      "typed transitions for failed, budget_exhausted, and needs_user_input with stop reasons",
+      "round-trip tests for every envelope and stop path",
+      "recording the local IPC transport decision in docs/DECISIONS.md"
     ],
     "forbidden_scope": [
       "live network, models, embeddings or rerankers",
@@ -86,11 +89,10 @@
       "claiming M001 complete before its full gate passes"
     ],
     "done_when": [
-      "the fixture runs with no network, keys, Docker or model weights",
-      "two runs produce identical normalized evidence and citation graph",
-      "every citation resolves to the exact saved passage and quote",
-      "broken references and unknown fields fail closed with typed errors",
-      "a completed run persists and reloads unchanged",
+      "command, event, and error envelopes decode strictly and round-trip",
+      "unknown fields and unsupported schema versions fail closed",
+      "failed, budget_exhausted, and needs_user_input are reachable only through typed transitions with tests",
+      "the IPC transport decision is recorded",
       "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]
   },

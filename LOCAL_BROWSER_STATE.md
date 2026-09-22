@@ -2,10 +2,11 @@
 
 Last updated: 2026-09-22 (Australia/Sydney)
 
-Status: **Milestone 001 is active. M001.1 (reuse provenance, ResearchCore
-boundary, protocol v1 schemas) is complete; M001.2 (deterministic offline
-fixture slice) is the sole next task. The native baseline builds, four core
-tests pass, and the app shell launches as a smoke test.**
+Status: **Milestone 001 is active. M001.1 and M001.2 (reuse provenance,
+protocol v1 schemas, deterministic offline fixture slice) are complete; M001.3
+(protocol boundary enforcement and typed stop transitions) is the sole next
+task. Eleven deterministic tests pass and the app shell launches as a smoke
+test.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -251,6 +252,27 @@ path has been tested. M001 remains active.
   research_mode=4, evidence_relation=3); `make verify` pass; commits `762cf55`
   and `2522780`.
 - Next eligible task: M001.2 deterministic offline fixture slice.
+
+### 2026-09-22 - M001.2 deterministic offline fixture slice
+
+- Added `Fixtures/deterministic/quick-coffee.json`, a synthetic
+  redistributable corpus with three sources and three anchored claims.
+- `DeterministicPipeline` runs fake search, fetch, extractor, and model
+  adapters with content-addressed snapshot, passage, claim, evidence, and
+  citation identities; synthesis is template-based, not model-generated.
+- `IntegrityError` and `DeterministicPipeline.validate` fail closed on
+  dangling references and quotes that are not exact passage substrings;
+  fixture, run-event, and persisted-run decoding reject unknown fields.
+- `RunStore` persists and reloads a completed run unchanged.
+- Commands and observed results: `make verify` pass; 11 tests, 0 failures
+  (7 new). Commit `75f50cc`.
+- Boundary note: this slice is clean-room Swift; sibling extraction remains
+  gated by `docs/REUSE_PROVENANCE.md` and is not claimed here.
+- Handoff correction: the first M001.3 manifest dropped the blocked-reuse
+  licence prerequisite; `make validate-manifest` rejected it, the prerequisite
+  was restored, and the gate then passed.
+- Next eligible task: M001.3 protocol boundary enforcement and typed stop
+  transitions.
 
 ## Evidence append template
 
