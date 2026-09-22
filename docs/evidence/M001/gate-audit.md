@@ -10,7 +10,7 @@ a named next action) or BLOCKED (with a named reason).
 
 | # | Gate item | Recorded evidence | Status |
 |---|-----------|-------------------|--------|
-| 1 | A clean checkout builds with one documented command | `git clone` into a temporary directory, then `make gate` on revision `386aafd`: manifest validation, schema parity, build, and all tests pass | PASS (final-revision re-run is an M001.6 close-out action) |
+| 1 | A clean checkout builds with one documented command | `git clone` into a temporary directory, then `make gate`: passes on `386aafd` and again on the M001.5 revision `912b563` (manifest, schema parity, build, 25 tests) | PASS |
 | 2 | The fixture runs without network, API keys, Docker, or model weights | `make verify`: the fixture tests read only `Fixtures/deterministic/quick-coffee.json` and perform no network or model I/O | PASS |
 | 3 | Two runs produce the same normalized evidence and citation graph | `testFixtureRunsOfflineTwiceWithIdenticalEvidenceAndCitationGraph`: byte-identical sorted JSON plus equal `citationGraphSignature` | PASS |
 | 4 | Every citation opens the exact saved passage | `testEveryCitationResolvesToExactPassageAndQuote`, `testInspectionsResolveEveryCitationToPassageAndSource`, `testMapNodeSelectionResolvesToTheSamePassageAsInspection`; window screenshot `app-first-run.png` shows the default-selected citation's exact passage, source, and text hash | PASS (unit, view-model, and visual for the default selection; pointer interaction not automated) |

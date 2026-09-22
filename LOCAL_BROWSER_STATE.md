@@ -2,10 +2,10 @@
 
 Last updated: 2026-09-22 (Australia/Sydney)
 
-Status: **Milestone 001 is active. M001.1 through M001.4 are complete;
-M001.5 (Living Research Map minimal screen and M001 gate audit) is the sole
-next task. Twenty-three deterministic tests pass, the app renders and
-persists the fixture run, and a clean checkout passes `make gate`.**
+Status: **Milestone 001 is active. M001.1 through M001.5 are complete;
+M001.6 (UI-verification decision and M001 declaration) is the sole next task.
+Twenty-five deterministic tests pass, the window render is visually verified,
+and a clean checkout passes `make gate` on `912b563`.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -311,6 +311,32 @@ path has been tested. M001 remains active.
   and the persisted artifact.
 - Commit `386aafd`. Next eligible task: M001.5 Living Research Map minimal
   screen and M001 gate audit.
+
+### 2026-09-22 - M001.5 living research map, visual evidence, and gate audit
+
+- `FixtureWorkspace.evidenceMap` builds one node per citation (claim,
+  relation, exact passage, source) and fails closed on dangling references;
+  two new tests cover map construction and map-selection resolution.
+- The app adds a Citations/Map segmented view over the same selection; the
+  map renders provenance cards and selecting a node opens the exact passage.
+- Window verification: the app window was captured and inspected
+  (`docs/evidence/M001/app-first-run.png`), showing the header, the question,
+  `Quick · complete · 3 citations`, the citation list, and the inspector with
+  the exact saved passage, source, and text hash. Switching segments through
+  accessibility scripting was not available; pointer interaction remains
+  unautomated.
+- Restart evidence: a second launch left the persisted run file untouched
+  (same mtime `Sep 22 21:18:45`, same size 7497 bytes), proving the app loaded
+  the completed run instead of rewriting it.
+- Gate audit recorded in `docs/evidence/M001/gate-audit.md`: gate items 1-8
+  pass with commands and results; open items are named (licence-blocked
+  sibling extraction, UI-automation decision, full map design, interaction
+  testing).
+- Commands and observed results: `make gate` pass; 25 tests, 0 failures.
+  Clean checkout: `git clone` plus `make gate` pass on revision `912b563`.
+  Commit `912b563`.
+- Next eligible task: M001.6 close-out (UI-verification decision and
+  milestone declaration).
 
 ## Evidence append template
 
