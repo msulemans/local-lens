@@ -76,14 +76,14 @@ Milestone 000 and its planning correction are complete. The plan now records
 the exact GitHub/research/X inputs, the code-reuse boundary, and the
 Evidence-Native Generative Search thesis.
 
-Milestone 001 is active. The package baseline builds, eleven deterministic
+Milestone 001 is active. The package baseline builds, twenty-one deterministic
 tests pass, and the app shell launches (`make run`, smoke test only). Reuse
-provenance and the ResearchCore boundary are frozen, protocol v1 schemas are
-validated against the Swift core, and the offline fixture slice proves
-identical evidence and exact-passage citations across runs. The next task is
-protocol boundary enforcement and typed stop transitions. Research-core
-extraction, live providers, models, and packaged distribution are not claimed
-yet.
+provenance and the ResearchCore boundary are frozen; protocol v1 schemas and
+envelopes are enforced against the Swift core; and the offline fixture slice
+proves identical evidence and exact-passage citations across runs. The next
+task wires that slice into the app with citation inspection and a
+clean-checkout proof. Research-core extraction, live providers, models, and
+packaged distribution are not claimed yet.
 
 ## Working rules
 

@@ -2,11 +2,10 @@
 
 Last updated: 2026-09-22 (Australia/Sydney)
 
-Status: **Milestone 001 is active. M001.1 and M001.2 (reuse provenance,
-protocol v1 schemas, deterministic offline fixture slice) are complete; M001.3
-(protocol boundary enforcement and typed stop transitions) is the sole next
-task. Eleven deterministic tests pass and the app shell launches as a smoke
-test.**
+Status: **Milestone 001 is active. M001.1 through M001.3 are complete;
+M001.4 (native fixture slice with citation inspection and clean-checkout
+proof) is the sole next task. Twenty-one deterministic tests pass and the app
+shell launches as a smoke test.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -273,6 +272,24 @@ path has been tested. M001 remains active.
   was restored, and the gate then passed.
 - Next eligible task: M001.3 protocol boundary enforcement and typed stop
   transitions.
+
+### 2026-09-22 - M001.3 protocol boundary enforcement
+
+- `ProtocolEnvelopes` decodes commands (`start_run`, `cancel_run`), event
+  envelopes, and typed error envelopes strictly: unknown fields, commands,
+  event kinds, error codes, and unsupported `schema_version` values fail
+  closed; round-trip tests cover each family.
+- `RunStateMachine` gains typed `fail`, `exhaustBudget`, and
+  `requestUserInput` stops with recorded reasons; the generic transition path
+  cannot reach those statuses.
+- `scripts/validate_protocol_schemas.py` now checks `ErrorCode` parity across
+  all Swift sources.
+- D013 records newline-delimited JSON over stdio as the first local IPC
+  transport.
+- Commands and observed results: `make gate` pass; 21 tests, 0 failures
+  (10 new). Commit `5ba762d`.
+- Next eligible task: M001.4 native fixture slice in the app with
+  clean-checkout verification.
 
 ## Evidence append template
 

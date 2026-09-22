@@ -57,7 +57,9 @@
       "deterministic fixture slice: identical evidence and citation graph across runs",
       "exact-passage citation resolution with fail-closed integrity validation",
       "fixture and persisted-run unknown-field rejection",
-      "completed-run persistence round-trip"
+      "completed-run persistence round-trip",
+      "strict protocol envelope decoding with version checks",
+      "typed fail, budget, and user-input stop paths"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
@@ -68,19 +70,19 @@
     ]
   },
   "next_task": {
-    "id": "M001.3",
-    "title": "Protocol boundary enforcement and typed stop transitions",
-    "objective": "Make the frozen protocol v1 enforceable at the native boundary and complete the state machine's terminal paths so failure, budget, and user-input stops are typed, tested, and cannot be bypassed.",
+    "id": "M001.4",
+    "title": "Native fixture slice with citation inspection and clean-checkout proof",
+    "objective": "Make the deterministic run visible in the app: launch loads the fixture through the same core pipeline, renders the brief and its citations, and selecting a citation opens the exact saved passage; then prove a clean checkout passes the full gate.",
     "prerequisites": [
-      "Protocol v1 schemas frozen (M001.1)",
+      "Protocol v1 schemas and envelopes enforced (M001.1, M001.3)",
       "Deterministic slice passing (M001.2)",
       "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet"
     ],
     "allowed_scope": [
-      "strict Swift decoding of command, event, and error envelopes with schema_version enforcement",
-      "typed transitions for failed, budget_exhausted, and needs_user_input with stop reasons",
-      "round-trip tests for every envelope and stop path",
-      "recording the local IPC transport decision in docs/DECISIONS.md"
+      "view-model wiring of DeterministicPipeline and RunStore into the app shell",
+      "minimal trusted Evidence UI: brief, citation list, passage inspector",
+      "view-model unit tests for citation selection resolution",
+      "clean-checkout verification: fresh clone into a temporary directory runs make gate"
     ],
     "forbidden_scope": [
       "live network, models, embeddings or rerankers",
@@ -89,11 +91,11 @@
       "claiming M001 complete before its full gate passes"
     ],
     "done_when": [
-      "command, event, and error envelopes decode strictly and round-trip",
-      "unknown fields and unsupported schema versions fail closed",
-      "failed, budget_exhausted, and needs_user_input are reachable only through typed transitions with tests",
-      "the IPC transport decision is recorded",
-      "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
+      "the app launches, runs the fixture, and lists its citations",
+      "selecting a citation shows the exact saved passage text and source",
+      "a view-model test proves citation selection resolves to the passage",
+      "a clean checkout in a temporary directory passes make gate",
+      "make gate passes in the working repository and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]
   },
   "architecture": {
