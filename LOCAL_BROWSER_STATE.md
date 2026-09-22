@@ -223,11 +223,16 @@ M000 correction gate:
 - `make build`: pass in the normal environment.
 - `make verify`: pass; 4 tests, 0 failures.
 - `make validate-manifest`: pass; JSON schema and handoff invariants conform.
+- `make run`: pass; the app process launches and shuts down cleanly. GUI
+  content and interaction were not manually inspected.
+- All baseline files were committed as the first repository commit `d3af88a`
+  on `main` (34 files); the working tree is clean afterwards.
 
 Proof boundary: the package and four initial core behaviors are
-deterministically verified. The app has not been launched, the selected visual
-direction has not been implemented, ResearchCore has not been extracted, and
-no live search or model/provider path has been tested. M001 remains active.
+deterministically verified. The minimal app shell launches (process smoke
+test only), the selected visual direction has not been implemented,
+ResearchCore has not been extracted, and no live search or model/provider
+path has been tested. M001 remains active.
 
 ## Evidence append template
 

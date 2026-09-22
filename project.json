@@ -43,7 +43,7 @@
     "git": {
       "initialized": true,
       "branch": "main",
-      "commit_created_for_this_project": false,
+      "commit_created_for_this_project": true,
       "files_staged": false
     },
     "verified_scope": [
@@ -51,10 +51,11 @@
       "Swift package compilation",
       "stable identity determinism",
       "legal and illegal state transitions",
-      "terminal cancellation"
+      "terminal cancellation",
+      "minimal app shell launch (process smoke test)"
     ],
     "unverified_scope": [
-      "application launch and visual QA",
+      "application visual QA and interaction",
       "complete deterministic cited-answer slice",
       "ResearchCore extraction and IPC",
       "live search, acquisition and models",
