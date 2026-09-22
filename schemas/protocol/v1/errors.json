@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:local-lens:protocol:v1:errors",
+  "title": "Local Lens ResearchCore errors v1",
+  "description": "Frozen typed error envelopes for protocol v1. The native shell fails closed on unknown codes.",
+  "$defs": {
+    "error_code": {
+      "type": "string",
+      "enum": [
+        "illegal_transition",
+        "terminal_state",
+        "unknown_field",
+        "unsupported_schema_version",
+        "invalid_reference",
+        "integrity_failure"
+      ]
+    },
+    "error_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "code", "message"],
+      "properties": {
+        "schema_version": { "const": "1.0.0" },
+        "code": { "$ref": "#/$defs/error_code" },
+        "message": { "type": "string", "minLength": 1 },
+        "run_id": { "type": "string", "minLength": 3 }
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:local-lens:protocol:v1:commands",
+  "title": "Local Lens ResearchCore commands v1",
+  "description": "Frozen command envelopes for protocol v1. Unknown fields are rejected at the boundary.",
+  "$defs": {
+    "instance_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+    },
+    "start_run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "command", "run_id", "question", "mode"],
+      "properties": {
+        "schema_version": { "const": "1.0.0" },
+        "command": { "const": "start_run" },
+        "run_id": { "$ref": "#/$defs/instance_id" },
+        "question": { "type": "string", "minLength": 3 },
+        "mode": { "$ref": "urn:local-lens:protocol:v1:entities#/$defs/research_mode" }
+      }
+    },
+    "cancel_run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "command", "run_id"],
+      "properties": {
+        "schema_version": { "const": "1.0.0" },
+        "command": { "const": "cancel_run" },
+        "run_id": { "$ref": "#/$defs/instance_id" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "command_envelope": {
+      "oneOf": [
+        { "$ref": "#/$defs/start_run" },
+        { "$ref": "#/$defs/cancel_run" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:local-lens:protocol:v1:events",
+  "title": "Local Lens ResearchCore events v1",
+  "description": "Frozen event envelopes for protocol v1. Events stream from the research core to the native shell.",
+  "$defs": {
+    "run_event_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "kind", "run_id", "event"],
+      "properties": {
+        "schema_version": { "const": "1.0.0" },
+        "kind": { "const": "run_event" },
+        "run_id": { "type": "string", "minLength": 3 },
+        "event": { "$ref": "urn:local-lens:protocol:v1:entities#/$defs/run_event" }
+      }
+    },
+    "event_envelope": {
+      "oneOf": [
+        { "$ref": "#/$defs/run_event_envelope" }
+      ]
+    }
+  }
+}
