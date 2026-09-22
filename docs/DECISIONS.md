@@ -265,3 +265,37 @@ progressive evidence, cache reuse, and an enforced deadline.
 
 Constraint: performance changes cannot weaken citation integrity, acquisition
 safety, or typed stop reasons.
+
+## D016 - Search adapter boundary and hit identity
+
+Date: 2026-09-22
+
+Decision: Live search enters through one narrow boundary. A `SearchAdapter`
+exchanges a query for a typed `SearchOutcome` (`.hits` or `.noResults`), and
+every adapter reaches the network only through an injected `SearchTransport`.
+The first implementation is a SearXNG JSON adapter; the production transport is
+a thin `URLSession` edge with no retry, redirect, or payload policy, because
+those decisions belong to the adapter and to the acquisition policy that M002
+adds next.
+
+Why: metasearch providers are unreliable and replaceable, so provider quirks
+must be decodable and testable without a socket. Injecting the transport lets
+the frozen fixture prove decoding, ordering, identity, and every failure path
+deterministically, and keeps the "no test performs network access" rule
+enforceable by inspection rather than by convention.
+
+Consequences:
+
+- `SearchError` is the typed failure family: `invalidEndpoint`, `emptyQuery`,
+  `transportFailure`, `httpStatus`, and `malformedPayload`. An empty but
+  successful response is the typed empty outcome `.noResults`, never a silent
+  success, and cancellation stays `CancellationError` for the state machine.
+- Hit identity is derived from the query, the fragment-free URL, and the
+  provider rank, so one search observation is reproducible across runs and
+  machines. The M001 deterministic fixture slice keeps its own two-part hit
+  identity so M001 evidence stays byte-identical; unifying the two schemes is a
+  deferred cleanup, not a silent edit.
+- SearXNG payloads are third-party metadata, not our frozen wire schema:
+  unread provider fields are ignored, consumed fields are validated strictly,
+  and only the first `maxResults` entries are parsed so trailing junk cannot
+  fail a usable search.

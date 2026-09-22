@@ -1,0 +1,54 @@
+{
+  "_fixture": {
+    "synthetic": true,
+    "authored": "hand-written in this repository for the Local Lens test suite",
+    "license": "redistributable",
+    "note": "No live provider response is stored. Hosts use the reserved example.invalid domain, which cannot resolve, so the fixture cannot be mistaken for captured web content.",
+    "shape": "SearXNG JSON API response (format=json) with provider metadata fields kept so decoding tolerance is exercised"
+  },
+  "query": "does cold brew contain less acid than hot drip coffee",
+  "number_of_results": 3,
+  "answers": [],
+  "corrections": [],
+  "infoboxes": [],
+  "suggestions": [],
+  "unresponsive_engines": [
+    ["bing", "timeout"],
+    ["mojeek", "access denied"]
+  ],
+  "results": [
+    {
+      "url": "https://example.invalid/brew-review",
+      "title": "Acidity in brewed coffee (synthetic search result)",
+      "content": "A controlled trial reports cold brew at pH 5.6 and hot drip at pH 4.9, so cold brew measured less acidic.",
+      "engine": "duckduckgo",
+      "engines": ["duckduckgo", "brave"],
+      "score": 3.5,
+      "category": "general",
+      "positions": [1, 2],
+      "publishedDate": null,
+      "thumbnail": null,
+      "template": "default.html"
+    },
+    {
+      "url": "https://example.invalid/sensory-panel#panel-results",
+      "title": "Tasting panel notes (synthetic search result)",
+      "content": "A trained panel described cold brew as smoother with lower perceived acidity than hot drip in blinded tasting.",
+      "engine": "brave",
+      "engines": ["brave"],
+      "score": 2.1,
+      "category": "general",
+      "positions": [1]
+    },
+    {
+      "url": "https://example.invalid/chemistry-notes",
+      "title": "Compound profile notes (synthetic search result)",
+      "content": "Chlorogenic acid lactones and quinides differ by extraction temperature and time.",
+      "engine": "duckduckgo",
+      "engines": ["duckduckgo"],
+      "score": 1.4,
+      "category": "general",
+      "positions": [3]
+    }
+  ]
+}

@@ -53,6 +53,16 @@ Explain back:
 3. When should browser rendering be permitted?
 4. What information must a snapshot preserve?
 
+Practised in M002.1:
+
+- why a search adapter must not own a socket, and what injecting the transport
+  buys a test suite;
+- which provider conditions are faults (transport, status, malformed payload)
+  and which is an honest outcome (`.noResults`);
+- why hit identity is content-derived rather than positional; and
+- why provider payloads are decoded tolerantly at the edges but validated
+  strictly wherever the adapter actually consumes a field.
+
 ## M003 - Retrieval and local generation
 
 Learn:

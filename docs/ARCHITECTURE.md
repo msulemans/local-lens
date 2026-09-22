@@ -91,12 +91,37 @@ the span, labels it as uncertainty, or rejects the draft.
 
 ## Search boundary
 
-`SearchProvider.search(query, options) -> [SearchHit]`
+```swift
+protocol SearchAdapter {
+    func search(_ query: String) async throws -> SearchOutcome   // .hits([SearchHit]) | .noResults(query:)
+}
 
-Initial planned adapters:
+protocol SearchTransport {                                        // the only socket boundary
+    func send(_ request: SearchRequest) async throws -> SearchResponse
+}
+```
 
-- deterministic fixture provider for M001;
-- SearXNG for the live baseline in M002;
+An adapter never owns a connection: every request travels through an injected
+`SearchTransport`, so provider logic is testable without network access and the
+production `URLSession` implementation stays a thin, single-purpose edge.
+
+Typed outcomes are mandatory. `SearchError` covers `invalidEndpoint`,
+`emptyQuery`, `transportFailure`, `httpStatus`, and `malformedPayload`; an empty
+but successful provider response is the typed empty outcome `.noResults`, not
+an error and never a silent success. Cancellation is not folded into
+`transportFailure`: it stays `CancellationError` so the run-level state machine
+owns the terminal `cancelled` transition.
+
+Hit identity is content-derived (`query`, fragment-free URL, provider rank), so
+the same search observation is reproducible across runs. Provider payloads are
+not our frozen wire schema, so unread provider fields are ignored, while every
+field the adapter consumes is validated strictly and any uninterpretable
+payload fails closed.
+
+Initial adapters:
+
+- deterministic fixture provider for M001 (implemented);
+- SearXNG JSON for the live baseline in M002 (implemented, M002.1);
 - academic metadata providers in M004; and
 - optional Exa comparison only after the baseline is measured.
 
