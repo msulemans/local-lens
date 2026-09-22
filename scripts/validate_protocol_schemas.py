@@ -22,12 +22,16 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PROTOCOL_DIR = ROOT / "schemas" / "protocol" / "v1"
-DOMAIN_SWIFT = ROOT / "Sources" / "LocalLensCore" / "Domain.swift"
+SWIFT_SOURCES = [
+    ROOT / "Sources" / "LocalLensCore" / "Domain.swift",
+    ROOT / "Sources" / "LocalLensCore" / "ProtocolEnvelopes.swift",
+]
 
 ENUM_PAIRS = {
     "run_status": "RunStatus",
     "research_mode": "ResearchMode",
     "evidence_relation": "EvidenceRelation",
+    "error_code": "ErrorCode",
 }
 
 EXPECTED_DEFS = {
@@ -121,7 +125,7 @@ def resolve(ref: str, schemas: dict[str, dict], current_doc: dict) -> None:
 def swift_enum_values(source: str, name: str) -> list[str]:
     match = re.search(rf"public enum {name}\b.*?\n\}}", source, re.S)
     if not match:
-        fail(f"enum {name} not found in {DOMAIN_SWIFT.name}")
+        fail(f"enum {name} not found in Swift sources")
     values: list[str] = []
     for case in re.finditer(
         r"case ([A-Za-z_][A-Za-z0-9_]*)(?: = \"([^\"]+)\")?", match.group(0)
@@ -148,9 +152,13 @@ def main() -> None:
             resolve(ref, schemas, entry["doc"])
 
     entities = schemas["urn:local-lens:protocol:v1:entities"]["doc"]["$defs"]
-    swift_source = DOMAIN_SWIFT.read_text(encoding="utf-8")
+    enum_defs = dict(entities)
+    enum_defs.update(schemas["urn:local-lens:protocol:v1:errors"]["doc"]["$defs"])
+    swift_source = "\n".join(path.read_text(encoding="utf-8") for path in SWIFT_SOURCES)
     for schema_name, swift_name in ENUM_PAIRS.items():
-        schema_values = entities[schema_name]["enum"]
+        if schema_name not in enum_defs:
+            fail(f"no schema declares enum {schema_name}")
+        schema_values = enum_defs[schema_name]["enum"]
         swift_values = swift_enum_values(swift_source, swift_name)
         if schema_values != swift_values:
             fail(
@@ -160,7 +168,7 @@ def main() -> None:
             )
 
     summary = ", ".join(
-        f"{name}={len(entities[name]['enum'])}" for name in ENUM_PAIRS
+        f"{name}={len(enum_defs[name]['enum'])}" for name in ENUM_PAIRS
     )
     print(f"protocol v1 schemas conform; Swift parity holds ({summary})")
 

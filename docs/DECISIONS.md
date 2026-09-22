@@ -154,6 +154,26 @@ Swift core and are enforced by `scripts/validate_protocol_schemas.py`.
 Review trigger: any boundary change; it requires a new decision entry and a
 protocol version bump.
 
+## D013 - Local IPC transport
+
+Date: 2026-09-22
+
+Decision: The first local transport is newline-delimited JSON over stdio to a
+single child process supervised by the app, carrying only the frozen protocol
+v1 envelopes (commands, events, errors).
+
+Why: parent-child stdio needs no network ports, discovery, or shared
+filesystem service, and the operating system already authenticates process
+parentage. The wire schemas stay unchanged if the transport is later replaced
+by a Unix domain socket or XPC.
+
+Alternatives considered: Unix domain socket with a per-launch token (better
+for a separately installed service; more setup); HTTP on loopback (rejected:
+unnecessary network surface and port management).
+
+Review trigger: packaging constraints, or a second local consumer needs
+direct access to the research core.
+
 This supersedes D009 only for the timing of sibling-code licensing: that issue
 must be resolved in M001. Selection of this repository's final public licence
 may still occur during public-release planning.

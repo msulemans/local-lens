@@ -51,4 +51,25 @@ public actor RunStateMachine {
         run.stopReason = reason
         events.append(RunEvent(sequence: events.count, status: .cancelled, message: reason))
     }
+
+    /// Typed stop paths. These are deliberately not reachable through
+    /// `transition(to:)`; each records its reason and ends the run.
+    public func fail(reason: String) throws {
+        try stop(at: .failed, reason: reason)
+    }
+
+    public func exhaustBudget(reason: String) throws {
+        try stop(at: .budgetExhausted, reason: reason)
+    }
+
+    public func requestUserInput(reason: String) throws {
+        try stop(at: .needsUserInput, reason: reason)
+    }
+
+    private func stop(at status: RunStatus, reason: String) throws {
+        guard !run.status.isTerminal else { throw RunStateError.terminalState(run.status) }
+        run.status = status
+        run.stopReason = reason
+        events.append(RunEvent(sequence: events.count, status: status, message: reason))
+    }
 }
