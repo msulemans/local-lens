@@ -63,6 +63,22 @@ Practised in M002.1:
 - why provider payloads are decoded tolerantly at the edges but validated
   strictly wherever the adapter actually consumes a field.
 
+Practised in M002.2:
+
+- SSRF: why a *name* is not a destination and why the address it resolves to is
+  the thing that must be approved;
+- why every redirect hop is re-validated, and why following redirects inside
+  the HTTP client would make that impossible;
+- why "partially private" must be read as private: one private answer among
+  several public ones is still a private destination;
+- why equivalent address encodings (`127.1`, `2130706433`, `0x7f.0.0.1`,
+  `0177.0.0.1`, `::ffff:127.0.0.1`, NAT64 and 6to4 forms) have to be normalized
+  before classification, because a blocklist that only matches text is a
+  blocklist that can be spelled around;
+- why refusals are typed per class rather than one "unsafe URL" error; and
+- why a frozen JSON decision table beats scattered assertions for a security
+  matrix.
+
 ## M003 - Retrieval and local generation
 
 Learn:

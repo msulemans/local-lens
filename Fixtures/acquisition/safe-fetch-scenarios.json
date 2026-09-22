@@ -1,0 +1,551 @@
+{
+  "_fixture": {
+    "synthetic": true,
+    "authored": "hand-written in this repository for the Local Lens test suite",
+    "license": "redistributable",
+    "note": "No live host, DNS answer, or captured response is stored here. Every host name is a reserved documentation or internal-use name (example.com, example.invalid, *.internal, *.local) and every address is either a documented reserved range or an address the stub resolver invents. Nothing in this file was measured against the public internet; it is a decision table for the acquisition policy.",
+    "shape": "Frozen scenario table for AcquisitionPolicy.validate and SafeAcquisition.fetch. `expected_outcome` is either an AcquisitionError.kind string, \"accepted\", or \"cancelled\".",
+    "protocol_version": "v1"
+  },
+
+  "policy": {
+    "allowed_schemes": ["http", "https"],
+    "allowed_ports": [80, 443, 8080, 8443],
+    "allowed_content_types": ["text/html", "application/xhtml+xml", "text/plain", "application/pdf"],
+    "reserved_host_suffixes": [".localhost", ".local", ".internal", ".invalid", ".test", ".example", ".home.arpa"],
+    "max_redirects": 5,
+    "max_bytes": 5000000,
+    "timeout_seconds": 15
+  },
+
+  "blocked_destinations": [
+    {
+      "id": "ipv4-loopback-canonical",
+      "url": "http://127.0.0.1/",
+      "expected_outcome": "loopback_address",
+      "why": "The canonical loopback literal."
+    },
+    {
+      "id": "ipv4-loopback-short-form",
+      "url": "http://127.1/",
+      "expected_outcome": "loopback_address",
+      "why": "inet_aton short form; must not be treated as an unknown host name."
+    },
+    {
+      "id": "ipv4-loopback-decimal-form",
+      "url": "http://2130706433/",
+      "expected_outcome": "loopback_address",
+      "why": "A single decimal integer that a resolver may still read as 127.0.0.1."
+    },
+    {
+      "id": "ipv4-loopback-hex-form",
+      "url": "http://0x7f.0.0.1/",
+      "expected_outcome": "loopback_address",
+      "why": "Hexadecimal octet encoding."
+    },
+    {
+      "id": "ipv4-loopback-octal-form",
+      "url": "http://0177.0.0.1/",
+      "expected_outcome": "loopback_address",
+      "why": "Octal octet encoding."
+    },
+    {
+      "id": "ipv6-loopback",
+      "url": "http://[::1]/",
+      "expected_outcome": "loopback_address",
+      "why": "IPv6 loopback literal."
+    },
+    {
+      "id": "ipv6-unspecified",
+      "url": "http://[::]/",
+      "expected_outcome": "reserved_address",
+      "why": "The unspecified address is never a fetch target."
+    },
+    {
+      "id": "ipv4-private-10",
+      "url": "http://10.0.0.5/",
+      "expected_outcome": "private_address",
+      "why": "RFC 1918 10/8."
+    },
+    {
+      "id": "ipv4-private-172",
+      "url": "http://172.16.4.4/",
+      "expected_outcome": "private_address",
+      "why": "RFC 1918 172.16/12."
+    },
+    {
+      "id": "ipv4-private-192",
+      "url": "http://192.168.1.1/",
+      "expected_outcome": "private_address",
+      "why": "RFC 1918 192.168/16, typically the user's own router."
+    },
+    {
+      "id": "ipv6-private-ula",
+      "url": "http://[fd00::1]/",
+      "expected_outcome": "private_address",
+      "why": "Unique local address fc00::/7."
+    },
+    {
+      "id": "ipv4-link-local",
+      "url": "http://169.254.1.1/",
+      "expected_outcome": "link_local_address",
+      "why": "RFC 3927 link-local, checked after the metadata address."
+    },
+    {
+      "id": "ipv6-link-local",
+      "url": "http://[fe80::1]/",
+      "expected_outcome": "link_local_address",
+      "why": "IPv6 link-local fe80::/10."
+    },
+    {
+      "id": "ipv4-metadata-service",
+      "url": "http://169.254.169.254/",
+      "expected_outcome": "metadata_service",
+      "why": "Cloud instance metadata endpoint."
+    },
+    {
+      "id": "ipv6-metadata-service",
+      "url": "http://[fd00:ec2::254]/",
+      "expected_outcome": "metadata_service",
+      "why": "IPv6 metadata endpoint, which is also inside fc00::/7 and must be classified by the narrower rule first."
+    },
+    {
+      "id": "ipv4-mapped-ipv6-metadata",
+      "url": "http://[::ffff:169.254.169.254]/",
+      "expected_outcome": "metadata_service",
+      "why": "An IPv4-mapped literal must be classified by its embedded IPv4 address."
+    },
+    {
+      "id": "ipv4-mapped-ipv6-private",
+      "url": "http://[::ffff:10.0.0.1]/",
+      "expected_outcome": "private_address",
+      "why": "Same rule for a private embedded address."
+    },
+    {
+      "id": "nat64-embedded-loopback",
+      "url": "http://[64:ff9b::127.0.0.1]/",
+      "expected_outcome": "loopback_address",
+      "why": "RFC 6052 NAT64 prefix embedding a loopback address."
+    },
+    {
+      "id": "six-to-four-embedded-loopback",
+      "url": "http://[2002:7f00:1::]/",
+      "expected_outcome": "loopback_address",
+      "why": "RFC 3056 6to4 address embedding 127.0.0.1."
+    },
+    {
+      "id": "ipv4-multicast",
+      "url": "http://224.0.0.1/",
+      "expected_outcome": "multicast_address",
+      "why": "224/4 multicast."
+    },
+    {
+      "id": "ipv6-multicast",
+      "url": "http://[ff02::1]/",
+      "expected_outcome": "multicast_address",
+      "why": "ff00::/8 multicast."
+    },
+    {
+      "id": "ipv4-unspecified",
+      "url": "http://0.0.0.0/",
+      "expected_outcome": "reserved_address",
+      "why": "0/8 this-network."
+    },
+    {
+      "id": "ipv4-shared-address-space",
+      "url": "http://100.64.0.1/",
+      "expected_outcome": "reserved_address",
+      "why": "RFC 6598 carrier-grade NAT space."
+    },
+    {
+      "id": "ipv4-benchmarking",
+      "url": "http://198.18.0.1/",
+      "expected_outcome": "reserved_address",
+      "why": "RFC 2544 benchmarking range."
+    },
+    {
+      "id": "ipv4-documentation-1",
+      "url": "http://192.0.2.10/",
+      "expected_outcome": "reserved_address",
+      "why": "TEST-NET-1."
+    },
+    {
+      "id": "ipv4-documentation-2",
+      "url": "http://198.51.100.7/",
+      "expected_outcome": "reserved_address",
+      "why": "TEST-NET-2."
+    },
+    {
+      "id": "ipv4-documentation-3",
+      "url": "http://203.0.113.9/",
+      "expected_outcome": "reserved_address",
+      "why": "TEST-NET-3."
+    },
+    {
+      "id": "ipv4-6to4-relay-anycast",
+      "url": "http://192.88.99.1/",
+      "expected_outcome": "reserved_address",
+      "why": "Deprecated 6to4 relay anycast."
+    },
+    {
+      "id": "ipv4-ietf-protocol-assignments",
+      "url": "http://192.0.0.8/",
+      "expected_outcome": "reserved_address",
+      "why": "192.0.0/24 IETF protocol assignments."
+    },
+    {
+      "id": "ipv4-future-use",
+      "url": "http://240.0.0.1/",
+      "expected_outcome": "reserved_address",
+      "why": "240/4 reserved for future use."
+    },
+    {
+      "id": "ipv6-documentation",
+      "url": "http://[2001:db8::1]/",
+      "expected_outcome": "reserved_address",
+      "why": "2001:db8::/32 documentation prefix."
+    },
+    {
+      "id": "ipv6-discard-only",
+      "url": "http://[100::1]/",
+      "expected_outcome": "reserved_address",
+      "why": "RFC 6666 discard-only prefix."
+    },
+    {
+      "id": "ipv6-teredo",
+      "url": "http://[2001::1]/",
+      "expected_outcome": "reserved_address",
+      "why": "Teredo 2001::/32."
+    },
+    {
+      "id": "reserved-name-invalid",
+      "url": "http://research.example.invalid/paper",
+      "expected_outcome": "reserved_host_name",
+      "why": "RFC 6761 .invalid can never resolve."
+    },
+    {
+      "id": "reserved-name-local",
+      "url": "http://printer.local/",
+      "expected_outcome": "reserved_host_name",
+      "why": "mDNS .local names belong to the user's own network."
+    },
+    {
+      "id": "reserved-name-internal",
+      "url": "http://metadata.internal/latest",
+      "expected_outcome": "reserved_host_name",
+      "why": "ICANN internal-use name."
+    },
+    {
+      "id": "reserved-name-localhost",
+      "url": "http://localhost/",
+      "expected_outcome": "reserved_host_name",
+      "why": "localhost is refused by name before any resolution."
+    },
+    {
+      "id": "reserved-name-home-arpa",
+      "url": "http://router.home.arpa/",
+      "expected_outcome": "reserved_host_name",
+      "why": "RFC 8375 home network name space."
+    },
+    {
+      "id": "blocked-scheme-ftp",
+      "url": "ftp://files.example.com/report",
+      "expected_outcome": "blocked_scheme",
+      "why": "Only http and https may be fetched."
+    },
+    {
+      "id": "blocked-scheme-file",
+      "url": "file:///etc/passwd",
+      "expected_outcome": "blocked_scheme",
+      "why": "A file URL is not a web resource at all."
+    },
+    {
+      "id": "credentials-in-url",
+      "url": "http://reader:secret@example.com/paper",
+      "expected_outcome": "credentials_in_url",
+      "why": "Embedded credentials must never be forwarded."
+    },
+    {
+      "id": "blocked-port-ssh",
+      "url": "http://example.com:22/",
+      "expected_outcome": "blocked_port",
+      "why": "A non-web port is refused even on an approved host."
+    },
+    {
+      "id": "blocked-port-redis",
+      "url": "http://example.com:6379/",
+      "expected_outcome": "blocked_port",
+      "why": "Same rule for a common internal service port."
+    }
+  ],
+
+  "resolution_cases": [
+    {
+      "id": "all-public-ipv4",
+      "url": "https://research.example.com/paper",
+      "resolved_addresses": { "research.example.com": ["93.184.216.34"] },
+      "expected_outcome": "accepted",
+      "why": "A single public answer is approved."
+    },
+    {
+      "id": "all-public-mixed-family",
+      "url": "https://research.example.com/paper",
+      "resolved_addresses": { "research.example.com": ["93.184.216.34", "2606:4700:4700::1111"] },
+      "expected_outcome": "accepted",
+      "why": "Every answer is public, so the name is approved."
+    },
+    {
+      "id": "public-name-resolving-to-private",
+      "url": "https://rebind.example.com/paper",
+      "resolved_addresses": { "rebind.example.com": ["93.184.216.34", "10.1.2.3"] },
+      "expected_outcome": "private_address",
+      "why": "One private answer blocks the whole name; a partially private answer is a private destination."
+    },
+    {
+      "id": "public-name-resolving-to-loopback",
+      "url": "https://loop.example.com/",
+      "resolved_addresses": { "loop.example.com": ["127.0.0.1"] },
+      "expected_outcome": "loopback_address",
+      "why": "DNS rebinding onto the user's own machine."
+    },
+    {
+      "id": "public-name-resolving-to-ipv6-private",
+      "url": "https://v6private.example.com/",
+      "resolved_addresses": { "v6private.example.com": ["fd12:3456:789a::1"] },
+      "expected_outcome": "private_address",
+      "why": "The IPv6 private range must be classified after resolution too."
+    },
+    {
+      "id": "public-name-resolving-to-metadata",
+      "url": "https://metadata.example.com/latest",
+      "resolved_addresses": { "metadata.example.com": ["169.254.169.254"] },
+      "expected_outcome": "metadata_service",
+      "why": "A name pointing at the metadata endpoint is refused."
+    },
+    {
+      "id": "empty-resolution",
+      "url": "https://nowhere.example.com/",
+      "resolved_addresses": { "nowhere.example.com": [] },
+      "expected_outcome": "unresolvable_host",
+      "why": "An empty answer is a typed failure, not an empty success."
+    },
+    {
+      "id": "unparseable-resolution",
+      "url": "https://broken.example.com/",
+      "resolved_addresses": { "broken.example.com": ["not-an-address"] },
+      "expected_outcome": "invalid_resolved_address",
+      "why": "An answer the policy cannot classify is refused rather than assumed public."
+    },
+    {
+      "id": "resolution-failure",
+      "url": "https://garbage.example.com/",
+      "resolution_failure": "nodename nor servname provided, or not known",
+      "expected_outcome": "host_resolution_failed",
+      "why": "A resolver error is surfaced with its reason."
+    }
+  ],
+
+  "fetch_scenarios": [
+    {
+      "id": "success-html-with-charset",
+      "requested_url": "https://example.com/article",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 200, "headers": { "Content-Type": "text/html; charset=utf-8" }, "body": "<html><body>synthetic</body></html>" }
+      ],
+      "expected_outcome": "accepted",
+      "expected": { "status_code": 200, "content_type": "text/html", "final_url": "https://example.com/article", "redirect_count": 0 },
+      "why": "The charset parameter is stripped and the media type is allow-listed."
+    },
+    {
+      "id": "success-after-public-redirect",
+      "requested_url": "https://example.com/old",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 302, "headers": { "Location": "https://example.com/new" } },
+        { "status": 200, "headers": { "Content-Type": "text/plain" }, "body": "synthetic body" }
+      ],
+      "expected_outcome": "accepted",
+      "expected": { "status_code": 200, "content_type": "text/plain", "final_url": "https://example.com/new", "redirect_count": 1 },
+      "why": "Both the requested URL and the final URL stay visible."
+    },
+    {
+      "id": "relative-redirect",
+      "requested_url": "https://example.com/a/b",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 301, "headers": { "Location": "../c" } },
+        { "status": 200, "headers": { "Content-Type": "text/html" }, "body": "<html></html>" }
+      ],
+      "expected_outcome": "accepted",
+      "expected": { "status_code": 200, "content_type": "text/html", "final_url": "https://example.com/c", "redirect_count": 1 },
+      "why": "A relative Location is resolved against the responding URL."
+    },
+    {
+      "id": "redirect-into-metadata-service",
+      "requested_url": "https://example.com/start",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 307, "headers": { "Location": "http://169.254.169.254/latest/meta-data/" } }
+      ],
+      "expected_outcome": "metadata_service",
+      "why": "A permitted origin must not be able to bounce the request into metadata."
+    },
+    {
+      "id": "redirect-into-private-address",
+      "requested_url": "https://example.com/start",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 302, "headers": { "Location": "http://10.0.0.9/admin" } }
+      ],
+      "expected_outcome": "private_address",
+      "why": "The hop is validated before it is requested."
+    },
+    {
+      "id": "redirect-into-private-name",
+      "requested_url": "https://example.com/start",
+      "resolved_addresses": { "example.com": ["93.184.216.34"], "rebind.example.com": ["192.168.7.7"] },
+      "responses": [
+        { "status": 302, "headers": { "Location": "https://rebind.example.com/paper" } }
+      ],
+      "expected_outcome": "private_address",
+      "why": "Redirect targets are resolved and classified, not trusted."
+    },
+    {
+      "id": "redirect-into-reserved-name",
+      "requested_url": "https://example.com/start",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 302, "headers": { "Location": "http://printer.local/status" } }
+      ],
+      "expected_outcome": "reserved_host_name",
+      "why": "Redirecting into the user's own network by name is refused."
+    },
+    {
+      "id": "redirect-loop",
+      "requested_url": "https://example.com/a",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 302, "headers": { "Location": "/b" } },
+        { "status": 302, "headers": { "Location": "/a" } }
+      ],
+      "expected_outcome": "redirect_loop",
+      "why": "A revisited URL is a loop, not an unbounded retry."
+    },
+    {
+      "id": "redirect-without-location",
+      "requested_url": "https://example.com/a",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 301, "headers": { "Content-Type": "text/html" }, "body": "" }
+      ],
+      "expected_outcome": "redirect_without_location",
+      "why": "A redirect with no usable Location is a typed failure."
+    },
+    {
+      "id": "too-many-redirects",
+      "requested_url": "https://example.com/0",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "policy_override": { "max_redirects": 2 },
+      "responses": [
+        { "status": 302, "headers": { "Location": "/1" } },
+        { "status": 302, "headers": { "Location": "/2" } },
+        { "status": 302, "headers": { "Location": "/3" } }
+      ],
+      "expected_outcome": "too_many_redirects",
+      "why": "The hop ceiling is enforced before the third redirect is followed."
+    },
+    {
+      "id": "http-status-500",
+      "requested_url": "https://example.com/a",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 500, "headers": { "Content-Type": "text/html" }, "body": "synthetic error page" }
+      ],
+      "expected_outcome": "http_status",
+      "why": "Only 2xx is a body worth keeping."
+    },
+    {
+      "id": "http-status-404",
+      "requested_url": "https://example.com/missing",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 404, "headers": { "Content-Type": "text/html" }, "body": "" }
+      ],
+      "expected_outcome": "http_status",
+      "why": "Same rule for a client error."
+    },
+    {
+      "id": "missing-content-type",
+      "requested_url": "https://example.com/a",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 200, "headers": {}, "body": "<html></html>" }
+      ],
+      "expected_outcome": "missing_content_type",
+      "why": "An undeclared body cannot be trusted to be text."
+    },
+    {
+      "id": "unsupported-content-type",
+      "requested_url": "https://example.com/blob",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "responses": [
+        { "status": 200, "headers": { "Content-Type": "application/octet-stream" }, "body": "synthetic bytes" }
+      ],
+      "expected_outcome": "unsupported_content_type",
+      "why": "A media type outside the allow list is refused, not silently decoded."
+    },
+    {
+      "id": "response-too-large",
+      "requested_url": "https://example.com/huge",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "policy_override": { "max_bytes": 32 },
+      "responses": [
+        { "status": 200, "headers": { "Content-Type": "text/html" }, "body": "0123456789012345678901234567890123456789" }
+      ],
+      "expected_outcome": "response_too_large",
+      "why": "The byte ceiling stops an unbounded body from being held in memory."
+    },
+    {
+      "id": "transport-failure",
+      "requested_url": "https://example.com/a",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "transport_error": "connection reset by peer",
+      "expected_outcome": "transport_failure",
+      "why": "A connection-level failure stays distinct from a policy refusal."
+    },
+    {
+      "id": "timeout-from-url-error",
+      "requested_url": "https://example.com/a",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "transport_error": "timeout_urlerror",
+      "expected_outcome": "timeout",
+      "why": "A URLError timeout is mapped to the typed timeout, not a generic transport failure."
+    },
+    {
+      "id": "timeout-wrapped-by-transport",
+      "requested_url": "https://example.com/a",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "transport_error": "timeout_wrapped",
+      "expected_outcome": "timeout",
+      "why": "The production transport collapses errors into a reason string, so the wrapped form must still be recognisable."
+    },
+    {
+      "id": "cancellation",
+      "requested_url": "https://example.com/a",
+      "resolved_addresses": { "example.com": ["93.184.216.34"] },
+      "transport_error": "cancellation",
+      "expected_outcome": "cancelled",
+      "why": "Cancellation is rethrown as CancellationError, never converted into an acquisition failure."
+    },
+    {
+      "id": "policy-refusal-before-transport",
+      "requested_url": "http://127.0.0.1/",
+      "responses": [
+        { "status": 200, "headers": { "Content-Type": "text/html" }, "body": "<html></html>" }
+      ],
+      "expected_outcome": "loopback_address",
+      "why": "A refused URL must produce zero requests; the scenario carries no usable response because none should be sent."
+    }
+  ]
+}

@@ -140,8 +140,51 @@ Before a live request, trusted code must:
 5. enforce redirect, timeout, byte, character, and MIME limits; and
 6. avoid login, form submission, CAPTCHA solving, and paywall bypass.
 
-Static HTTP is the default. Browser rendering is a separately recorded fallback.
-PDF extraction has its own adapter and page-aware passage identifiers.
+Rules 1, 2, and the redirect/byte/MIME part of rule 5 are implemented in
+M002.2; rules 3 and 4 are still planned for the next task.
+
+```swift
+protocol HostResolver {                                     // the only DNS boundary
+    func addresses(for host: String) async throws -> [String]
+}
+
+struct AcquisitionPolicy {                                  // approved destinations only
+    func validate(_ url: URL, resolver: any HostResolver) async throws
+}
+
+enum SafeAcquisition {
+    static func fetch(_ url: URL, transport: any SearchTransport,
+                      resolver: any HostResolver,
+                      policy: AcquisitionPolicy = .default) async throws -> AcquisitionResult
+}
+```
+
+A URL is approved before it is requested, and every redirect hop is approved
+before it is requested too, so an approved origin cannot bounce a request into
+a private address or a cloud metadata endpoint. `IPAddress` normalizes the
+encodings a resolver honours but a naive check does not (`127.1`, `2130706433`,
+`0x7f.0.0.1`, `0177.0.0.1`) and classifies the IPv4 address embedded in
+`::ffff:`, NAT64, and 6to4 forms. A name that resolves to *any* non-public
+address is refused: partially private is private.
+
+Refusals are typed. `AcquisitionError` keeps destination refusal
+(`loopbackAddress`, `privateAddress`, `linkLocalAddress`, `multicastAddress`,
+`metadataService`, `reservedAddress`, `reservedHostName`), request-shape refusal
+(`blockedScheme`, `credentialsInURL`, `blockedPort`, `invalidURL`),
+resolution failure (`hostResolutionFailed`, `unresolvableHost`,
+`invalidResolvedAddress`), and response refusal (`httpStatus`, `timeout`,
+`transportFailure`, `redirectWithoutLocation`, `redirectLoop`,
+`tooManyRedirects`, `missingContentType`, `unsupportedContentType`,
+`responseTooLarge`) distinct, because each becomes a different user-visible
+stop reason. Each case carries a stable `kind` label, and the blocked
+destination matrix is frozen as data in
+`Fixtures/acquisition/safe-fetch-scenarios.json` rather than as scattered
+assertions.
+
+`SafeAcquisition.fetch` follows redirects itself instead of delegating them, and
+returns both the requested and the final URL so that leaving the origin stays
+visible. Static HTTP is the default. Browser rendering is a separately recorded
+fallback. PDF extraction has its own adapter and page-aware passage identifiers.
 
 ## Snapshot and passage boundary
 

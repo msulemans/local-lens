@@ -299,3 +299,49 @@ Consequences:
   unread provider fields are ignored, consumed fields are validated strictly,
   and only the first `maxResults` entries are parsed so trailing junk cannot
   fail a usable search.
+
+## D017 - Policy-checked acquisition with a frozen refusal matrix
+
+Date: 2026-09-22
+
+Decision: Live retrieval goes through `SafeAcquisition.fetch`, which approves a
+URL with `AcquisitionPolicy.validate` before any request and re-approves every
+redirect hop before it is requested. Redirects are followed by our code, not by
+the HTTP client, so no hop can bypass the check. Name resolution is an injected
+`HostResolver`; the production `SystemHostResolver` is the only implementation
+that performs a real lookup and no test uses it.
+
+Why: the M002.1 search boundary proves we can talk to a provider, but nothing
+yet stopped a result URL, a redirect, or a rebound DNS answer from pointing the
+app at the user's own machine, a private network, or a cloud metadata service.
+A search tool that can be steered onto `169.254.169.254` is a credential
+exfiltration tool, so this had to land before any live fetch.
+
+Consequences:
+
+- `AcquisitionPolicy.validate` is fail-closed and address-based, not
+  name-based: it refuses reserved host suffixes by name, then resolves and
+  requires *every* answer to be publicly routable. Partially private is
+  private, which is the DNS-rebinding case.
+- `IPAddress` normalizes the encodings a resolver honours but a naive
+  string check does not (`127.1`, `2130706433`, `0x7f.0.0.1`, `0177.0.0.1`)
+  and classifies the IPv4 address embedded in IPv4-mapped, NAT64, and 6to4
+  IPv6 forms. The narrower rule wins where ranges overlap: the IPv6 metadata
+  endpoint is also inside `fc00::/7` and is reported as metadata, not private.
+- `AcquisitionError` keeps destination refusal, request-shape refusal,
+  resolution failure, and response refusal as distinct cases, each with a
+  stable `kind` label, because each becomes a different user-visible stop
+  reason. `SafeAcquisition` returns both the requested and the final URL so
+  leaving the origin stays visible.
+- The refusal matrix is frozen as data in
+  `Fixtures/acquisition/safe-fetch-scenarios.json` (43 blocked destinations, 9
+  resolution cases, 20 fetch scenarios), so a security rule can be reviewed and
+  extended without reading test code. The fixture contains only reserved
+  documentation/internal names and reserved address ranges; a guard test
+  enforces that.
+- Cancellation stays `CancellationError`; a timeout is `AcquisitionError.timeout`
+  even when the transport has already collapsed the `URLError` into a string,
+  because a timeout must remain distinguishable from a connection failure.
+- Robots policy, per-host concurrency, and politeness delay are explicitly NOT
+  in this decision; they are the next task in M002 and the acquisition boundary
+  is shaped so they can be added as a gate on the same validated URL.
