@@ -84,24 +84,27 @@
       "HTML extraction boundary turning acquisition-approved HTML into readable text with heading attribution",
       "typed extraction refusal family: unsupported content type, over-limit, empty, unsupported charset, malformed markup, unreadable text, missing source identifier, invalid policy",
       "content-derived Snapshot and Passage identity reusing the M001 part ordering, with passages ordered and resolving back to their snapshot",
-      "deterministic extraction: identical bytes produce identical text, snapshot, passages and hashes across runs"
+      "deterministic extraction: identical bytes produce identical text, snapshot, passages and hashes across runs",
+      "content-addressed snapshot store with retry-safe deduplication and snippet-never-evidence hit resolution"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
       "complete deterministic cited-answer slice",
       "ResearchCore extraction and IPC",
       "live SearXNG response against a running instance",
-      "content snapshot store, deduplication and the citation path over extracted pages",
       "live models and local inference",
-      "packaging and second-machine reproduction"
+      "packaging and second-machine reproduction",
+      "citation path over extracted pages (the M002 snapshot store is not yet wired into citation compilation)",
+      "bounded parallel fetch, extraction diagnostics and approved live corpus tests (the M002 remainder)"
     ]
   },
   "next_task": {
-    "id": "M002.5",
-    "title": "Content snapshots: a content-addressed snapshot store with retry-safe deduplication",
-    "objective": "Persist extracted pages as immutable content-addressed snapshots so that fetching the same bytes twice - a retry, a redirect to an already-seen page, or two URLs serving identical content - yields exactly one snapshot and one passage set, and so that a search hit with no fetched body can never become evidence.",
+    "id": "M002.6",
+    "title": "Bounded parallel fetch: polite per-host concurrency over the acquisition boundary",
+    "objective": "Fetch a set of approved URLs concurrently under a bounded, per-host polite schedule so that a multi-source question completes faster than a serial fetch while no host receives more than its permitted concurrency, and so that every per-URL result - stored, duplicate, or refused - is a typed outcome rather than a lost task.",
     "prerequisites": [
-      "M002.4 complete (HTML extraction boundary with typed refusals)",
+      "M002.5 complete (content-addressed snapshot store with retry-safe deduplication)",
+      "M002.2 and M002.3 complete (acquisition policy and per-host robots and politeness)",
       "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet",
       "No test may perform real network access, real DNS resolution, or read a live page",
       "Sources/LocalLensCore/Domain.swift Snapshot and Passage definitions are frozen and must not change",
@@ -109,10 +112,10 @@
       "Search hits remain discovery metadata and must never be promoted to evidence without a fetched body"
     ],
     "allowed_scope": [
-      "a snapshot store that keeps snapshots and passages in memory keyed by content-derived identity",
-      "retry-safe deduplication: the same bytes stored twice produce exactly one snapshot and one passage set",
-      "an explicit, typed record of which acquisition attempt produced a snapshot and which attempts were recognised as duplicates",
-      "a typed refusal when a search hit is offered as evidence without an extracted snapshot",
+      "a bounded parallel fetch scheduler over the existing acquisition boundary and snapshot store, with stub transports only",
+      "a per-host concurrency limit so politeness is a property of the scheduler rather than of the caller",
+      "typed per-URL outcomes covering stored, duplicate, and every refusal already defined by acquisition, robots, and extraction",
+      "deterministic result ordering independent of completion order",
       "frozen fixtures and stub-only tests"
     ],
     "forbidden_scope": [
@@ -125,11 +128,11 @@
       "UI work beyond the existing shell"
     ],
     "done_when": [
-      "storing the same bytes twice produces exactly one snapshot and one passage set, and the second store is reported as a duplicate rather than as new evidence",
-      "a retried acquisition of the same URL produces no second snapshot",
-      "two different URLs serving identical bytes resolve to the same snapshot while both source URLs remain recorded",
-      "a search hit offered as evidence without an extracted snapshot is refused with a typed outcome rather than becoming a passage",
-      "every stored snapshot and passage round-trips through the store unchanged, and identity is stable across store instances",
+      "a batch of approved URLs is fetched with more than one fetch in flight at a time, proving the schedule is parallel rather than serial",
+      "no host ever has more concurrent fetches than its configured per-host limit, and the limit is enforced by the scheduler rather than trusted from the caller",
+      "every URL in the batch produces exactly one typed outcome - stored, duplicate, or a refusal - and no task is dropped or silently retried",
+      "results are returned in a deterministic order that does not depend on completion order",
+      "a refusal of one URL does not abort the rest of the batch",
       "no test performs network access, DNS resolution, or reads a live page (stub transport and frozen fixtures only)",
       "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]

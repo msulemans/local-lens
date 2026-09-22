@@ -50,9 +50,9 @@ Gate: recorded in `LOCAL_BROWSER_STATE.md`.
 ## M002 - Safe live acquisition
 
 Status: **active; M002.1 (search adapter boundary and SearXNG JSON adapter),
-M002.2 (safe acquisition boundary), M002.3 (robots and politeness boundary), and
-M002.4 (HTML extraction boundary) are complete; M002.5 (content snapshots) is
-defined in `project.json`.**
+M002.2 (safe acquisition boundary), M002.3 (robots and politeness boundary),
+M002.4 (HTML extraction boundary), and M002.5 (content snapshots) are complete;
+M002.6 (bounded parallel fetch) is defined in `project.json`.**
 
 Learn:
 

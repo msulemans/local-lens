@@ -3,13 +3,14 @@
 Last updated: 2026-09-23 (Australia/Sydney)
 
 Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
-Milestone 002 (safe live acquisition) is active; M002.5 (content snapshots: a
-content-addressed snapshot store with retry-safe deduplication) is the sole next
-task. M002.1 delivered the search adapter boundary with a SearXNG JSON adapter,
-M002.2 delivered the policy-checked acquisition boundary with a frozen refusal
-matrix, M002.3 delivered the robots and politeness boundary, and M002.4
-delivered the HTML extraction boundary with a frozen typed refusal family.
-Ninety-six deterministic tests pass and clean checkouts pass `make gate`.**
+Milestone 002 (safe live acquisition) is active; M002.6 (bounded parallel fetch)
+is the sole next task. M002.1 delivered the search adapter boundary with a
+SearXNG JSON adapter, M002.2 delivered the policy-checked acquisition boundary
+with a frozen refusal matrix, M002.3 delivered the robots and politeness
+boundary, M002.4 delivered the HTML extraction boundary with a frozen typed
+refusal family, and M002.5 delivered the content-addressed snapshot store with
+retry-safe deduplication. One hundred and seven deterministic tests pass and
+clean checkouts pass `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -802,6 +803,91 @@ Observations carried forward, not silently changed:
 Next eligible task: M002.5 content snapshots (a content-addressed snapshot store
 with retry-safe deduplication), derived from the M002 build list in
 `docs/MILESTONES.md`.
+
+### 2026-09-23 - M002.5 content snapshots
+
+Scope actually executed: the fifth M002 task only. M002.5 turns an approved and
+extracted page into an evidence record in a content-addressed store, with
+retry-safe deduplication. No bounded parallel fetch, no diagnostics surface, no
+rendering, no model, and no UI work was done, and the M001 deterministic slice
+was not touched.
+
+Implementation:
+
+- `Sources/LocalLensCore/SnapshotStore.swift` (new): the `SnapshotStore` actor,
+  `SnapshotRecord`, `DuplicateReason`, `SnapshotStoreOutcome` (with `kind`),
+  `SnapshotStoreError`, `store`, `records`, `snapshotCount`, `record(id:)`,
+  `passages(snapshotID:)`, `record(forHit:)`, and `validate(_:)`.
+- `Fixtures/snapshots/store-scenarios.json` (new): 5 ordered cases and 4
+  refusals, each with a `why`; all hosts on non-resolvable `.invalid` names; the
+  fixture declares itself synthetic and redistributable.
+- `Tests/LocalLensCoreTests/SnapshotStoreTests.swift` (new): 11 tests.
+
+Observed results (commands and exact outcomes):
+
+- `swift test --filter SnapshotStoreTests` - first run RED: 11 tests, 3 failures
+  at `SnapshotStoreTests.swift:197` and `:243-244`. All three were defects in the
+  new tests, not in the store: the ordered-sequence test compared the five
+  offered attempt ids against the two stored records instead of their distinct
+  set, and the no-rewrite test asserted duplicate counters on a stale value copy
+  captured from the first outcome instead of re-reading the record that the
+  store updates in place. Fixed in the assertions; no production behaviour was
+  weakened and no gate was relaxed.
+- `swift test --filter SnapshotStoreTests` - GREEN: 11 tests, 0 failures.
+- `swift test` (full suite) - GREEN: 107 tests, 0 failures. The repository-wide
+  offline guards in `RobotsPolicyTests` and `SafeAcquisitionTests` pass
+  unchanged; the new guard test builds its forbidden literals by concatenation,
+  matching the existing convention.
+- `make gate` - exit 0 (`validate-manifest`, `validate-schemas`, `build`,
+  `verify`). Gate green before both commits.
+
+Typed boundaries that fail closed (all enumerated in the fixture's `refusals`
+array and asserted by `testTypedOutcomeFamilyIsEnumerated`):
+
+1. `invalid_attempt` - an attempt number below 1 cannot be counted;
+2. `inconsistent_page` - a page whose snapshot id, passage ids, ordinals, or
+   text digests disagree with its own source id and content hash is refused
+   rather than stored, because identity is re-derived and never trusted;
+3. `hit_is_not_evidence` - a hit whose URL was never requested for any stored
+   snapshot (and is not a final URL) is refused; the snippet is never consulted;
+4. `unknown_snapshot` - a lookup for an id that was never stored.
+
+Duplicate outcomes are likewise typed and enumerated
+(`DuplicateReason`): `repeated_attempt`, `same_content_from_another_url`, and
+`same_bytes_from_another_source`. They are distinguished because they are
+different facts about a run - collapsing them would hide a redirect loop or a
+shared CDN body.
+
+Decisions: D020 in `docs/DECISIONS.md` (the snapshot store deduplicates content
+without rewriting identity). `docs/ARCHITECTURE.md` gains a "Snapshot store"
+section, and `docs/LEARNING_PATH.md` gains a "Practised in M002.5" block.
+
+M002 gate bullets advanced by this task:
+
+- "retries do not duplicate snapshots" now has recorded evidence: every offer is
+  counted, duplicates never store and never rewrite a cited identity, and the
+  concurrent-offer test stores exactly one snapshot from simultaneous offers of
+  the same bytes.
+- "search snippets never become evidence" now has a mechanical counterpart:
+  `record(forHit:)` resolves a hit only through URLs actually requested, or the
+  final URL, and refuses anything else with `hit_is_not_evidence`.
+- "the deterministic M001 slice remains unchanged" still holds: 107 tests pass
+  and no M001 file was modified.
+
+Observations carried forward, not silently changed:
+
+- `snapshotCount` counts stored snapshots, not offers; a run's attempt history
+  lives in each record's `attempt`, `duplicateAttempts`, and `totalAttempts`.
+- The store is in-memory only. Durable persistence stays out of scope until the
+  persistence milestone; nothing in M002 writes to disk.
+- The pre-existing duplicate `D011`-`D014` headings in `docs/DECISIONS.md` and
+  the out-of-numeric-order D017 remain untouched because they predate this task.
+- `RobotsLoader.load` still deliberately does not take the host gate, and
+  fixture *addresses* must stay reserved or explicitly documented; both are
+  unchanged from M002.3.
+
+Next eligible task: M002.6 bounded parallel fetch, derived from the M002 build
+list in `docs/MILESTONES.md`.
 
 ## Evidence append template
 
