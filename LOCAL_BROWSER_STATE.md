@@ -1,15 +1,15 @@
 # Local Lens - Canonical State
 
-Last updated: 2026-09-22 (Australia/Sydney)
+Last updated: 2026-09-23 (Australia/Sydney)
 
 Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
-Milestone 002 (safe live acquisition) is active; M002.4 (HTML extraction
-boundary: static HTML to Snapshot and Passages with typed extraction outcomes)
-is the sole next task. M002.1 delivered the search adapter boundary with a
-SearXNG JSON adapter, M002.2 delivered the policy-checked acquisition boundary
-with a frozen refusal matrix, and M002.3 delivered the robots and politeness
-boundary. Eighty-one deterministic tests pass and clean checkouts pass
-`make gate`.**
+Milestone 002 (safe live acquisition) is active; M002.5 (content snapshots: a
+content-addressed snapshot store with retry-safe deduplication) is the sole next
+task. M002.1 delivered the search adapter boundary with a SearXNG JSON adapter,
+M002.2 delivered the policy-checked acquisition boundary with a frozen refusal
+matrix, M002.3 delivered the robots and politeness boundary, and M002.4
+delivered the HTML extraction boundary with a frozen typed refusal family.
+Ninety-six deterministic tests pass and clean checkouts pass `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -645,6 +645,163 @@ Observations carried forward, not silently changed:
 
 Next eligible task: M002.4 HTML extraction boundary (static HTML to Snapshot and
 Passages with typed extraction outcomes).
+
+### 2026-09-23 - M002.4 HTML extraction boundary
+
+Scope actually executed: the fourth M002 task only. M002.4 turns an
+acquisition-approved HTML response into readable text plus the frozen `Snapshot`
+and `Passage` entities, or refuses it with a typed fact. No snapshot store, no
+bounded parallel fetch, no diagnostics surface, no rendering, no model, and no
+UI work was done, and the M001 deterministic slice was not touched.
+
+Implementation:
+
+- `Sources/LocalLensCore/HTMLExtraction.swift` (new, adopted from an untracked
+  draft and repaired):
+  - `ExtractionPolicy` follows the `AcquisitionPolicy` checked/unchecked
+    pattern: a private unchecked initializer behind
+    `ExtractionPolicy.default` (`5_000_000` bytes, `html-extractor-1`) and a
+    throwing public initializer that rejects a non-positive ceiling or a blank
+    extractor version. The extraction ceiling is separate from the acquisition
+    ceiling because holding a document to parse it is a different cost from
+    streaming it.
+  - `ExtractionError` is the frozen refusal family:
+    `unsupported_content_type`, `document_too_large`, `empty_document`,
+    `unsupported_charset`, `malformed_markup`, `no_readable_text`,
+    `missing_source_identifier`, `invalid_policy`. Each case carries a stable
+    `kind` label and a `reason` that names the specific fact, so a caller can
+    tell an origin that published nothing from a document we refused to guess
+    at.
+  - Refusal order is fixed and observable: source identifier, media type, size,
+    character set, markup, readability. A PDF over the ceiling is still a PDF,
+    and an oversized document is refused for its size before its encoding is
+    considered.
+  - `ExtractedPage` binds the frozen entities so a caller cannot invent a
+    different identity scheme: `Snapshot` identity is
+    `StableIdentity.make("snapshot", sourceID, contentHash)` and `Passage`
+    identity is
+    `StableIdentity.make("passage", snapshot.id, String(ordinal), digest(text))`,
+    the same part ordering the M001 deterministic slice uses.
+  - `HTMLExtraction.extract` performs no I/O: no socket, no DNS, no file read,
+    no clock. `HTMLTokenizer` handles comments, declarations, processing
+    instructions, void elements, skip elements (`script`, `style`, and friends),
+    block elements, headings, and the title. Headings are attribution: the last
+    heading a reader saw is carried on the blocks that follow it, and a heading
+    is also emitted as its own block, so a document that is nothing but headings
+    is still readable and an empty heading is not a heading change.
+  - `HTMLText` resolves character references before collapsing whitespace, so
+    `&nbsp;` becomes an ordinary space while `&amp;nbsp;` stays the literal text
+    a reader sees. Unknown or malformed references stay as text rather than
+    becoming markup failures.
+  - Character-set resolution: the header's `charset` parameter wins over the
+    document's own `<meta>` declaration, and a document that declares nothing is
+    read as UTF-8. The `<meta>` reader scans the ASCII prefix where the format
+    requires the declaration and matches `charset` as a token of its own, so
+    `charsetless` cannot decide an encoding. This is a scan, not a parser, and
+    is recorded as such.
+- `Fixtures/html/extraction-scenarios.json` (new): the frozen scenario table -
+  7 `cases` and 17 `refusals`, each with a `why`. Bodies that JSON cannot hold
+  as text are `body_base64` and labelled. Every host is a non-resolvable
+  `.invalid` name and the fixture declares itself synthetic and
+  redistributable, so no captured page enters Git.
+- `Tests/LocalLensCoreTests/HTMLExtractionTests.swift` (new): 15 tests covering
+  fixture integrity (synthetic, redistributable, reserved hosts, every expected
+  outcome known), exact text and heading attribution for every case, determinism
+  across three runs, snapshot and passage identity against the frozen part
+  ordering, passage ordering and resolution back to the snapshot, typed refusals
+  for every refusal case, the enumerated refusal family, refusal order,
+  policy validation, media-type and charset parsing, `<meta>` scanning, entity
+  and whitespace normalization, and an offline guard that scans the extraction
+  source for `URL`+`Session`, `URL`+`(string:`, `getaddr`+`info`,
+  `File`+`Manager`, `Data(contents`+`Of`, and `Pro`+`cess(`. Every body is a
+  hand-authored byte string through a constructed `AcquisitionResult`; no
+  transport, resolver, socket, or file is involved in extraction.
+
+Commands and observed results:
+
+```text
+$ swift test --filter HTMLExtractionTests
+  (red first: 15 tests, 5 failures. All three causes were real defects in the
+   new source, not wrong assertions:
+   1. the <title> open tag advanced the cursor to </title>, so the title's
+      characters were never read and every title extracted as "" ;
+   2. mediaType(of:) used split(omittingEmptySubsequences: true), so
+      "; charset=utf-8" reported "charset=utf-8" as the media type instead of
+      "" ;
+   3. the <meta> scan found the first "charset" substring, so
+      <meta name="charsetless"> resolved the encoding to "less".
+   Fixed in the source: the title is captured directly from the source slice,
+   mediaType keeps empty components, and the scan now requires a token boundary
+   before and after `charset`. The dead `inTitle` routing in the tokenizer was
+   removed with it.)
+
+$ swift test --filter HTMLExtractionTests
+  Executed 15 tests, with 0 failures (0 unexpected) in 0.029 seconds.
+
+$ swift test
+  (red: 2 failures in the pre-existing repository-wide offline guards. My new
+   guard listed the literal needle "getaddrinfo", and the M002.2 and M002.3
+   guards scan every test source for that literal, so my guard matched its own
+   source. Fixed by building the needles by concatenation, the same way the
+   existing guards do. The guards were not weakened.)
+
+$ swift test
+  Executed 96 tests, with 0 failures (0 unexpected) in 0.085 seconds.
+
+$ make gate
+  project.json conforms to its schema and handoff invariants.
+  protocol v1 schemas conform; Swift parity holds (run_status=15,
+    research_mode=4, evidence_relation=3, error_code=6)
+  swift build -> Build complete
+  swift test  -> Executed 96 tests, with 0 failures (0 unexpected)
+  gate exit: 0
+```
+
+Gate result: `make gate` passed at commit `dfff4a8` with 96 tests and 0 failures
+(81 before this task, 15 added). The manifest validated and the protocol v1
+schemas and Swift enum parity were unchanged.
+
+Failures preserved at: none outstanding. The three red runs above are recorded
+with their causes. Every red run was a failure of the new code or of the new
+tests, and no gate was weakened to clear them: the title, media-type, and
+`charset` defects were fixed in the production source, and the self-matching
+guard needle was fixed in the test source.
+
+Proof boundary: deterministically verified. Extraction is verified against
+frozen hand-authored fixtures as a pure function of bytes. No live page has been
+fetched or parsed, no real document has been extracted, and no snapshot has been
+stored, deduplicated, or cited, so the live-web extraction claim and the
+snapshot store remain unverified. The extractor is verified to accept only the
+two HTML media types that `SafeAcquisition.requireAllowedContentType` can
+produce, so the boundary composition is verified; `application/pdf` and
+`text/plain`, which acquisition allows, are verified to be refused here as
+`unsupported_content_type`, which is a declared gap rather than an extraction
+capability. Whitespace inside `<pre>` is verified to be collapsed, and there is
+no DOM, no attribute or `<base>` handling, and no full HTML5 named-entity table;
+these are recorded as losses, not implied capabilities.
+
+Decisions: D019 in `docs/DECISIONS.md` (HTML extraction is a typed,
+content-addressed boundary). `docs/ARCHITECTURE.md` gains an "HTML extraction
+boundary" section with the ordered refusal family, and `docs/LEARNING_PATH.md`
+gains a "Practised in M002.4" block.
+
+Observations carried forward, not silently changed:
+
+- The `<pre>` whitespace loss is a fixture case
+  (`preformatted-whitespace-is-lost`) rather than a footnote, so the limitation
+  is data that a later task can be measured against.
+- The extractor keeps the M001/M002.1 hit-identity question out of scope: it
+  reuses the snapshot/passage ordering and does not unify search-hit identity
+  (D016 still defers that).
+- The pre-existing duplicate `D011`-`D014` headings in `docs/DECISIONS.md` and
+  the out-of-numeric-order D017 remain untouched because they predate this task.
+- `RobotsLoader.load` still deliberately does not take the host gate, and
+  fixture *addresses* must stay reserved or explicitly documented; both are
+  unchanged from M002.3.
+
+Next eligible task: M002.5 content snapshots (a content-addressed snapshot store
+with retry-safe deduplication), derived from the M002 build list in
+`docs/MILESTONES.md`.
 
 ## Evidence append template
 

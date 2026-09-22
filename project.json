@@ -27,7 +27,7 @@
     "README.md"
   ],
   "current_state": {
-    "as_of": "2026-09-22",
+    "as_of": "2026-09-23",
     "timezone": "Australia/Sydney",
     "completed_milestones": [
       "M000",
@@ -80,50 +80,56 @@
       "robots fetch through the existing validated boundary with typed missing, server-error, unparseable, unreachable and blocked outcomes",
       "fail-closed robots fallback: an unreadable policy refuses while a 4xx missing policy does not",
       "per-host request gate enforcing one in-flight request and a minimum start-to-start interval against an injected clock",
-      "robots cache keyed by scheme, host and port rather than by user agent"
+      "robots cache keyed by scheme, host and port rather than by user agent",
+      "HTML extraction boundary turning acquisition-approved HTML into readable text with heading attribution",
+      "typed extraction refusal family: unsupported content type, over-limit, empty, unsupported charset, malformed markup, unreadable text, missing source identifier, invalid policy",
+      "content-derived Snapshot and Passage identity reusing the M001 part ordering, with passages ordered and resolving back to their snapshot",
+      "deterministic extraction: identical bytes produce identical text, snapshot, passages and hashes across runs"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
       "complete deterministic cited-answer slice",
       "ResearchCore extraction and IPC",
       "live SearXNG response against a running instance",
-      "HTML extraction, content snapshots and passages",
+      "content snapshot store, deduplication and the citation path over extracted pages",
       "live models and local inference",
       "packaging and second-machine reproduction"
     ]
   },
   "next_task": {
-    "id": "M002.4",
-    "title": "HTML extraction boundary: static HTML to Snapshot and Passages with typed extraction outcomes",
-    "objective": "Turn a policy-checked HTML response into the frozen Snapshot and Passage entities without losing the mapping back to the source: extract readable text and headings from static HTML, derive content-derived snapshot and passage identities, and report unreadable, empty, and unsupported documents as typed outcomes rather than as empty text.",
+    "id": "M002.5",
+    "title": "Content snapshots: a content-addressed snapshot store with retry-safe deduplication",
+    "objective": "Persist extracted pages as immutable content-addressed snapshots so that fetching the same bytes twice - a retry, a redirect to an already-seen page, or two URLs serving identical content - yields exactly one snapshot and one passage set, and so that a search hit with no fetched body can never become evidence.",
     "prerequisites": [
-      "M002.3 complete (robots policy and per-host politeness boundary)",
+      "M002.4 complete (HTML extraction boundary with typed refusals)",
       "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet",
       "No test may perform real network access, real DNS resolution, or read a live page",
       "Sources/LocalLensCore/Domain.swift Snapshot and Passage definitions are frozen and must not change",
-      "M001 deterministic slice evidence must remain byte-identical"
+      "M001 deterministic slice evidence must remain byte-identical",
+      "Search hits remain discovery metadata and must never be promoted to evidence without a fetched body"
     ],
     "allowed_scope": [
-      "static HTML extraction into readable text with heading structure preserved",
-      "a typed extraction outcome family: extracted, empty document, unsupported document type, malformed markup, and over-limit document",
-      "Snapshot construction with a content-derived identity, content hash and extractor version",
-      "Passage construction with ordinal, heading, text and text hash derived from the extracted document",
-      "frozen HTML fixtures and stub-only tests"
+      "a snapshot store that keeps snapshots and passages in memory keyed by content-derived identity",
+      "retry-safe deduplication: the same bytes stored twice produce exactly one snapshot and one passage set",
+      "an explicit, typed record of which acquisition attempt produced a snapshot and which attempts were recognised as duplicates",
+      "a typed refusal when a search hit is offered as evidence without an extracted snapshot",
+      "frozen fixtures and stub-only tests"
     ],
     "forbidden_scope": [
       "real network calls, real DNS resolution or live page capture in tests",
-      "browser rendering or JavaScript execution",
-      "PDF extraction",
+      "SQLite, FTS5, retrieval, ranking or answer generation",
       "models, embeddings or rerankers",
-      "retrieval, ranking or answer generation",
+      "PDF extraction",
+      "browser rendering or JavaScript execution",
       "copying sibling source while the licence gate is unmet",
       "UI work beyond the existing shell"
     ],
     "done_when": [
-      "a static HTML document extracts into readable text with heading structure and a stable Snapshot identity that is identical across runs",
-      "passages are ordered, carry their heading, and resolve back to the snapshot they came from",
-      "an empty document, an unsupported document type, malformed markup, and an over-limit document each produce a typed outcome, not silent empty text",
-      "extraction is deterministic: the same bytes produce the same snapshot, passages, and hashes",
+      "storing the same bytes twice produces exactly one snapshot and one passage set, and the second store is reported as a duplicate rather than as new evidence",
+      "a retried acquisition of the same URL produces no second snapshot",
+      "two different URLs serving identical bytes resolve to the same snapshot while both source URLs remain recorded",
+      "a search hit offered as evidence without an extracted snapshot is refused with a typed outcome rather than becoming a passage",
+      "every stored snapshot and passage round-trips through the store unchanged, and identity is stable across store instances",
       "no test performs network access, DNS resolution, or reads a live page (stub transport and frozen fixtures only)",
       "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]
@@ -287,7 +293,7 @@
     "current_command_status": {
       "validate-manifest": "verified_2026-09-22",
       "build": "verified_2026-09-22",
-      "verify": "verified_2026-09-22_81_tests_0_failures"
+      "verify": "verified_2026-09-23_96_tests_0_failures"
     },
     "proof_vocabulary": [
       "planned",
