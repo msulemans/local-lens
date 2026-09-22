@@ -1,0 +1,115 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Icon?
+
+# Xcode and Swift generated state
+.build/
+.index-build/
+.swiftpm/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.xcresult
+*.trace
+
+# Python sidecar environments and generated files
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# JavaScript tooling, if used for docs or development utilities
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+*.tsbuildinfo
+
+# Editors and local agents
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.codex/
+.agents/
+
+# Secrets, credentials, signing material and local configuration
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+*.p8
+*.p12
+*.mobileprovision
+
+# Logs, caches and temporary files
+*.log
+logs/
+.cache/
+cache/
+tmp/
+temp/
+artifacts/
+data/cache/
+data/private/
+
+# Local databases and journals
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.db-shm
+*.db-wal
+
+# Private research runs and acquired page bodies
+runs/*
+!runs/.gitkeep
+private-snapshots/
+downloads/
+benchmark-results/private/
+
+# Downloaded or compiled model assets
+models/*
+!models/.gitkeep
+*.safetensors
+*.gguf
+*.onnx
+*.mlmodelc/
+*.ckpt
+*.pth
+*.pt
+
+# Generated app and installer outputs
+*.app/
+*.dmg
+*.pkg
+*.zip
+
+# Crash and profiling output
+*.crash
+*.ips
+*.profraw
+*.profdata

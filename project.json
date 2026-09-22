@@ -1,0 +1,287 @@
+{
+  "$schema": "./schemas/project-manifest.schema.json",
+  "schema_version": "1.0.0",
+  "project": {
+    "name": "Local Lens",
+    "slug": "local-lens",
+    "product_thesis": "Evidence-Native Generative Search",
+    "one_sentence": "A Mac-native answer engine that generates the right research view for a question and proves every factual cell with an exact saved passage.",
+    "primary_platform": "macOS",
+    "product_shell": "SwiftUI",
+    "repository_license": {
+      "status": "unselected",
+      "must_be_resolved_by": "M009"
+    }
+  },
+  "authority_order": [
+    "LOCAL_BROWSER_STATE.md",
+    "project.json",
+    "docs/COMPLETE_PLAN.md",
+    "docs/DECISIONS.md",
+    "docs/MILESTONES.md",
+    "docs/ARCHITECTURE.md",
+    "docs/EVALUATION.md",
+    "docs/MODEL_POLICY.md",
+    "docs/SECURITY_AND_PRIVACY.md",
+    "docs/REFERENCES.md",
+    "README.md"
+  ],
+  "current_state": {
+    "as_of": "2026-09-22",
+    "timezone": "Australia/Sydney",
+    "completed_milestones": [
+      "M000",
+      "M000A"
+    ],
+    "next_milestone": "M001",
+    "proof_level": "deterministically_verified",
+    "runtime_verified": false,
+    "build_verified": true,
+    "tests_verified": true,
+    "live_provider_verified": false,
+    "packaged_app_verified": false,
+    "git": {
+      "initialized": true,
+      "branch": "main",
+      "commit_created_for_this_project": false,
+      "files_staged": false
+    },
+    "verified_scope": [
+      "project manifest schema and handoff invariants",
+      "Swift package compilation",
+      "stable identity determinism",
+      "legal and illegal state transitions",
+      "terminal cancellation"
+    ],
+    "unverified_scope": [
+      "application launch and visual QA",
+      "complete deterministic cited-answer slice",
+      "ResearchCore extraction and IPC",
+      "live search, acquisition and models",
+      "packaging and second-machine reproduction"
+    ]
+  },
+  "next_task": {
+    "id": "M001.1",
+    "title": "Resolve reusable-core provenance and freeze the ResearchCore extraction boundary",
+    "objective": "Make the proven sibling research engine legally and technically reusable without copying its web product or rebuilding its mature pipeline.",
+    "prerequisites": [
+      "Confirm ownership of ../deep-research-agent",
+      "Choose or record a licence that permits the intended Local Lens distribution",
+      "Record the source revision and copied module provenance"
+    ],
+    "allowed_scope": [
+      "licence and provenance records",
+      "ResearchCore package-boundary design",
+      "versioned command, event, entity and error schemas",
+      "deterministic sibling test inventory",
+      "audit of existing Swift WIP against the frozen schemas"
+    ],
+    "forbidden_scope": [
+      "live web integration",
+      "real model evaluation",
+      "embedding or reranker experiments",
+      "Deep, Academic or News implementation",
+      "rewriting the sibling acquisition or citation engine in Swift",
+      "claiming M001 complete before its full gate passes"
+    ],
+    "done_when": [
+      "the reuse licence and provenance decision is recorded",
+      "the ResearchCore extraction list and exclusions are frozen",
+      "the local protocol schemas are versioned",
+      "relevant sibling tests are mapped to the extracted boundary",
+      "the existing Swift WIP is kept, amended or superseded with reasons",
+      "LOCAL_BROWSER_STATE.md and project.json agree on the next eligible task"
+    ]
+  },
+  "architecture": {
+    "shape": "native_shell_plus_bundled_research_core",
+    "native_shell_responsibilities": [
+      "macOS lifecycle and windowing",
+      "mode selection and global launcher",
+      "trusted Evidence UI rendering",
+      "IPC message validation",
+      "citation and passage inspection",
+      "history, settings, export, accessibility and OS integration"
+    ],
+    "research_core_responsibilities": [
+      "research state and budgets",
+      "query planning and search adapters",
+      "safe acquisition and extraction",
+      "snapshot and passage identity",
+      "retrieval, ranking and deduplication",
+      "claim and evidence graph",
+      "citation compilation and evaluation"
+    ],
+    "boundary": {
+      "transport": "authenticated local IPC; exact transport frozen during M001",
+      "format": "versioned JSON commands, events, entities and typed errors",
+      "trust_rule": "The Swift client validates schemas, IDs, hashes and legal state transitions before rendering.",
+      "normal_user_requirements": "No terminal, Docker, Python installation or manually managed model server."
+    },
+    "performance": {
+      "principle": "Retrieve cheaply, narrow aggressively, batch model work and stream useful evidence before final synthesis.",
+      "quick_limits": {
+        "search_queries": 2,
+        "opened_sources": 6,
+        "synthesis_passages": 12,
+        "follow_up_rounds": 0
+      },
+      "required_changes_from_sibling": [
+        "bounded parallel search",
+        "bounded cross-host fetch concurrency",
+        "progressive extraction and evidence events",
+        "retrieval before model claim extraction",
+        "batched evidence proposal and review",
+        "enforced monotonic phase and run deadlines",
+        "versioned cache and freshness keys"
+      ],
+      "quality_guard": "No latency improvement may weaken citation integrity, safe acquisition or typed stop reasons."
+    }
+  },
+  "reuse": {
+    "primary_source": {
+      "path": "../deep-research-agent",
+      "observed_revision": "1b1a698",
+      "observed_unit_tests": 184,
+      "test_count_kind": "discovered_test_functions_not_executed_in_this_repository",
+      "license_status": "blocked_no_license_file_observed",
+      "approved_modules_to_extract": [
+        "domain, events and state_machine",
+        "adapter protocols and deterministic fakes",
+        "SearXNG search boundary",
+        "safe acquisition, robots, fetcher, HTML/PDF extraction and rendering fallback",
+        "FTS5 retrieval, ranking and deduplication",
+        "artifact persistence",
+        "report and citation compilation and validation",
+        "integrity, semantic, system and end-to-end evaluation"
+      ],
+      "explicit_exclusions": [
+        "existing web UI",
+        "monolithic FastAPI surface as the native app contract",
+        "sibling-relative runtime paths",
+        "unlicensed code transfer"
+      ]
+    },
+    "pattern_sources": [
+      {
+        "name": "AG-UI",
+        "decision": "adapt",
+        "use": "run lifecycle and activity snapshot/delta vocabulary",
+        "runtime_dependency_for_v1": false
+      },
+      {
+        "name": "A2UI",
+        "decision": "adapt",
+        "use": "declarative surface and data separation for Evidence UI",
+        "runtime_dependency_for_v1": false
+      },
+      {
+        "name": "Apple Foundation Models 2026",
+        "decision": "adopt_api_when_supported",
+        "use": "LanguageModel boundary, Dynamic Profiles and structured generation",
+        "runtime_dependency_for_v1": false
+      }
+    ]
+  },
+  "product_contract": {
+    "modes": {
+      "Quick": "fast bounded cited answer",
+      "Deep": "bounded multi-angle investigation with visible gaps and conflicts",
+      "Academic": "paper-grounded synthesis with page-aware evidence",
+      "News": "fresh event synthesis with syndication and independence checks"
+    },
+    "evidence_maturity": [
+      "discovered",
+      "opened",
+      "extracted",
+      "cited",
+      "independently_confirmed"
+    ],
+    "exception_states": [
+      "conflicted",
+      "stale",
+      "cached",
+      "rejected"
+    ],
+    "allowed_evidence_ui_blocks": [
+      "prose",
+      "comparison_table",
+      "timeline",
+      "paper_matrix",
+      "recommendation",
+      "uncertainty",
+      "conflict",
+      "next_questions"
+    ],
+    "citation_definition": "A typed link from an answer claim to an exact passage in an immutable snapshot; a URL or search snippet alone is not a citation."
+  },
+  "nonnegotiable_invariants": [
+    "Work on one milestone at a time.",
+    "Do not weaken a frozen gate after seeing a result.",
+    "Search snippets are discovery metadata and never report evidence.",
+    "Every factual Evidence UI field names a known claim ID.",
+    "Every accepted claim resolves to exact saved passage evidence.",
+    "Model output cannot create trusted IDs, executable UI or arbitrary actions.",
+    "Local and hosted results remain visibly and analytically separate.",
+    "No model, embedding model or reranker is tested without a measured failure and frozen promotion threshold.",
+    "Normal users do not need Docker or a terminal.",
+    "Documentation checks do not prove runtime behavior.",
+    "Never expose secrets, private snapshots, downloaded weights or restricted benchmark bodies."
+  ],
+  "conditional_experiments": [
+    {
+      "candidate": "contextual passage embeddings",
+      "eligible_only_when": "labelled passage-recall failures require document-wide context",
+      "status": "not_eligible_yet"
+    },
+    {
+      "candidate": "listwise reranker",
+      "eligible_only_when": "candidate recall is adequate but ordering is a measured downstream failure",
+      "status": "not_eligible_yet"
+    },
+    {
+      "candidate": "multi-agent orchestration",
+      "eligible_only_when": "the bounded single-controller design has a demonstrated product failure",
+      "status": "deferred"
+    }
+  ],
+  "verification": {
+    "manifest_command": "make validate-manifest",
+    "swift_build_command": "make build",
+    "swift_test_command": "make verify",
+    "current_command_status": {
+      "validate-manifest": "verified_2026-09-22",
+      "build": "verified_2026-09-22",
+      "verify": "verified_2026-09-22_4_tests_0_failures"
+    },
+    "proof_vocabulary": [
+      "planned",
+      "implemented",
+      "deterministically_verified",
+      "locally_measured",
+      "live_provider_verified",
+      "packaged_and_reproduced"
+    ]
+  },
+  "handoff_protocol": {
+    "read_first": [
+      "AGENTS.md",
+      "LOCAL_BROWSER_STATE.md",
+      "project.json",
+      "docs/COMPLETE_PLAN.md"
+    ],
+    "before_work": [
+      "Confirm project.json and LOCAL_BROWSER_STATE.md agree.",
+      "Inspect the working tree and preserve unrelated changes.",
+      "Restate the active milestone, proof level and exact gate.",
+      "Do not infer that an existing file is built, tested or accepted."
+    ],
+    "after_work": [
+      "Record commands and observed outputs.",
+      "Update tests, documentation, project.json and LOCAL_BROWSER_STATE.md together.",
+      "State which proof level was actually reached.",
+      "Leave exactly one eligible next task."
+    ]
+  }
+}

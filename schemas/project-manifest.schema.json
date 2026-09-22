@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local-lens.invalid/schemas/project-manifest.schema.json",
+  "title": "Local Lens project manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "project",
+    "authority_order",
+    "current_state",
+    "next_task",
+    "architecture",
+    "reuse",
+    "product_contract",
+    "nonnegotiable_invariants",
+    "conditional_experiments",
+    "verification",
+    "handoff_protocol"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "project": {
+      "type": "object",
+      "required": ["name", "slug", "product_thesis", "one_sentence", "primary_platform", "product_shell", "repository_license"]
+    },
+    "authority_order": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string" }
+    },
+    "current_state": {
+      "type": "object",
+      "required": ["as_of", "completed_milestones", "next_milestone", "proof_level", "verified_scope", "unverified_scope"]
+    },
+    "next_task": {
+      "type": "object",
+      "required": ["id", "title", "objective", "prerequisites", "allowed_scope", "forbidden_scope", "done_when"]
+    },
+    "architecture": { "type": "object" },
+    "reuse": { "type": "object" },
+    "product_contract": { "type": "object" },
+    "nonnegotiable_invariants": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string" }
+    },
+    "conditional_experiments": { "type": "array" },
+    "verification": { "type": "object" },
+    "handoff_protocol": {
+      "type": "object",
+      "required": ["read_first", "before_work", "after_work"]
+    }
+  }
+}
