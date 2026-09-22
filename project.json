@@ -59,7 +59,10 @@
       "fixture and persisted-run unknown-field rejection",
       "completed-run persistence round-trip",
       "strict protocol envelope decoding with version checks",
-      "typed fail, budget, and user-input stop paths"
+      "typed fail, budget, and user-input stop paths",
+      "native fixture run with persisted artifact (smoke test)",
+      "citation-to-passage inspection resolution",
+      "clean-checkout make gate proof"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
@@ -70,32 +73,31 @@
     ]
   },
   "next_task": {
-    "id": "M001.4",
-    "title": "Native fixture slice with citation inspection and clean-checkout proof",
-    "objective": "Make the deterministic run visible in the app: launch loads the fixture through the same core pipeline, renders the brief and its citations, and selecting a citation opens the exact saved passage; then prove a clean checkout passes the full gate.",
+    "id": "M001.5",
+    "title": "Living Research Map minimal screen and M001 gate audit",
+    "objective": "Extend the native slice from a citation list to a minimal Living Research Map screen (claims, evidence relationships, source provenance) and audit every M001 gate item against recorded evidence before declaring M001 complete.",
     "prerequisites": [
-      "Protocol v1 schemas and envelopes enforced (M001.1, M001.3)",
-      "Deterministic slice passing (M001.2)",
+      "M001.1 through M001.4 complete with evidence recorded",
       "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet"
     ],
     "allowed_scope": [
-      "view-model wiring of DeterministicPipeline and RunStore into the app shell",
-      "minimal trusted Evidence UI: brief, citation list, passage inspector",
-      "view-model unit tests for citation selection resolution",
-      "clean-checkout verification: fresh clone into a temporary directory runs make gate"
+      "minimal Living Research Map rendering from existing domain types (claims, evidence links, sources)",
+      "selection and accessibility behavior for the map",
+      "view-model or UI tests for the map flow",
+      "M001 gate audit table with command, revision, and observed result per gate item"
     ],
     "forbidden_scope": [
       "live network, models, embeddings or rerankers",
       "copying sibling source while the licence gate is unmet",
       "Deep, Academic or News implementation",
-      "claiming M001 complete before its full gate passes"
+      "declaring M001 complete while any gate item lacks recorded evidence"
     ],
     "done_when": [
-      "the app launches, runs the fixture, and lists its citations",
-      "selecting a citation shows the exact saved passage text and source",
-      "a view-model test proves citation selection resolves to the passage",
-      "a clean checkout in a temporary directory passes make gate",
-      "make gate passes in the working repository and evidence is recorded in LOCAL_BROWSER_STATE.md"
+      "the map screen renders claims with their evidence relationships and sources",
+      "selecting a claim opens its exact passage",
+      "automated tests cover the map selection and integrity behavior",
+      "every M001 gate item has a recorded command and observed result, or is explicitly listed as unmet",
+      "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]
   },
   "architecture": {

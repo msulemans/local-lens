@@ -2,10 +2,10 @@
 
 Last updated: 2026-09-22 (Australia/Sydney)
 
-Status: **Milestone 001 is active. M001.1 through M001.3 are complete;
-M001.4 (native fixture slice with citation inspection and clean-checkout
-proof) is the sole next task. Twenty-one deterministic tests pass and the app
-shell launches as a smoke test.**
+Status: **Milestone 001 is active. M001.1 through M001.4 are complete;
+M001.5 (Living Research Map minimal screen and M001 gate audit) is the sole
+next task. Twenty-three deterministic tests pass, the app renders and
+persists the fixture run, and a clean checkout passes `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -290,6 +290,27 @@ path has been tested. M001 remains active.
   (10 new). Commit `5ba762d`.
 - Next eligible task: M001.4 native fixture slice in the app with
   clean-checkout verification.
+
+### 2026-09-22 - M001.4 native fixture slice and clean-checkout proof
+
+- `FixtureWorkspace` resolves each citation to its claim, exact passage, and
+  source with typed failures; `FixtureWorkspaceTests` cover resolution and
+  the unknown-citation path.
+- The app renders the fixture brief, citation list, and passage inspector;
+  selecting a citation shows the exact saved passage text and hash.
+- The app persists the completed run under
+  `~/Library/Application Support/LocalLens/runs/` and reloads it on later
+  launches.
+- Commands and observed results: `make gate` pass; 23 tests, 0 failures.
+  Smoke run: process launched and persisted `fixture-run.json`, which decodes
+  as status `complete` with 3 citations, 4 passages, and 11 events. Clean
+  checkout: `git clone` into a temporary directory and `make gate` pass on
+  revision `386aafd`.
+- Proof boundary: GUI appearance and pointer interaction were not visually
+  inspected; persistence, resolution, and gate behavior are covered by tests
+  and the persisted artifact.
+- Commit `386aafd`. Next eligible task: M001.5 Living Research Map minimal
+  screen and M001 gate audit.
 
 ## Evidence append template
 
