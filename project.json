@@ -71,48 +71,55 @@
       "map view captured with relation hierarchy (screenshot evidence)",
       "search adapter boundary with an injectable transport and a SearXNG JSON adapter",
       "SearXNG fixture decoding into ordered hits with content-derived stable identity",
-      "typed search failures (transport, status, malformed payload) and typed empty outcome"
+      "typed search failures (transport, status, malformed payload) and typed empty outcome",
+      "acquisition policy refusing loopback, private, link-local, multicast, metadata-service and reserved destinations",
+      "equivalent address encodings normalized before classification (inet_aton forms, IPv4-mapped, NAT64, 6to4)",
+      "policy-checked fetch validating every redirect hop before it is requested, with MIME allow-list, byte ceiling and typed timeout"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
       "complete deterministic cited-answer slice",
       "ResearchCore extraction and IPC",
       "live SearXNG response against a running instance",
-      "safe acquisition, robots, extraction and snapshots",
+      "robots.txt policy, per-host concurrency and delay",
+      "HTML extraction, content snapshots and passages",
       "live models and local inference",
       "packaging and second-machine reproduction"
     ]
   },
   "next_task": {
-    "id": "M002.2",
-    "title": "Safe acquisition boundary: URL and address policy with policy-checked fetch",
-    "objective": "Turn the injectable transport into a safe acquisition boundary before any live page is opened: validate every outbound URL and redirect hop against an address policy with an injectable host resolver, enforce MIME and byte ceilings, and return typed acquisition outcomes proven with frozen fixtures and a stub transport only.",
+    "id": "M002.3",
+    "title": "Robots and politeness boundary: robots.txt policy with per-host concurrency and delay",
+    "objective": "Make acquisition polite and permitted before any live corpus is fetched: evaluate robots.txt for the requesting user agent through the existing injected transport, and serialise requests per host so no origin sees concurrent or rapid requests. Prove the rules with frozen robots fixtures, a stub transport, a stub resolver, and an injected clock.",
     "prerequisites": [
-      "M002.1 complete (search adapter boundary and stub-transport tests)",
+      "M002.2 complete (acquisition policy and policy-checked fetch)",
       "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet",
       "No test may perform real network access or real DNS resolution",
       "M001 deterministic slice evidence must remain byte-identical"
     ],
     "allowed_scope": [
-      "AcquisitionPolicy for scheme, credentials, port, host-literal and resolved-address rules",
-      "injectable HostResolver boundary plus a deterministic stub resolver for tests",
-      "policy-checked fetch over the existing injectable transport: redirect chain validation with a hop cap, MIME allow-list, byte ceiling and timeout",
-      "typed AcquisitionError outcomes and a bounded, immutable acquisition result",
-      "frozen acquisition fixtures and stub-transport tests"
+      "robots.txt model and parser: user-agent group selection, longest-match Allow/Disallow, and crawl-delay",
+      "robots fetch through the existing SearchTransport and AcquisitionPolicy, never a new socket",
+      "typed robots outcomes: allowed, disallowed path, robots unavailable, robots unparseable, and robots blocked by the acquisition policy",
+      "a per-host gate enforcing at most one in-flight request and a minimum delay per host",
+      "an injectable clock and sleeper boundary so delay and concurrency are deterministic in tests",
+      "frozen robots.txt fixtures and stub-only tests"
     ],
     "forbidden_scope": [
       "real network calls or real DNS resolution in tests",
-      "robots.txt policy, per-host concurrency and delay (deferred to the following task)",
       "HTML extraction, snapshot or passage creation",
+      "browser rendering",
       "models, embeddings or rerankers",
       "copying sibling source while the licence gate is unmet",
       "UI work beyond the existing shell"
     ],
     "done_when": [
-      "private, loopback, link-local, multicast and metadata-service destinations are refused with typed errors, including when reached only through a redirect",
-      "scheme, credentials, port, redirect-hop, MIME and byte-ceiling violations each produce a distinct typed error",
-      "a permitted fetch returns bounded bytes plus the validated final URL and content type, and a transport timeout maps to a typed timeout error",
-      "no test performs network access or DNS resolution (stub transport and stub resolver only)",
+      "robots.txt is fetched only through the injected transport, and a robots URL the acquisition policy refuses is reported as a typed outcome rather than fetched anyway",
+      "a disallowed path is refused with a typed error naming the matched rule, and an allowed path proceeds",
+      "user-agent group selection follows the frozen fixture cases, including wildcard fallback and longest-match precedence",
+      "per-host concurrency never exceeds one in-flight request and the minimum delay is enforced against an injected clock, with independent gates per host",
+      "an unavailable or unparseable robots.txt resolves to an explicit documented rule, not to silent permission",
+      "no test performs network access or DNS resolution (stub transport, stub resolver and stub clock only)",
       "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]
   },
@@ -275,7 +282,7 @@
     "current_command_status": {
       "validate-manifest": "verified_2026-09-22",
       "build": "verified_2026-09-22",
-      "verify": "verified_2026-09-22_43_tests_0_failures"
+      "verify": "verified_2026-09-22_58_tests_0_failures"
     },
     "proof_vocabulary": [
       "planned",

@@ -49,7 +49,7 @@ Gate: recorded in `LOCAL_BROWSER_STATE.md`.
 
 ## M002 - Safe live acquisition
 
-Status: **next; first task M002.1 (search adapter boundary and SearXNG JSON adapter) is defined in `project.json`.**
+Status: **active; first task M002.1 (search adapter boundary and SearXNG JSON adapter) complete, M002.2 (safe acquisition boundary) complete; M002.3 (robots and politeness boundary) is defined in `project.json`.**
 
 Learn:
 

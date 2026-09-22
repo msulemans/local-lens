@@ -3,10 +3,12 @@
 Last updated: 2026-09-22 (Australia/Sydney)
 
 Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
-Milestone 002 (safe live acquisition) is active; M002.2 (safe acquisition
-boundary: URL and address policy with policy-checked fetch) is the sole next
-task. M002.1 delivered the search adapter boundary with a SearXNG JSON adapter.
-Forty-three deterministic tests pass and clean checkouts pass `make gate`.**
+Milestone 002 (safe live acquisition) is active; M002.3 (robots and politeness
+boundary: robots.txt policy with per-host concurrency and delay) is the sole
+next task. M002.1 delivered the search adapter boundary with a SearXNG JSON
+adapter, and M002.2 delivered the policy-checked acquisition boundary with a
+frozen refusal matrix. Fifty-eight deterministic tests pass and clean checkouts
+pass `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -412,6 +414,93 @@ path has been tested. M001 remains active.
   observed and left untouched because they predate this task.
 - Next eligible task: M002.2 safe acquisition boundary (URL and address policy
   with policy-checked fetch).
+
+### 2026-09-22 - M002.2 safe acquisition boundary and frozen refusal matrix
+
+- `Sources/LocalLensCore/AddressPolicy.swift` implemented: `AddressClass`
+  (`publicRoutable`, `loopback`, `privateNetwork`, `linkLocal`, `multicast`,
+  `metadataService`, `reserved`), an `IPAddress(parsing:)` normalizer, an
+  injectable `HostResolver` boundary with `HostResolutionFailure`, and the only
+  production resolver `SystemHostResolver` (blocking `getaddrinfo` on a utility
+  queue, returning numeric addresses with `NI_NUMERICHOST`).
+- `AcquisitionPolicy.validate` is fail-closed and address-based rather than
+  name-based. It refuses non-http/https schemes, embedded credentials,
+  reserved and internal-only host suffixes (`localhost`, `.localhost`,
+  `.local`, `.internal`, `.invalid`, `.test`, `.example`, `.home.arpa`), and
+  ports outside the allow-list, then requires **every** resolved answer to be
+  publicly routable. One private answer among several public ones is treated as
+  a private destination, which is the DNS-rebinding case.
+- `IPAddress` normalizes the encodings a resolver honours but a naive string
+  check does not: `127.1`, `2130706433`, `0x7f.0.0.1`, and `0177.0.0.1` all
+  normalize to `127.0.0.1` before classification, and the IPv4 address embedded
+  in IPv4-mapped (`::ffff:a.b.c.d`), NAT64 (`64:ff9b::/96`), and 6to4
+  (`2002::/16`) IPv6 forms is classified instead of the IPv6 envelope. The
+  narrower rule wins where ranges overlap: `fd00:ec2::254` is also inside
+  `fc00::/7` and is reported as a metadata service, not merely private.
+- `Sources/LocalLensCore/SafeAcquisition.swift` implemented:
+  `SafeAcquisition.fetch(_:transport:resolver:policy:)` follows redirects
+  itself rather than delegating them to the HTTP client, re-validating every
+  hop through `AcquisitionPolicy` **before** that hop is requested, capping
+  hops, detecting loops on a canonical URL key (default port, host case,
+  trailing root dot, empty path), parsing the media type with the `charset`
+  parameter stripped against an allow-list, and enforcing a byte ceiling. The
+  result keeps both the requested and the final URL, so leaving the origin
+  stays visible.
+- `AcquisitionError` keeps four distinct refusal families with stable `kind`
+  labels and human descriptions: destination refusal (`loopbackAddress`,
+  `privateAddress`, `linkLocalAddress`, `multicastAddress`, `metadataService`,
+  `reservedAddress`, `reservedHostName`), request-shape refusal
+  (`blockedScheme`, `credentialsInURL`, `blockedPort`, `invalidURL`),
+  resolution failure (`hostResolutionFailed`, `unresolvableHost`,
+  `invalidResolvedAddress`), and response refusal (`httpStatus`, `timeout`,
+  `transportFailure`, `redirectWithoutLocation`, `redirectLoop`,
+  `tooManyRedirects`, `missingContentType`, `unsupportedContentType`,
+  `responseTooLarge`), plus `invalidPolicy` from the validating initializer.
+  Cancellation is rethrown as `CancellationError`; a timeout stays
+  distinguishable from a connection failure even after the production
+  transport has already collapsed the `URLError` into a reason string.
+- Frozen fixture `Fixtures/acquisition/safe-fetch-scenarios.json` holds the
+  refusal matrix as data: 43 blocked destinations, 9 resolution cases, and 20
+  fetch scenarios. It contains only reserved documentation and internal-use
+  names (`example.com`, `example.invalid`, `*.internal`, `*.local`,
+  `home.arpa`) and reserved address ranges, and one guard test enforces that
+  invariant plus the frozen policy values.
+- 15 new tests in `Tests/LocalLensCoreTests/SafeAcquisitionTests.swift` drive a
+  stub `HostResolver` actor and a scripted stub `SearchTransport` actor only:
+  every blocked destination with its frozen `kind` and zero resolutions
+  attempted, the resolution matrix (public, mixed public/private, rebinding,
+  empty answer, unparseable answer, resolver failure), every fetch scenario
+  (success, absolute and relative redirects, redirect into metadata/private
+  address/private name/reserved name, loop, missing Location, hop cap, 500,
+  404, missing and unsupported MIME, byte ceiling, transport failure, timeout
+  in both the `URLError` and the wrapped form, cancellation), the refusal
+  families, address normalization and classification, non-addresses, the label
+  boundary of reserved suffixes, policy-initializer rejection, plus two
+  offline guards — a refused URL must produce zero requests, and no test or app
+  source may reference `URLSession`, `SystemHostResolver`, or `getaddrinfo`.
+- Commands and observed results: `swift test --filter SafeAcquisitionTests`
+  pass, 15 tests, 0 failures; `make gate` pass; 58 tests, 0 failures (15 new);
+  `make validate-manifest` pass. Commit `080db9d`.
+- Decisions: D017 records the boundary, the address-based fail-closed rule, the
+  normalization requirement, the typed refusal families, and the frozen matrix.
+  `docs/ARCHITECTURE.md` acquisition boundary now records the implemented
+  signatures and marks robots and politeness as still planned;
+  `docs/LEARNING_PATH.md` records what M002.2 practised.
+- Proof boundary: the acquisition boundary is **deterministically verified**
+  against frozen fixtures through a stub transport, a stub resolver, and no
+  clock. No live host has been contacted and no real DNS lookup has been made,
+  so `SystemHostResolver` itself remains unexercised and no live-provider claim
+  is made. The byte ceiling is enforced on the body the transport already
+  returned, so it is not yet a streaming ceiling.
+- Observations carried forward, not silently changed: `SafeAcquisition.fetch`
+  shares the M002.1 `SearchTransport` boundary rather than opening its own
+  socket, so `URLSessionSearchTransport` still has no redirect policy of its
+  own — by design, because redirects are followed and validated here; the M001
+  fixture slice keeps its own hit identity (D016); and the pre-existing
+  duplicate `D011`-`D014` headings in `docs/DECISIONS.md` remain untouched
+  because they predate this task.
+- Next eligible task: M002.3 robots and politeness boundary (robots.txt policy
+  with per-host concurrency and delay).
 
 ## Evidence append template
 
