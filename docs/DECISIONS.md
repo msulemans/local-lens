@@ -119,6 +119,41 @@ effort into the native product and Evidence UI while retaining known behavior.
 Constraint: the sibling has no observed `LICENSE` file. Code copying is blocked
 until ownership, licensing, and provenance are explicitly resolved.
 
+## D011 - Sibling transfer gate
+
+Date: 2026-09-22
+
+Decision: Sibling code transfer stays blocked until `../deep-research-agent`
+carries a licence file that permits redistribution. The owner applies the
+licence; M001 clean-room work (schemas, fakes, fixtures, tests) proceeds
+without it.
+
+Why: audit of revision `1b1a698` found 89 commits by the sole owner and no
+`LICENSE` file. Ownership is attributable, but redistribution permission is
+not yet granted in writing.
+
+Evidence: `docs/REUSE_PROVENANCE.md` records the audit, the decision, and the
+checks required before the first extraction commit.
+
+Review trigger: a sibling `LICENSE` file appears, or the sibling revision
+changes.
+
+## D012 - Frozen ResearchCore boundary and protocol v1
+
+Date: 2026-09-22
+
+Decision: Freeze the extraction boundary, exclusions, and the versioned
+protocol surface `v1` for commands, events, entities, and errors. Retain the
+existing Swift WIP; its audit and the sibling test mapping are recorded in
+`docs/RESEARCH_CORE_BOUNDARY.md`.
+
+Why: M001.1 requires an explicit reuse boundary and versioned schemas before
+extraction or implementation can be reviewed. Frozen wire enums must match the
+Swift core and are enforced by `scripts/validate_protocol_schemas.py`.
+
+Review trigger: any boundary change; it requires a new decision entry and a
+protocol version bump.
+
 This supersedes D009 only for the timing of sibling-code licensing: that issue
 must be resolved in M001. Selection of this repository's final public licence
 may still occur during public-release planning.
