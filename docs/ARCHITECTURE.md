@@ -383,6 +383,32 @@ or `refused` carrying a `FetchStage` (`acquisition`, `robots`, `extraction`,
 pass their attempt number to the store so a retried fetch still stores exactly
 one snapshot.
 
+## Approved live corpus
+
+`LiveCorpus` is the gate in front of any real page. It plans a manifest and
+judges a run, and it performs neither fetch nor read.
+
+`Fixtures/corpus/live-corpus.json` is the frozen manifest. Each entry records
+an identifier, an https URL, a licence, a reference to that licence's text, a
+frozen expected typed outcome, and an approval naming who recorded it and
+where. `CorpusManifest.decode` is strict and total: a missing licence, a
+missing licence reference, a missing or unknown expectation, a duplicate
+identifier, a non-https URL, or a half-recorded approval is a typed
+`CorpusManifestError`, never a default.
+
+`LiveCorpus.plan` returns `runnable` only when every entry is approved. An
+unapproved entry refuses the whole manifest and names the entries at fault,
+because a run that skipped an entry would report a pass over a corpus it did
+not run. An empty manifest is a valid document and a refused plan: "no corpus
+is approved yet" is a real state, and the shipped fixture is in it.
+
+`LiveCorpus.verdict` compares a `CorpusObservation` - what a live run saw,
+produced only by a caller that can fetch - against the frozen expectation, and
+returns `matches` or `differs` with a reason naming both shapes in the frozen
+`FetchStage` vocabulary. The module imports `Foundation` only and holds no
+transport, no session, no resolver, and no clock, so the default and gated test
+runs cannot reach the network through it.
+
 ## Retrieval boundary
 
 The first baseline is:

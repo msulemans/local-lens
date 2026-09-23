@@ -637,3 +637,43 @@ Consequences:
   the frozen field-order test was corrected against the measured value, and
   the test now cross-checks the digest against the fixture body so the literal
   cannot drift from the characters it claims to identify.
+
+## D023 - The live corpus is gated by a recorded approval, and the harness holds no transport
+
+Context: M002 has to show that the boundaries produce the expected typed
+outcomes on *real* pages, but no page's licence has been recorded and no owner
+approval exists for any page (see `docs/REUSE_PROVENANCE.md`). A test that
+quietly fetches a live page would also break the repository's offline
+guarantee.
+
+Decision: an opt-in corpus harness, `LiveCorpus`, that can *plan* and *judge* a
+live run but cannot perform one.
+
+- The module imports `Foundation` only and holds no transport, no session, no
+  resolver, and no clock. A live run is a separate, later binary that produces
+  `CorpusObservation` values; nothing in this module can produce one, so no
+  default or gated test run can reach the network through it.
+- `Fixtures/corpus/live-corpus.json` records, per entry, an identifier, an
+  https URL, a licence, a reference to that licence's text, a frozen expected
+  typed outcome, and an approval naming who recorded it and where. An entry
+  that omits any of these is a typed refusal at decode time, not a default.
+- An unapproved entry refuses the *whole* manifest. A run that silently
+  skipped an entry would report a pass over a corpus it did not run.
+- An empty manifest is valid - "no corpus is approved yet" is a real state -
+  and it decodes; it is the run gate (`noEntries`), not the decoder, that
+  refuses it. The shipped fixture is empty and records why.
+- Expectations reuse the frozen `FetchStage` vocabulary
+  (`acquisition`/`robots`/`extraction`/`store`) rather than inventing a second
+  one, so an expectation and an observation cannot disagree about names.
+
+Consequences:
+
+- The ten manifest refusal kinds and the two run refusal kinds are frozen and
+  enumerated by a test, so a new kind cannot be added silently.
+- The verdict reason names both shapes in the vocabulary's own terms
+  (`expected refused(extraction/no_readable_text) and observed
+  extracted(html-extractor-1)`), so a mismatch is greppable rather than prose.
+- Because no licence and no approval is recorded, M002.8 ships the gate and the
+  harness with the blocker recorded in the fixture and in the state file. The
+  live-corpus portion of the M002 gate is therefore explicitly *unproven*
+  rather than claimed, and no non-redistributable body is committed.

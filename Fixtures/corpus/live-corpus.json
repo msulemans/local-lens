@@ -1,0 +1,16 @@
+{
+  "_fixture": {
+    "kind": "synthetic",
+    "shape": "CorpusManifest",
+    "why_empty": "A corpus entry asserts that a real page may be fetched and that its licence permits it. Neither claim can be made by an implementation task, so this manifest ships empty and the harness refuses to run until an entry carries a recorded licence and an owner approval. Adding the first entry therefore also has to change the test that asserts this manifest is empty, which is deliberate: an unapproved corpus cannot be added quietly.",
+    "to_add_an_entry": [
+      "record the licence name and a reference to its text",
+      "record who approved the entry and a reference to that approval",
+      "record the frozen expected typed outcome for the entry",
+      "change the test that asserts this manifest has no entries"
+    ],
+    "network": "nothing in this repository reaches the network from a default or gated test run; the corpus harness performs no fetch itself and takes no transport"
+  },
+  "id": "live-corpus-v1",
+  "entries": []
+}

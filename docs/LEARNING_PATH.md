@@ -182,6 +182,25 @@ Practised in M002.7:
   prose-depth rule, a content digest, a single undecided gate) rather than by
   relaxing the assertion that caught them.
 
+Practised in M002.8:
+
+- why the honest answer to "prove this on real pages" was a gate rather than a
+  fetch, and why an offline test that reached the network once would be worse
+  than no test at all;
+- why an unapproved entry refuses the whole manifest instead of being skipped,
+  and what a skip would let a run report: a pass over a corpus it never ran;
+- why an empty manifest is a valid document and a refused plan - the difference
+  between "this is not a corpus" and "no corpus is approved yet";
+- why an approval needs both a name and a record, and why half an approval is
+  not an approval;
+- why the expectation vocabulary is borrowed from the frozen `FetchStage`
+  rather than duplicated, so an expectation and an observation cannot disagree
+  about what a boundary is called;
+- why a mismatch reason names both shapes in the vocabulary's own terms, so a
+  failure is greppable rather than prose; and
+- why a blocker recorded in the artifact and the state file is a result, while
+  a claimed pass over a corpus that does not exist is not.
+
 ## M003 - Retrieval and local generation
 
 Learn:
