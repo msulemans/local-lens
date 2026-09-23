@@ -3,14 +3,16 @@
 Last updated: 2026-09-23 (Australia/Sydney)
 
 Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
-Milestone 002 (safe live acquisition) is active; M002.6 (bounded parallel fetch)
-is the sole next task. M002.1 delivered the search adapter boundary with a
-SearXNG JSON adapter, M002.2 delivered the policy-checked acquisition boundary
-with a frozen refusal matrix, M002.3 delivered the robots and politeness
-boundary, M002.4 delivered the HTML extraction boundary with a frozen typed
-refusal family, and M002.5 delivered the content-addressed snapshot store with
-retry-safe deduplication. One hundred and seven deterministic tests pass and
-clean checkouts pass `make gate`.**
+Milestone 002 (safe live acquisition) is active; M002.7 (extraction
+diagnostics) is the sole next task. M002.1 delivered the search adapter
+boundary with a SearXNG JSON adapter, M002.2 delivered the policy-checked
+acquisition boundary with a frozen refusal matrix, M002.3 delivered the robots
+and politeness boundary, M002.4 delivered the HTML extraction boundary with a
+frozen typed refusal family, M002.5 delivered the content-addressed snapshot
+store with retry-safe deduplication, and M002.6 delivered the bounded,
+per-host polite parallel fetch scheduler that composes all four boundaries
+behind one typed per-URL outcome. One hundred and twenty-six deterministic
+tests pass and clean checkouts pass `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -887,6 +889,149 @@ Observations carried forward, not silently changed:
   unchanged from M002.3.
 
 Next eligible task: M002.6 bounded parallel fetch, derived from the M002 build
+list in `docs/MILESTONES.md`.
+
+### 2026-09-23 - M002.6 bounded parallel fetch
+
+Scope actually executed: the sixth M002 task only. M002.6 composes the M002.2
+acquisition boundary, the M002.3 robots and politeness boundary, the M002.4
+extraction boundary, and the M002.5 snapshot store behind one bounded,
+per-host polite scheduler. No diagnostics surface, no persistence, no
+retrieval, no model, no rendering, and no UI work was done, and the M001
+deterministic slice was not touched.
+
+Implementation:
+
+- `Sources/LocalLensCore/BoundedFetch.swift` (new): `FetchTarget`,
+  `FetchLimits` (validated initialiser plus a private unchecked one),
+  `FetchScheduleError`, `FetchStage`, `FetchRefusal` (with `isRetryable`),
+  `FetchOutcome`, `FetchResult`, `BoundedFetcher`, and an internal
+  `FetchLimiter` actor.
+- `Fixtures/fetch/schedule-scenarios.json` (new): 10 ordered cases and 21
+  refusals, each with a `why`; a stub resolver answer table using IANA
+  documentation names and the public addresses the policy is required to
+  permit; `requires_overlap` per case; and one case marked
+  `concurrent_offers_are_race_decided`. The fixture declares itself synthetic
+  and redistributable.
+- `Tests/LocalLensCoreTests/BoundedFetchTests.swift` (new): 19 tests.
+
+Observed results (commands and exact outcomes):
+
+- `swift test --filter BoundedFetchTests` - first run RED at compile time: the
+  pre-existing untracked draft contained `await` inside `XCTAssert*`
+  autoclosure arguments, which cannot compile. Repaired by gathering every
+  awaited value into one `Sendable` `BatchOutcome` struct and asserting on that.
+- Second compile RED: `cannot infer key path type from context` throughout,
+  caused by a file-private helper named `run` shadowing `XCTestCase.run()`.
+  Renamed the helper to `runBatch`; no assertion was changed.
+- `swift test --filter BoundedFetchTests` - RED: 18 tests, 5 failures. All five
+  were defects in the new tests, not in the scheduler:
+  (a) `testIdenticalBytesFromTwoHostsAreOneSnapshot` asserted the outcome array
+  positionally and read the record from a result value captured before the
+  store merged the duplicate in place; fixed by adding `storedRecords` (read
+  from `SnapshotStore.records()`) to `BatchOutcome` and asserting the outcome
+  multiset plus the merged stored record;
+  (b) `testPerHostCeilingOfTwoIsHonouredAndNotExceeded` expected a per-host peak
+  of 2, but the host gate admits exactly one request per host regardless of
+  `maxInFlightPerHost`; the case was reframed as
+  `a-looser-per-host-ceiling-does-not-loosen-politeness`, which asserts the
+  measured peak instead of a derived one;
+  (c) three cases measured overlap by counting `Task.yield()`, which is a
+  timing coincidence rather than a measurement.
+- `swift test --filter BoundedFetchTests` - RED: 19 tests, 5 failures, still
+  the overlap measurement. Fixed by moving overlap into the stub transport: a
+  case's document requests are held in a bounded yield loop until
+  `requires_overlap` of them are in flight together. A serial schedule now
+  burns the budget and fails on the measurement instead of hanging, and no wall
+  clock is involved. A new test,
+  `testNoCaseEverObservesTwoRequestsInFlightToOneHost`, runs every case and
+  asserts the per-host peak is always exactly 1.
+- One further compile RED: `testAnEmptyBatchIsNotAFetch` was missing the new
+  `requiredOverlap` argument; fixed at the call site.
+- One further full-suite RED: the repository-wide offline guards in
+  `RobotsPolicyTests`, `SafeAcquisitionTests`, and `SearchAdapterTests` fired on
+  the new test file, which had contained a `Task.sleep` barrier deadline and the
+  concatenated literals `"URL" + "Session"` and `"Foundation" + ".URLSession"`.
+  The deadline was removed entirely in favour of the bounded yield loop, and the
+  new file's own guard was rewritten so it does not contain the halves it
+  forbids. No guard was weakened.
+- `swift test --filter BoundedFetchTests` - GREEN: 19 tests, 0 failures, run six
+  consecutive times with identical results (19 passed each run).
+- `swift test` (full suite) - GREEN: 126 tests, 0 failures.
+- `swift build` - clean, no warnings.
+- `make gate` - exit 0 (`validate-manifest`, `validate-schemas`, `build`,
+  `verify`). Gate green before both commits.
+
+Typed boundaries that fail closed (all enumerated in the fixture's `refusals`
+array and asserted by `testRefusalFamilyIsEnumeratedAndTyped`):
+
+1. `robots` / `published_rule` - the origin's own robots.txt forbade the path;
+2. `robots` / `fail_closed` - robots.txt could not be read, so access is denied
+   rather than assumed;
+3. `acquisition` / `timeout` - no HTTP response arrived inside the policy's
+   timeout; one of only two retryable refusals;
+4. `acquisition` / `transport_failure` - the connection failed before a response
+   existed; the other retryable refusal;
+5. `acquisition` / `http_status` - a non-success status is an answer, not a
+   fault, and is not retried;
+6. `acquisition` / `private_address` - refused before any request is issued;
+7. `acquisition` / `reserved_host_name` - a namespace the policy never resolves;
+8. `acquisition` / `unsupported_content_type`;
+9. `acquisition` / `response_too_large`;
+10. `acquisition` / `too_many_redirects`;
+11. `acquisition` / `redirect_loop`;
+12. `acquisition` / `missing_content_type`;
+13. `extraction` / `unsupported_content_type` - allowed by acquisition but not
+    HTML, such as a PDF;
+14. `extraction` / `empty_document`;
+15. `extraction` / `no_readable_text`;
+16. `extraction` / `malformed_markup`;
+17. `extraction` / `unsupported_charset`;
+18. `extraction` / `document_too_large`;
+19. `extraction` / `missing_source_identifier`;
+20. `store` / `invalid_attempt` - an attempt number below 1 cannot be counted;
+21. `store` / `inconsistent_page` - the page disagrees with its own derived
+    identity.
+
+Only cancellation is thrown by `BoundedFetcher.fetch(_:)`; stored, duplicate,
+and refused are values. `FetchStage` is a closed four-member set, so a new
+boundary cannot be added without a compile-time decision about which stage owns
+it.
+
+Decisions: D021 in `docs/DECISIONS.md` (the schedule is a property of the
+scheduler, not of the caller). `docs/ARCHITECTURE.md` gains a "Bounded fetch
+schedule" section and `docs/LEARNING_PATH.md` gains a "Practised in M002.6"
+block.
+
+M002 gate bullets advanced by this task:
+
+- "retries do not duplicate snapshots" gains a second, independent proof: a
+  transient timeout is retried inside the batch, the retry is visible as
+  `attempt` and `attempts`, the attempt number travels into the store, and the
+  batch still stores exactly one snapshot. A second test proves retries stop at
+  the attempt budget and that a definite answer is never retried.
+- "search snippets never become evidence" is unaffected and still holds; the
+  scheduler accepts only `FetchTarget` values, which carry no snippet.
+- "the deterministic M001 slice remains unchanged" still holds: 126 tests pass
+  and no M001 file was modified.
+
+Observations carried forward, not silently changed:
+
+- `maxInFlightPerHost` is not a politeness lever. `HostRequestGate.perform`
+  admits exactly one body per host, so observed per-host concurrency is always
+  1 whatever the number says. Its real effect is on queueing, and its
+  doc-comment now says so. Fixture expectations for `expected_peak_in_flight`
+  are therefore recorded as measured values, never derived from a ceiling.
+- A limiter waiter holding a batch slot while it waits on the host gate can make
+  the observed batch peak lower than the configured ceiling. The fixture
+  records the measured peak for this reason.
+- The one thing a parallel batch cannot decide deterministically - which of two
+  simultaneous identical offers stores the bytes - is recorded in the fixture as
+  `concurrent_offers_are_race_decided` rather than asserted positionally.
+- The scheduler is in-memory only and opens no socket in tests. Live acquisition
+  remains unimplemented by design; nothing in M002 touches the disk.
+
+Next eligible task: M002.7 extraction diagnostics, derived from the M002 build
 list in `docs/MILESTONES.md`.
 
 ## Evidence append template
