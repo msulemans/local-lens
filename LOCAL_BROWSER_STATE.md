@@ -1652,9 +1652,18 @@ is exercised: the fixture proves composition and citation integrity, not
 retrieval quality or answer usefulness. `q-mercury` proves the failed terminal
 path, not a real coverage gap.
 
-Next eligible task: M003.4 (local inference boundary and model eligibility),
-derived from the M003 build list in `docs/MILESTONES.md` and defined in
-`project.json`.
+Runtime/UI check (2026-09-23): after M003.3 the app was built and launched in
+both views (`LOCAL_LENS_START_VIEW` default and `map`) and captured window-only
+to `docs/evidence/M003/app-m003-core-boundaries.png` and
+`docs/evidence/M003/app-m003-map.png`. It renders the M001 slice unchanged,
+proving no regression. The M003.1-M003.3 boundaries are core-only and not
+reachable from the app, so this check does not verify them through the UI; see
+`docs/evidence/M003/runtime-check.md`. Screen Recording permission was required
+and granted for the capture. This gap is why the next task wires the
+deterministic Quick pipeline into the app.
+
+Next eligible task: M003.4 (deterministic Quick view in the app), derived from
+the M003 build list in `docs/MILESTONES.md` and defined in `project.json`.
 
 ## Evidence append template
 

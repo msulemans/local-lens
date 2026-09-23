@@ -112,43 +112,41 @@
       "live models and local inference",
       "packaging and second-machine reproduction",
       "local inference boundary and model eligibility (no model is selected; docs/MODEL_POLICY.md needs a filled experiment record first)",
-      "citation inspector UI, Quick mode wiring over a real run, history, launcher, onboarding, and packaging (later M003 build items)",
+      "history, launcher, onboarding, packaging, and Quick mode over a live or model-backed run (later M003 build items)",
       "source-type, recency, and independence retrieval features (the snapshot record carries no source metadata yet)",
       "live corpus execution: no page licence and no owner approval is recorded, so no live page has been fetched and the live-corpus portion of the M002 gate is explicitly unproven"
     ]
   },
   "next_task": {
     "id": "M003.4",
-    "title": "Local inference boundary: a provider-agnostic model seam with a deterministic fake, gated by a filled model-eligibility record",
-    "objective": "Define the native inference boundary the Quick pipeline will call and keep the deterministic fake as the default test adapter. Measure the local hardware and the deterministic baseline, and fill the docs/MODEL_POLICY.md experiment record before any real local model may be selected. No real model, weights, bundled dependency, hosted provider, or network call is added in this task.",
+    "title": "Deterministic Quick view: surface retrieval-backed citations in the app and verify them visually",
+    "objective": "Wire the M003.3 deterministic Quick pipeline into the native app so the UI actually exercises the M003 boundaries. Add a Quick view that runs a frozen local plan through QuickPipeline, renders the resulting citations and evidence map through the existing exact-passage inspector, persists and reloads the run separately from the M001 fixture, and is selected by LOCAL_LENS_START_VIEW=quick. Capture the Quick citations and map views window-only as evidence and read them back. Keep the M001 fixture view unchanged.",
     "prerequisites": [
       "M003.3 complete (deterministic Quick pipeline over retrieval and citation compilation)",
-      "docs/MODEL_POLICY.md read in full; a candidate is eligible only when its experiment record is filled",
-      "The local hardware capacity and model-memory envelope must be measured on this Mac and recorded",
+      "D014 (UI verification via window capture) and D026 (deterministic Quick pipeline) recorded",
+      "The M001 FixtureRunView, DeterministicPipeline, and the frozen entities must not change, and M001 tests must stay green",
       "The offline guards must remain green: no network, DNS, live page read, or real clock in any default or gated test run",
-      "M001 deterministic slice evidence must remain byte-identical",
       "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet"
     ],
     "allowed_scope": [
-      "a provider-agnostic model boundary with a typed request and response and a deterministic fake implementation",
-      "typed model-boundary refusals, enumerated in the evidence",
-      "deterministic offline tests through the fake only",
-      "a recorded hardware and baseline measurement and an explicit model-eligibility decision in docs/MODEL_POLICY.md, including not_eligible_yet when no failure is measured"
+      "a second app view that runs the deterministic Quick pipeline over a frozen local fixture and renders citations, the evidence map, and the exact-passage inspector",
+      "run persistence and reload for the Quick view, separate from the M001 fixture run",
+      "LOCAL_LENS_START_VIEW=quick selecting the new view",
+      "view-model or render-path tests plus window-only captures of the Quick citations and map views under docs/evidence/M003"
     ],
     "forbidden_scope": [
-      "downloading, committing, bundling, or shipping model weights",
-      "contacting Apple, MLX, a hosted provider, or any network endpoint",
-      "adding a model, embedding, reranker, or third-party dependency",
-      "changing the frozen entities, extraction refusals, protocol definitions, retrieval boundary, or citation boundary",
-      "UI, history, launcher, onboarding, or packaging",
+      "real network, model, provider, live corpus, or Docker calls",
+      "changing the M001 fixture view, DeterministicPipeline, or the frozen Snapshot, Passage, Claim, EvidenceLink, Citation, or protocol definitions",
+      "history, global launcher, onboarding, or packaging (later M003 build items)",
+      "adding a third-party dependency, a vector database, embeddings, or a reranker",
       "weakening or bypassing the offline guards",
       "copying sibling source while the licence gate is unmet"
     ],
     "done_when": [
-      "a provider-agnostic model boundary exists with a deterministic fake as the only wired implementation, verified entirely offline with no network, weights, or real clock",
-      "every model-boundary refusal is typed and enumerated in the evidence",
-      "docs/MODEL_POLICY.md records the measured hardware envelope, the measured deterministic baseline, and the eligibility decision for any named candidate",
-      "no real model is selected, and not_eligible_yet is recorded rather than implied if the failure is not measured",
+      "the app launches and renders retrieval-backed Quick citations and the evidence map, selected by LOCAL_LENS_START_VIEW=quick, with no network, model, or real clock",
+      "every rendered citation resolves to an exact stored passage and snapshot through the existing inspector",
+      "window-only captures of the Quick citations and map views are stored under docs/evidence/M003 and read back",
+      "the M001 fixture view still renders unchanged and its tests still pass",
       "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]
   },
