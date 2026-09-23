@@ -98,7 +98,11 @@
       "retrieval-backed citation compilation: each accepted claim bound to exactly one ranked stored passage whose text contains the exact quote",
       "content-derived evidence and citation identity, deterministic across repeated runs and a separately rebuilt index",
       "a sixteen-member CitationCompilerError family: nine compile refusals and seven resolve refusals, including an empty quote and a dangling later evidence link",
-      "every compiled citation resolves to its exact stored passage and snapshot, and the compiler holds no URL or snippet field"
+      "every compiled citation resolves to its exact stored passage and snapshot, and the compiler holds no URL or snippet field",
+      "deterministic Quick pipeline: a frozen question set composed with the lexical index and citation compiler through the existing run state machine",
+      "terminal Quick outcomes: complete with a retrieval-backed evidence graph, or failed with a stop reason naming the typed refusal",
+      "a result carrying only cited snapshots, sources, and passages, with missing_snapshot and missing_source failing the run",
+      "re-validation of every completed run through the UI's own citation resolver, and byte-identical PersistedRun values across repeated runs"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
@@ -107,44 +111,44 @@
       "live SearXNG response against a running instance",
       "live models and local inference",
       "packaging and second-machine reproduction",
-      "Quick pipeline composition (retrieval and citation compilation are separate boundaries, not yet composed into one run)",
-      "citation inspector UI and Quick mode wiring (later M003 build items)",
+      "local inference boundary and model eligibility (no model is selected; docs/MODEL_POLICY.md needs a filled experiment record first)",
+      "citation inspector UI, Quick mode wiring over a real run, history, launcher, onboarding, and packaging (later M003 build items)",
       "source-type, recency, and independence retrieval features (the snapshot record carries no source metadata yet)",
       "live corpus execution: no page licence and no owner approval is recorded, so no live page has been fetched and the live-corpus portion of the M002 gate is explicitly unproven"
     ]
   },
   "next_task": {
-    "id": "M003.3",
-    "title": "Deterministic Quick pipeline: compose retrieval and citation compilation into one offline run over a frozen question set",
-    "objective": "Compose the M003.1 lexical index and the M003.2 citation compiler into a deterministic Quick run that needs no model and no network. Given a frozen question set and synthetic stored snapshots, retrieve the ranked passages, compile retrieval-backed citations for the accepted claims, drive the existing run state machine to a typed terminal status, and emit one normalized result per question - so the offline half of Quick mode is measurable and the later model task attaches to a proven retrieval-and-citation path.",
+    "id": "M003.4",
+    "title": "Local inference boundary: a provider-agnostic model seam with a deterministic fake, gated by a filled model-eligibility record",
+    "objective": "Define the native inference boundary the Quick pipeline will call and keep the deterministic fake as the default test adapter. Measure the local hardware and the deterministic baseline, and fill the docs/MODEL_POLICY.md experiment record before any real local model may be selected. No real model, weights, bundled dependency, hosted provider, or network call is added in this task.",
     "prerequisites": [
-      "M003.1 and M003.2 complete (lexical retrieval boundary and retrieval-backed citation compiler)",
-      "D005, D020, D024 and D025 recorded; the snapshot store stays the source of truth and the index is a derived artifact",
-      "The frozen Snapshot, Passage, Claim, EvidenceLink, Citation, ResearchResult and protocol v1 definitions must not change",
+      "M003.3 complete (deterministic Quick pipeline over retrieval and citation compilation)",
+      "docs/MODEL_POLICY.md read in full; a candidate is eligible only when its experiment record is filled",
+      "The local hardware capacity and model-memory envelope must be measured on this Mac and recorded",
       "The offline guards must remain green: no network, DNS, live page read, or real clock in any default or gated test run",
       "M001 deterministic slice evidence must remain byte-identical",
       "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet"
     ],
     "allowed_scope": [
-      "a deterministic Quick pipeline that composes a frozen question set, retrieval through LexicalIndex, and citation compilation through CitationCompiler",
-      "typed per-question run outcomes and terminal stop reasons over the existing RunStateMachine",
-      "a frozen question fixture and deterministic offline tests for the pipeline, the citation graph, and every refusal",
-      "normalized result identity that is identical across repeated runs"
+      "a provider-agnostic model boundary with a typed request and response and a deterministic fake implementation",
+      "typed model-boundary refusals, enumerated in the evidence",
+      "deterministic offline tests through the fake only",
+      "a recorded hardware and baseline measurement and an explicit model-eligibility decision in docs/MODEL_POLICY.md, including not_eligible_yet when no failure is measured"
     ],
     "forbidden_scope": [
-      "model, provider, network, Docker, or real corpus calls of any kind in a default or gated test run",
-      "UI, citation inspector, history, global launcher, onboarding, or packaging (later M003 build items)",
-      "adding a third-party dependency, a vector database, embeddings, or a reranker",
-      "changing the frozen Snapshot, Passage, Claim, EvidenceLink, Citation, ResearchResult, extraction refusal, or protocol definitions",
-      "PDF extraction",
+      "downloading, committing, bundling, or shipping model weights",
+      "contacting Apple, MLX, a hosted provider, or any network endpoint",
+      "adding a model, embedding, reranker, or third-party dependency",
+      "changing the frozen entities, extraction refusals, protocol definitions, retrieval boundary, or citation boundary",
+      "UI, history, launcher, onboarding, or packaging",
       "weakening or bypassing the offline guards",
       "copying sibling source while the licence gate is unmet"
     ],
     "done_when": [
-      "the pipeline runs entirely offline over a frozen question set, with no network, no DNS, no live page read, and no real clock",
-      "every run reaches a typed terminal status with a recorded reason, and every refusal is typed",
-      "citation integrity is 100 percent: every citation resolves to an exact stored passage and snapshot",
-      "two runs over the same input produce identical normalized results",
+      "a provider-agnostic model boundary exists with a deterministic fake as the only wired implementation, verified entirely offline with no network, weights, or real clock",
+      "every model-boundary refusal is typed and enumerated in the evidence",
+      "docs/MODEL_POLICY.md records the measured hardware envelope, the measured deterministic baseline, and the eligibility decision for any named candidate",
+      "no real model is selected, and not_eligible_yet is recorded rather than implied if the failure is not measured",
       "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]
   },
@@ -307,7 +311,7 @@
     "current_command_status": {
       "validate-manifest": "verified_2026-09-23",
       "build": "verified_2026-09-23",
-      "verify": "verified_2026-09-23_179_tests_0_failures"
+      "verify": "verified_2026-09-23_188_tests_0_failures"
     },
     "proof_vocabulary": [
       "planned",

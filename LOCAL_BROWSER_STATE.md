@@ -8,8 +8,9 @@ recorded evidence, with the live-corpus portion of bullet (a) recorded as an
 explicit blocker rather than claimed. Milestone 003 (first useful Quick
 release) is the sole active milestone; its first task, M003.1, delivered the
 lexical retrieval boundary (FTS5/BM25 over stored passages), M003.2 delivered
-retrieval-backed citation compilation, and M003.3 is the next task defined in
-`project.json`. M002.1 delivered the search adapter
+retrieval-backed citation compilation, M003.3 delivered the deterministic Quick
+pipeline, and M003.4 is the next task defined in `project.json`. M002.1
+delivered the search adapter
 boundary with a SearXNG JSON adapter, M002.2 delivered the policy-checked
 acquisition boundary with a frozen refusal matrix, M002.3 delivered the robots
 and politeness boundary, M002.4 delivered the HTML extraction boundary with a
@@ -20,7 +21,7 @@ typed per-URL outcome, and M002.7 delivered the extraction diagnostic record
 that makes every extraction outcome, page or refusal, inspectable without
 re-fetching, and M002.8 delivered the approved-live-corpus gate, which can plan
 and judge a live run but holds no transport, so no default or gated test run
-can reach the network. One hundred and seventy-nine deterministic tests pass and
+can reach the network. One hundred and eighty-eight deterministic tests pass and
 clean checkouts pass `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
@@ -1557,6 +1558,103 @@ exercised: the fixture proves binding rules, not effectiveness on real pages.
 
 Next eligible task: M003.3 (deterministic Quick pipeline), derived from the M003
 build list in `docs/MILESTONES.md` and defined in `project.json`.
+
+## 2026-09-23 - M003.3 deterministic Quick pipeline
+
+Scope actually executed: the M003.3 `next_task` only. `QuickPipeline.swift`,
+`QuickPipelineTests.swift`, and `Fixtures/retrieval/quick-scenarios.json`
+compose the run state machine, the M003.1 lexical index, and the M003.2 citation
+compiler into one offline run. No model, network, UI, history, launcher,
+onboarding, packaging, or live corpus work was done, and no M001/M002 file was
+modified.
+
+Commit or working-tree state: implementation commit `d16132b`; this entry is the
+second commit of the pair.
+
+Implementation:
+
+- `QuickRunPlan` carries a question, frozen `ClaimCandidate`s, and the source
+  metadata needed to attribute evidence.
+- `QuickPipeline.run` drives the existing `RunStateMachine` through the frozen
+  Quick phase order. It always ends terminal: `complete` with a retrieval-backed
+  evidence graph, or `failed` with `stopReason = "citation_compile_failed:
+  <kind>: <reason>"`.
+- The result contains only the snapshots, sources, and passages the compilation
+  cites. `missing_snapshot` (a cited snapshot absent from the store) and
+  `missing_source` (a cited source the plan does not describe) fail the run
+  rather than producing an unattributable citation.
+- `QuickPipelineError` freezes four kinds: `empty_question`, `duplicate_source`,
+  `missing_source`, and `missing_snapshot`. An empty question and duplicate
+  source identities refuse before a run starts.
+- The pipeline imports `Foundation` only and names no model, provider, socket,
+  DNS, file, or clock.
+
+Commands and observed results:
+
+```text
+$ swift build --build-tests
+  (red first: a local `payload` value shadowed the helper method of the same
+   name. Renamed the helper to `makePayload`; no assertion or guard was
+   weakened.)
+
+$ swift test --filter QuickPipelineTests
+  Executed 9 tests, with 0 failures (0 unexpected) in 0.040 seconds
+
+$ swift test
+  Executed 188 tests, with 0 failures (0 unexpected) in 0.637 seconds
+
+$ make gate
+  project.json conforms to its schema and handoff invariants.
+  protocol v1 schemas conform; Swift parity holds (run_status=15,
+    research_mode=4, evidence_relation=3, error_code=6)
+  swift build -> Build complete
+  swift test  -> Executed 188 tests, with 0 failures (0 unexpected)
+  gate exit: 0
+```
+
+Gate result: `make gate` passed at commit `d16132b` with 188 tests and 0
+failures (179 before this task, 9 added). The manifest validated and the
+protocol v1 schemas and Swift enum parity were unchanged.
+
+Failures preserved at: the compile red above is recorded with its cause. It was
+a name-shadowing defect in the new source, fixed in the source; no gate was
+weakened. The `missing_snapshot` guard was added while reviewing the boundary
+before the first commit.
+
+The fixture `Fixtures/retrieval/quick-scenarios.json` is hand-authored,
+synthetic, and on reserved `.invalid` hosts. It holds four documents, four
+source records, and four frozen questions: three complete, and `q-mercury`
+retrieves nothing and therefore fails with `no_results`. Every completed run is
+re-validated through `FixtureWorkspace.inspections`, the same resolver the UI
+uses, and two runs over the same input produce identical `PersistedRun` values.
+The tea document is stored but cited by no question, so the result-carrying
+selection is exercised rather than assumed.
+
+Decision: D026 in `docs/DECISIONS.md` (the deterministic Quick pipeline
+composes retrieval, compilation, and the run state machine).
+`docs/ARCHITECTURE.md` gains a "Deterministic Quick pipeline" section and
+`docs/LEARNING_PATH.md` gains a "Practised in M003.3" block.
+
+M003 progress advanced by this task:
+
+- the offline half of Quick mode now exists end to end: a question set, ranked
+  retrieval, exact-quote citation compilation, a typed terminal status, and a
+  normalized result;
+- citation integrity is re-proven through the UI's own resolver for every
+  completed run; and
+- "the deterministic M001 slice remains unchanged" still holds: 188 tests pass
+  and no M001 file was modified.
+
+Proof boundary: deterministically verified. The pipeline is a pure composition
+of the state machine, the lexical index, and the citation compiler, verified
+with no network, DNS, file, or clock. No real search, model, live corpus, or UI
+is exercised: the fixture proves composition and citation integrity, not
+retrieval quality or answer usefulness. `q-mercury` proves the failed terminal
+path, not a real coverage gap.
+
+Next eligible task: M003.4 (local inference boundary and model eligibility),
+derived from the M003 build list in `docs/MILESTONES.md` and defined in
+`project.json`.
 
 ## Evidence append template
 
