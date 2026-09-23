@@ -319,6 +319,39 @@ snapshot, or its final URL. A hit whose URL was never acquired is refused with
 `hit_is_not_evidence`; the search snippet is never consulted. This is the
 mechanical form of "search snippets never become evidence".
 
+## Bounded fetch schedule
+
+`BoundedFetcher` is the only place a batch of targets is fetched. It composes
+the boundaries above in one order per attempt:
+
+origin -> robots (`RobotsLoader.load`, cached per origin) -> crawl-delay applied
+to the host gate -> `requireAccess` -> `SafeAcquisition.fetch` ->
+`HTMLExtraction.extract` -> `SnapshotStore.store(_:attempt:)`.
+
+The schedule is a property of the scheduler, not of the caller. `FetchLimits`
+states the batch-wide ceiling, the per-host ceiling, the floor on the spacing
+between two requests to one host, and the attempt budget; impossible limits are
+refused with `invalid_limits` before any target is fetched.
+
+One `TaskGroup` child runs per target. The results are re-sorted by the
+caller's index before returning, so the returned order never depends on
+completion order. A `FetchLimiter` actor enforces the batch-wide ceiling and
+resumes waiters in arrival order. Per-host concurrency is one request at a
+time, enforced by the host's `HostRequestGate`: the robots check and the request
+that follows it run inside one turn of that gate, so a published `crawl-delay`
+cannot be defeated by two requests leaving back to back.
+
+`maxInFlightPerHost` cannot raise per-host concurrency above what the gate
+allows. Its effect is on queueing: with a value of one, targets that share a
+host cannot occupy the whole batch budget while they wait their turn.
+
+Only cancellation is thrown. Everything else is a value: `stored`, `duplicate`,
+or `refused` carrying a `FetchStage` (`acquisition`, `robots`, `extraction`,
+`store`), a kind, and a reason. Retries are limited to `timeout` and
+`transport_failure`, are visible as `attempt` and `attempts` on the result, and
+pass their attempt number to the store so a retried fetch still stores exactly
+one snapshot.
+
 ## Retrieval boundary
 
 The first baseline is:

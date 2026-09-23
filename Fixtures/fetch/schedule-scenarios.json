@@ -1,0 +1,936 @@
+{
+  "_fixture": {
+    "synthetic": true,
+    "license": "redistributable",
+    "note": "Hand-authored schedule scenarios. No host here is resolved: every name is answered by a stub resolver and every response comes from a stub transport, so the suite performs no DNS lookup and opens no socket. The names are IANA documentation names and the addresses are the addresses the acquisition policy is required to permit; a reserved or private address would be refused by the policy before the schedule could be exercised at all. requires_overlap is how many document requests the case's transport holds in flight together before answering any of them, so a case that claims parallelism cannot pass on a serial schedule. concurrent_offers_are_race_decided marks the one case where two targets can offer the same bytes at the same time: which offer stores them is decided by arrival order, so only the multiset of outcomes is asserted there."
+  },
+  "limits": {
+    "max_in_flight": 3,
+    "max_in_flight_per_host": 1,
+    "minimum_host_delay_seconds": 0,
+    "attempts_per_target": 2
+  },
+  "resolver_answers": {
+    "example.com": [
+      "93.184.216.34"
+    ],
+    "example.org": [
+      "93.184.216.35"
+    ],
+    "example.net": [
+      "93.184.216.36"
+    ],
+    "intranet.example.com": [
+      "10.0.0.5"
+    ]
+  },
+  "cases": [
+    {
+      "id": "three-hosts-are-fetched-in-parallel",
+      "why": "Three targets on three hosts with a global ceiling of three must overlap; the per-host ceiling of one is not what bounds this batch.",
+      "limits_override": {
+        "max_in_flight": 3,
+        "max_in_flight_per_host": 1
+      },
+      "targets": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha"
+        },
+        {
+          "source_id": "src-beta",
+          "url": "https://example.org/beta"
+        },
+        {
+          "source_id": "src-gamma",
+          "url": "https://example.net/gamma"
+        }
+      ],
+      "robots": {
+        "example.com": 404,
+        "example.org": 404,
+        "example.net": 404
+      },
+      "documents": {
+        "https://example.com/alpha": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Alpha report</title></head><body><h1>Alpha</h1><p>The alpha document reports a measured result.</p></body></html>",
+            "yields_before_response": 200
+          }
+        ],
+        "https://example.org/beta": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Beta report</title></head><body><h1>Beta</h1><p>The beta document reports a different measured result.</p></body></html>",
+            "yields_before_response": 200
+          }
+        ],
+        "https://example.net/gamma": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Gamma report</title></head><body><h1>Gamma</h1><p>The gamma document reports a third measured result.</p></body></html>",
+            "yields_before_response": 200
+          }
+        ]
+      },
+      "expected": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-beta",
+          "url": "https://example.org/beta",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-gamma",
+          "url": "https://example.net/gamma",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        }
+      ],
+      "expected_snapshot_count": 3,
+      "requires_overlap": 3,
+      "expected_peak_in_flight": 3,
+      "expected_peak_per_host": {
+        "example.com": 1,
+        "example.org": 1,
+        "example.net": 1
+      },
+      "expected_robots_requests": 3
+    },
+    {
+      "id": "one-host-is-serialised",
+      "why": "Three targets on one host must not overlap, because the origin observes one polite connection at a time even though the global ceiling would allow three.",
+      "limits_override": {
+        "max_in_flight": 3,
+        "max_in_flight_per_host": 1
+      },
+      "targets": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha"
+        },
+        {
+          "source_id": "src-beta",
+          "url": "https://example.com/beta"
+        },
+        {
+          "source_id": "src-gamma",
+          "url": "https://example.com/gamma"
+        }
+      ],
+      "robots": {
+        "example.com": 404
+      },
+      "documents": {
+        "https://example.com/alpha": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Alpha report</title></head><body><h1>Alpha</h1><p>The alpha document reports a measured result.</p></body></html>",
+            "yields_before_response": 10
+          }
+        ],
+        "https://example.com/beta": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Beta report</title></head><body><h1>Beta</h1><p>The beta document reports a different measured result.</p></body></html>",
+            "yields_before_response": 10
+          }
+        ],
+        "https://example.com/gamma": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Gamma report</title></head><body><h1>Gamma</h1><p>The gamma document reports a third measured result.</p></body></html>",
+            "yields_before_response": 10
+          }
+        ]
+      },
+      "expected": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-beta",
+          "url": "https://example.com/beta",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-gamma",
+          "url": "https://example.com/gamma",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        }
+      ],
+      "expected_snapshot_count": 3,
+      "requires_overlap": 1,
+      "expected_peak_in_flight": 1,
+      "expected_peak_per_host": {
+        "example.com": 1
+      },
+      "expected_robots_requests": 1
+    },
+    {
+      "id": "a-looser-per-host-ceiling-does-not-loosen-politeness",
+      "why": "A per-host ceiling of two is accepted, but the host gate still admits exactly one request at a time, so the looser number cannot produce two overlapping requests to one origin. A ceiling that a caller can raise without a politeness effect is a ceiling that must be proven not to have one.",
+      "limits_override": {
+        "max_in_flight": 4,
+        "max_in_flight_per_host": 2
+      },
+      "targets": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha"
+        },
+        {
+          "source_id": "src-beta",
+          "url": "https://example.com/beta"
+        },
+        {
+          "source_id": "src-gamma",
+          "url": "https://example.org/gamma"
+        },
+        {
+          "source_id": "src-delta",
+          "url": "https://example.org/delta"
+        }
+      ],
+      "robots": {
+        "example.com": 404,
+        "example.org": 404
+      },
+      "documents": {
+        "https://example.com/alpha": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Alpha report</title></head><body><h1>Alpha</h1><p>The alpha document reports a measured result.</p></body></html>",
+            "yields_before_response": 200
+          }
+        ],
+        "https://example.com/beta": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Beta report</title></head><body><h1>Beta</h1><p>The beta document reports a different measured result.</p></body></html>",
+            "yields_before_response": 200
+          }
+        ],
+        "https://example.org/gamma": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Gamma report</title></head><body><h1>Gamma</h1><p>The gamma document reports a third measured result.</p></body></html>",
+            "yields_before_response": 200
+          }
+        ],
+        "https://example.org/delta": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Delta report</title></head><body><h1>Delta</h1><p>The delta document reports a fourth measured result.</p></body></html>",
+            "yields_before_response": 200
+          }
+        ]
+      },
+      "expected": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-beta",
+          "url": "https://example.com/beta",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-gamma",
+          "url": "https://example.org/gamma",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-delta",
+          "url": "https://example.org/delta",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        }
+      ],
+      "expected_snapshot_count": 4,
+      "requires_overlap": 2,
+      "expected_peak_in_flight": 2,
+      "expected_peak_per_host": {
+        "example.com": 1,
+        "example.org": 1
+      },
+      "expected_robots_requests": 2
+    },
+    {
+      "id": "identical-bytes-from-two-hosts-are-one-snapshot",
+      "why": "Two origins publishing identical bytes in one batch must resolve to one snapshot with both source identities and both requested URLs recorded on it. Which of the two offers the bytes first is decided by arrival order and is therefore not part of the contract: what is contractual is that exactly one snapshot exists, that exactly one offer is reported as a duplicate, and that both identities survive.",
+      "limits_override": {
+        "max_in_flight": 2,
+        "max_in_flight_per_host": 1
+      },
+      "targets": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/mirror"
+        },
+        {
+          "source_id": "src-beta",
+          "url": "https://example.org/mirror"
+        }
+      ],
+      "robots": {
+        "example.com": 404,
+        "example.org": 404
+      },
+      "documents": {
+        "https://example.com/mirror": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Alpha report</title></head><body><h1>Alpha</h1><p>The alpha document reports a measured result.</p></body></html>",
+            "yields_before_response": 200
+          }
+        ],
+        "https://example.org/mirror": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Alpha report</title></head><body><h1>Alpha</h1><p>The alpha document reports a measured result.</p></body></html>",
+            "yields_before_response": 200
+          }
+        ]
+      },
+      "expected": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/mirror",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-beta",
+          "url": "https://example.org/mirror",
+          "kind": "duplicate",
+          "duplicate_reason": "same_bytes_from_another_source",
+          "attempt": 1,
+          "attempts": 1
+        }
+      ],
+      "expected_snapshot_count": 1,
+      "expected_recorded_source_ids": [
+        "src-alpha",
+        "src-beta"
+      ],
+      "expected_recorded_urls": [
+        "https://example.com/mirror",
+        "https://example.org/mirror"
+      ],
+      "requires_overlap": 2,
+      "expected_peak_in_flight": 2,
+      "expected_peak_per_host": {
+        "example.com": 1,
+        "example.org": 1
+      },
+      "expected_robots_requests": 2,
+      "concurrent_offers_are_race_decided": true
+    },
+    {
+      "id": "a-refusal-does-not-abort-the-batch",
+      "why": "A published robots rule, a redirect into a private address and an unreadable document must each be reported for their own target while the remaining target is still stored.",
+      "limits_override": {
+        "max_in_flight": 4,
+        "max_in_flight_per_host": 1
+      },
+      "targets": [
+        {
+          "source_id": "src-blocked",
+          "url": "https://example.com/private/secret"
+        },
+        {
+          "source_id": "src-private",
+          "url": "https://example.com/bounce"
+        },
+        {
+          "source_id": "src-pdf",
+          "url": "https://example.org/paper"
+        },
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.net/alpha"
+        }
+      ],
+      "robots": {
+        "example.com": 200,
+        "example.org": 404,
+        "example.net": 404
+      },
+      "robots_body": {
+        "example.com": "User-agent: *\nDisallow: /private/\n"
+      },
+      "documents": {
+        "https://example.com/bounce": [
+          {
+            "status": 302,
+            "headers": {
+              "Location": "https://intranet.example.com/notes"
+            }
+          }
+        ],
+        "https://example.org/paper": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "application/pdf"
+            },
+            "body": "%PDF-1.4 synthetic",
+            "yields_before_response": 200
+          }
+        ],
+        "https://example.net/alpha": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Alpha report</title></head><body><h1>Alpha</h1><p>The alpha document reports a measured result.</p></body></html>",
+            "yields_before_response": 200
+          }
+        ]
+      },
+      "expected": [
+        {
+          "source_id": "src-blocked",
+          "url": "https://example.com/private/secret",
+          "kind": "refused",
+          "refusal_stage": "robots",
+          "refusal_kind": "published_rule",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-private",
+          "url": "https://example.com/bounce",
+          "kind": "refused",
+          "refusal_stage": "acquisition",
+          "refusal_kind": "private_address",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-pdf",
+          "url": "https://example.org/paper",
+          "kind": "refused",
+          "refusal_stage": "extraction",
+          "refusal_kind": "unsupported_content_type",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.net/alpha",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        }
+      ],
+      "expected_snapshot_count": 1,
+      "requires_overlap": 3,
+      "expected_peak_in_flight": 3,
+      "expected_peak_per_host": {
+        "example.com": 1,
+        "example.org": 1,
+        "example.net": 1
+      },
+      "expected_robots_requests": 3,
+      "expected_document_requests": 3
+    },
+    {
+      "id": "a-transient-timeout-is-retried-and-the-retry-is-visible",
+      "why": "A transport timeout is the one refusal another attempt can plausibly fix, and the result must show that two attempts were made rather than hiding the retry.",
+      "limits_override": {
+        "max_in_flight": 1,
+        "max_in_flight_per_host": 1,
+        "attempts_per_target": 2
+      },
+      "targets": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha"
+        }
+      ],
+      "robots": {
+        "example.com": 404
+      },
+      "documents": {
+        "https://example.com/alpha": [
+          {
+            "transport_error": "timeout_urlerror"
+          },
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Alpha report</title></head><body><h1>Alpha</h1><p>The alpha document reports a measured result.</p></body></html>",
+            "yields_before_response": 10
+          }
+        ]
+      },
+      "expected": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha",
+          "kind": "stored",
+          "attempt": 2,
+          "attempts": 2
+        }
+      ],
+      "expected_snapshot_count": 1,
+      "requires_overlap": 1,
+      "expected_peak_in_flight": 1,
+      "expected_peak_per_host": {
+        "example.com": 1
+      },
+      "expected_robots_requests": 1,
+      "expected_document_requests": 2
+    },
+    {
+      "id": "retries-are-bounded-by-the-attempt-budget",
+      "why": "A host that times out on every attempt must be refused once the budget is spent, with the attempt count visible, rather than being retried forever.",
+      "limits_override": {
+        "max_in_flight": 1,
+        "max_in_flight_per_host": 1,
+        "attempts_per_target": 3
+      },
+      "targets": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha"
+        }
+      ],
+      "robots": {
+        "example.com": 404
+      },
+      "documents": {
+        "https://example.com/alpha": [
+          {
+            "transport_error": "timeout_urlerror"
+          },
+          {
+            "transport_error": "timeout_urlerror"
+          },
+          {
+            "transport_error": "timeout_urlerror"
+          }
+        ]
+      },
+      "expected": [
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha",
+          "kind": "refused",
+          "refusal_stage": "acquisition",
+          "refusal_kind": "timeout",
+          "attempt": 3,
+          "attempts": 3
+        }
+      ],
+      "expected_snapshot_count": 0,
+      "requires_overlap": 1,
+      "expected_peak_in_flight": 1,
+      "expected_peak_per_host": {
+        "example.com": 1
+      },
+      "expected_robots_requests": 1,
+      "expected_document_requests": 3
+    },
+    {
+      "id": "a-definite-answer-is-not-retried",
+      "why": "An HTTP status and an unreadable document are answers from the origin, so a later attempt would only repeat them; only the transport-level faults are retried.",
+      "limits_override": {
+        "max_in_flight": 2,
+        "max_in_flight_per_host": 1,
+        "attempts_per_target": 3
+      },
+      "targets": [
+        {
+          "source_id": "src-gone",
+          "url": "https://example.com/gone"
+        },
+        {
+          "source_id": "src-empty",
+          "url": "https://example.org/empty"
+        }
+      ],
+      "robots": {
+        "example.com": 404,
+        "example.org": 404
+      },
+      "documents": {
+        "https://example.com/gone": [
+          {
+            "status": 404,
+            "headers": {
+              "Content-Type": "text/html"
+            },
+            "body": "not found"
+          }
+        ],
+        "https://example.org/empty": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><body>   </body></html>",
+            "yields_before_response": 10
+          }
+        ]
+      },
+      "expected": [
+        {
+          "source_id": "src-gone",
+          "url": "https://example.com/gone",
+          "kind": "refused",
+          "refusal_stage": "acquisition",
+          "refusal_kind": "http_status",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-empty",
+          "url": "https://example.org/empty",
+          "kind": "refused",
+          "refusal_stage": "extraction",
+          "refusal_kind": "no_readable_text",
+          "attempt": 1,
+          "attempts": 1
+        }
+      ],
+      "expected_snapshot_count": 0,
+      "requires_overlap": 2,
+      "expected_peak_in_flight": 2,
+      "expected_peak_per_host": {
+        "example.com": 1,
+        "example.org": 1
+      },
+      "expected_robots_requests": 2,
+      "expected_document_requests": 2
+    },
+    {
+      "id": "results-follow-the-target-order-not-the-completion-order",
+      "why": "The slowest target is offered first and holds its response longest while the other two finish, so a batch that reported completion order would describe itself differently on a faster or slower run.",
+      "limits_override": {
+        "max_in_flight": 3,
+        "max_in_flight_per_host": 1
+      },
+      "targets": [
+        {
+          "source_id": "src-slow",
+          "url": "https://example.com/slow"
+        },
+        {
+          "source_id": "src-beta",
+          "url": "https://example.org/beta"
+        },
+        {
+          "source_id": "src-gamma",
+          "url": "https://example.net/gamma"
+        }
+      ],
+      "robots": {
+        "example.com": 404,
+        "example.org": 404,
+        "example.net": 404
+      },
+      "documents": {
+        "https://example.com/slow": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Alpha report</title></head><body><h1>Alpha</h1><p>The alpha document reports a measured result.</p></body></html>",
+            "yields_before_response": 400
+          }
+        ],
+        "https://example.org/beta": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Beta report</title></head><body><h1>Beta</h1><p>The beta document reports a different measured result.</p></body></html>",
+            "yields_before_response": 0
+          }
+        ],
+        "https://example.net/gamma": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Gamma report</title></head><body><h1>Gamma</h1><p>The gamma document reports a third measured result.</p></body></html>",
+            "yields_before_response": 0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "source_id": "src-slow",
+          "url": "https://example.com/slow",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-beta",
+          "url": "https://example.org/beta",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-gamma",
+          "url": "https://example.net/gamma",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        }
+      ],
+      "expected_snapshot_count": 3,
+      "requires_overlap": 3,
+      "expected_peak_in_flight": 3,
+      "expected_peak_per_host": {
+        "example.com": 1,
+        "example.org": 1,
+        "example.net": 1
+      },
+      "expected_robots_requests": 3
+    },
+    {
+      "id": "an-unfetchable-namespace-fails-closed-before-any-request",
+      "why": "A host in a reserved namespace cannot have its robots.txt read, so the policy denies access rather than assuming permission; the refusal is reported at the robots stage and no request is issued for that host.",
+      "limits_override": {
+        "max_in_flight": 2,
+        "max_in_flight_per_host": 1,
+        "attempts_per_target": 3
+      },
+      "targets": [
+        {
+          "source_id": "src-reserved",
+          "url": "https://research.invalid/page"
+        },
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha"
+        }
+      ],
+      "robots": {
+        "example.com": 404
+      },
+      "documents": {
+        "https://example.com/alpha": [
+          {
+            "status": 200,
+            "headers": {
+              "Content-Type": "text/html; charset=utf-8"
+            },
+            "body": "<html><head><title>Alpha report</title></head><body><h1>Alpha</h1><p>The alpha document reports a measured result.</p></body></html>",
+            "yields_before_response": 200
+          }
+        ]
+      },
+      "expected": [
+        {
+          "source_id": "src-reserved",
+          "url": "https://research.invalid/page",
+          "kind": "refused",
+          "refusal_stage": "robots",
+          "refusal_kind": "fail_closed",
+          "attempt": 1,
+          "attempts": 1
+        },
+        {
+          "source_id": "src-alpha",
+          "url": "https://example.com/alpha",
+          "kind": "stored",
+          "attempt": 1,
+          "attempts": 1
+        }
+      ],
+      "expected_snapshot_count": 1,
+      "requires_overlap": 1,
+      "expected_peak_in_flight": 1,
+      "expected_peak_per_host": {
+        "example.com": 1
+      },
+      "expected_robots_requests": 1,
+      "expected_document_requests": 1
+    }
+  ],
+  "refusals": [
+    {
+      "stage": "robots",
+      "kind": "published_rule",
+      "why": "the origin's own robots.txt forbade the path"
+    },
+    {
+      "stage": "robots",
+      "kind": "fail_closed",
+      "why": "robots.txt could not be read, so access is denied rather than assumed"
+    },
+    {
+      "stage": "acquisition",
+      "kind": "timeout",
+      "why": "no HTTP response arrived inside the policy's timeout; the only retryable acquisition refusal"
+    },
+    {
+      "stage": "acquisition",
+      "kind": "transport_failure",
+      "why": "the connection failed before a response existed; the only other retryable refusal"
+    },
+    {
+      "stage": "acquisition",
+      "kind": "http_status",
+      "why": "the origin answered with a non-success status, which is an answer and not retried"
+    },
+    {
+      "stage": "acquisition",
+      "kind": "private_address",
+      "why": "the name resolved to a private address, which is refused before any request is issued"
+    },
+    {
+      "stage": "acquisition",
+      "kind": "reserved_host_name",
+      "why": "the name is in a reserved namespace the policy never resolves"
+    },
+    {
+      "stage": "acquisition",
+      "kind": "unsupported_content_type",
+      "why": "the response declared a media type the acquisition policy does not allow"
+    },
+    {
+      "stage": "acquisition",
+      "kind": "response_too_large",
+      "why": "the body exceeded the acquisition ceiling"
+    },
+    {
+      "stage": "acquisition",
+      "kind": "too_many_redirects",
+      "why": "the redirect chain exceeded the policy's hop limit"
+    },
+    {
+      "stage": "acquisition",
+      "kind": "redirect_loop",
+      "why": "the redirect chain revisited a URL"
+    },
+    {
+      "stage": "acquisition",
+      "kind": "missing_content_type",
+      "why": "the response declared no media type at all"
+    },
+    {
+      "stage": "extraction",
+      "kind": "unsupported_content_type",
+      "why": "the bytes were allowed by acquisition but are not HTML, such as a PDF"
+    },
+    {
+      "stage": "extraction",
+      "kind": "empty_document",
+      "why": "the body was empty or whitespace only"
+    },
+    {
+      "stage": "extraction",
+      "kind": "no_readable_text",
+      "why": "the markup was readable but contained no text a reader could use"
+    },
+    {
+      "stage": "extraction",
+      "kind": "malformed_markup",
+      "why": "the body could not be decoded or contained no usable markup"
+    },
+    {
+      "stage": "extraction",
+      "kind": "unsupported_charset",
+      "why": "the declared character set is not one the extractor decodes"
+    },
+    {
+      "stage": "extraction",
+      "kind": "document_too_large",
+      "why": "the body exceeded the extraction ceiling"
+    },
+    {
+      "stage": "extraction",
+      "kind": "missing_source_identifier",
+      "why": "a document that cannot name its source could never be cited"
+    },
+    {
+      "stage": "store",
+      "kind": "invalid_attempt",
+      "why": "the attempt number was below one, so the record could not count it"
+    },
+    {
+      "stage": "store",
+      "kind": "inconsistent_page",
+      "why": "the page disagreed with its own derived identity"
+    }
+  ]
+}

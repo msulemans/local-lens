@@ -136,6 +136,28 @@ Practised in M002.5:
   pages at the same time, and the concurrency test requires that simultaneous
   offers of the same bytes store exactly one snapshot.
 
+Practised in M002.6:
+
+- why the returned order is re-sorted by the caller's index instead of by
+  completion, and what two runs of the same batch would otherwise disagree on;
+- why a concurrency bound belongs inside the scheduler rather than in the
+  caller's loop, and why the limiter resumes waiters in arrival order;
+- why "at most one request per host at a time" is enforced by the host gate
+  rather than by a number the caller supplies, and why a number that cannot
+  bind must still be proven not to loosen politeness;
+- why the robots check and the request it governs share one turn of the gate,
+  and how a separately-taken gate would defeat a published `crawl-delay`;
+- why only `timeout` and `transport_failure` are retried, and why a status
+  code, a refused address, a robots rule, and an unreadable document are
+  answers rather than faults;
+- why an attempt number travels into the store, so a retry produces one
+  snapshot whose record names the attempt that actually produced the bytes;
+- why parallelism has to be *measured* rather than inferred from timing, and
+  how a stub transport can hold requests until N are in flight together; and
+- why the one thing a parallel batch cannot decide deterministically - which
+  of two identical offers stores the bytes - is recorded as such in the fixture
+  rather than asserted positionally.
+
 ## M003 - Retrieval and local generation
 
 Learn:

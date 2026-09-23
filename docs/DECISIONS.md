@@ -521,3 +521,67 @@ Consequences:
   records, and a duplicate-counter assertion read a stale value copy instead of
   re-reading the record the store had updated in place. Both are fixed in the
   assertions; no production behaviour was weakened.
+
+## D021 - A batch is bounded and polite by schedule, not by caller discipline
+
+Decision: `BoundedFetcher.fetch(_:)` takes a list of `FetchTarget` values and
+returns one `FetchResult` per target, in the order the targets were given. The
+schedule is described by `FetchLimits` and enforced inside the scheduler.
+
+Rules:
+
+- One `TaskGroup` child per target. Results are re-sorted by the caller's index
+  before returning, so the returned order never depends on completion order.
+  A batch that reported arrival order would describe itself differently on two
+  runs over the same targets.
+- The batch-wide ceiling (`maxInFlight`) is enforced by a `FetchLimiter` actor
+  that admits waiters in arrival order, so the bound is fair as well as strict.
+- Per-host concurrency is one request at a time, enforced by the host's
+  `HostRequestGate`. `maxInFlightPerHost` cannot raise that: the gate is
+  stricter than any number above one. Its real effect is on queueing - with a
+  value of one, targets that share a host cannot occupy the whole batch budget
+  while they wait their turn. The fixture therefore asserts the stronger fact
+  (no host ever sees two requests at once, whatever the number says) and one
+  case exists specifically to prove that a looser number does not loosen
+  politeness.
+- The robots check and the request that follows it run inside one turn of the
+  host gate. Taking the gate separately around each would let two requests
+  leave back to back and would defeat a published `crawl-delay`.
+- A retry is a new attempt of the same target, not a new target. The attempt
+  number is passed to `SnapshotStore.store(_:attempt:)`, so a fetch that
+  succeeded on its second attempt stores one snapshot whose record names
+  attempt 2, and the first attempt is counted rather than forgotten.
+- Only `CancellationError` is thrown out of `fetch`. Every other outcome is a
+  value: `stored`, `duplicate`, or `refused` with a `FetchStage` and a kind.
+  One source failing is a result of a research run, not a reason to discard the
+  sources that succeeded.
+- Retries are limited to `timeout` and `transport_failure`. A status code, a
+  refused address, a robots rule, and an unreadable document are answers;
+  asking again would only repeat them.
+- The refusal is flattened to `(stage, kind, reason)` so that one batch can
+  report four different boundaries without the caller switching over four error
+  types. `FetchStage` is a closed set of four, and the fixture's refusal table
+  is asserted to enumerate exactly those four.
+
+Consequences:
+
+- Parallelism is measured, not inferred. The stub transport holds each document
+  request until the case's declared number of requests are in flight together
+  (a bounded yield loop, no wall clock). A serial schedule cannot satisfy that,
+  so "the batch is parallel" is a measurement rather than a hope, and the
+  measured peak is then exactly bounded above by the ceiling.
+- Two targets offering identical bytes in the same batch are race-decided in
+  the one respect that cannot be otherwise: which offer stores the bytes. The
+  fixture marks that case and asserts the multiset of outcomes plus the stored
+  record, because the contract is "one snapshot, both identities, both URLs,
+  one duplicate", not "target 0 stores and target 1 duplicates".
+- A ceiling that a caller can raise without a politeness effect is a ceiling
+  that must be proven not to have one, so a case sets the per-host ceiling to
+  two and asserts the observed per-host overlap is still one.
+- The first run of the new suite was red with 5 failures. Two were real
+  defects in the tests (a record read from a result captured before the merge,
+  and peak-overlap expectations that assumed the limiter rather than the gate
+  was the binding per-host constraint). Three were the same defect in
+  miniature: overlap measured by yield counting is not deterministic, so the
+  measurement was replaced by the barrier. No production behaviour was
+  weakened; the per-host expectation was tightened from two to one.
