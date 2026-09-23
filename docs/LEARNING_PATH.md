@@ -158,6 +158,30 @@ Practised in M002.6:
   of two identical offers stores the bytes - is recorded as such in the fixture
   rather than asserted positionally.
 
+Practised in M002.7:
+
+- why a diagnostic must be *derived* from the run rather than written next to
+  it, and how one `switch` over a single pipeline makes "the reason you were
+  given" and "the error that was thrown" the same fact;
+- why an exhaustive switch over a refusal family is a design constraint rather
+  than a formality: a new refusal case cannot compile until someone decides
+  which boundary owns it;
+- why a run that never decoded must report `undecided` for the encoding it
+  asked for, and why the requested encoding belongs in the reason instead;
+- why `runs_dropped` counts a run that began inside a prose element and not the
+  newline between two block tags, and what a counter that tracks indentation
+  would be measuring instead;
+- why a fingerprint taken only over counts identifies a document's shape rather
+  than the document, and why the digest of the decoded characters is the
+  smallest fact that closes that gap;
+- why a fact that is always false - a truncation flag on a boundary that
+  refuses instead of truncating - is decoration rather than evidence;
+- why a frozen serialized order with the fingerprint last lets a reader verify
+  a record without trusting the writer; and
+- why three red runs were fixed by making the implementation stronger (a
+  prose-depth rule, a content digest, a single undecided gate) rather than by
+  relaxing the assertion that caught them.
+
 ## M003 - Retrieval and local generation
 
 Learn:

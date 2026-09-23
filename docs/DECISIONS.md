@@ -585,3 +585,55 @@ Consequences:
   miniature: overlap measured by yield counting is not deterministic, so the
   measurement was replaced by the barrier. No production behaviour was
   weakened; the per-host expectation was tightened from two to one.
+
+## D022 - A diagnostic is derived from the run, never authored beside it
+
+Decision: `HTMLExtraction.diagnose(_:sourceID:policy:)` returns an
+`ExtractionOutcome` carrying either the page or the refusal, each with exactly
+one `ExtractionDiagnostic`. `HTMLExtraction.extract` is implemented as a
+`switch` over `diagnose`, so the throwing entry point and the reporting entry
+point execute one pipeline and cannot disagree about what happened.
+
+Rules:
+
+- The stage comes from `ExtractionError.stage`, an exhaustive switch over the
+  refusal family. A new refusal case cannot compile without deciding which
+  boundary owns it, so the stage mapping is total by construction and all seven
+  stages are reachable. No new refusal kind is introduced.
+- Every fact is a count or a digest over bytes already in hand. Nothing is
+  fetched, resolved, timed, or estimated: the diagnostic reports what the run
+  measured, not what it might have done.
+- A run that never decoded reports `charset=undecided`, `charset_source=
+  undecided`, and `decoded_digest=undecided`. The requested encoding belongs in
+  the refusal's reason, not in a fact about what was used. This is enforced in
+  one place - the metrics builder - so no caller can bypass it.
+- `decoded_digest` is the digest of the decoded characters, so two bodies that
+  differ by one character cannot produce the same record. Without it the
+  fingerprint would identify the shape of a run rather than the run.
+- `runs_dropped` counts a text run that held characters, produced no readable
+  text, and *began inside a prose element* (`p`, `li`, `dt`, `dd`,
+  `blockquote`, `figcaption`, `td`, `th`, `pre`, and the headings). Whitespace
+  between structural elements is layout; counting it would make the number a
+  measure of a document's indentation. The depth is recorded when a run's first
+  character arrives, so a closing tag cannot retroactively decide whether the
+  run was inside it.
+- Nothing is reported that is always false. Extraction refuses an oversized
+  document rather than truncating it, so there is no `truncated` or
+  `bytes_dropped` field: the byte ceiling and the byte count are reported, and
+  a fact that could never vary would be decoration.
+
+Consequences:
+
+- The record is frozen at twenty-three serialized keys in a fixed order, with
+  the fingerprint last, taken over exactly the preceding lines. A reader can
+  strip the last line and hash the rest to check the record itself.
+- Three red runs shaped the design rather than being worked around: the first
+  run reported `runs_dropped=2` because inter-element newlines were counted
+  (fixed by the prose-depth rule); the second let a one-character change
+  produce an identical fingerprint (fixed by `decoded_digest`, which
+  strengthened the property instead of weakening the assertion); the third
+  reported the requested `shift_jis` as a used encoding on a run that never
+  decoded (fixed by the single undecided gate). A mistyped digest literal in
+  the frozen field-order test was corrected against the measured value, and
+  the test now cross-checks the digest against the fixture body so the literal
+  cannot drift from the characters it claims to identify.

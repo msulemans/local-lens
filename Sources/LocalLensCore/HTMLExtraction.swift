@@ -158,82 +158,26 @@ public enum HTMLExtraction {
         sourceID: String,
         policy: ExtractionPolicy = .default
     ) throws -> ExtractedPage {
-        let url = response.finalURL.absoluteString
-
-        guard !sourceID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw ExtractionError.missingSourceIdentifier(url: url)
+        switch diagnose(response, sourceID: sourceID, policy: policy) {
+        case let .extracted(page, _):
+            return page
+        case let .refused(error, _):
+            throw error
         }
+    }
 
-        let mediaType = Self.mediaType(of: response.contentType)
-        guard supportedContentTypes.contains(mediaType) else {
-            throw ExtractionError.unsupportedContentType(contentType: mediaType, url: url)
-        }
-
-        guard response.body.count <= policy.maximumBytes else {
-            throw ExtractionError.documentTooLarge(
-                byteCount: response.body.count,
-                limit: policy.maximumBytes,
-                url: url
-            )
-        }
-
-        // The header wins. A document that declares its own character set in
-        // `<meta>` is believed only when the header said nothing, because the
-        // header is the transport's statement about the bytes and `<meta>` is
-        // the document's statement about itself.
-        let charset = Self.charset(in: response.contentType)
-            ?? Self.declaredCharset(inBody: response.body)
-        let html = try Self.decode(response.body, charset: charset, url: url)
-
-        guard !html.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw ExtractionError.emptyDocument(url: url)
-        }
-        guard html.contains("<") else {
-            throw ExtractionError.malformedMarkup(url: url, reason: "the body contained no markup")
-        }
-
-        let document = try HTMLTokenizer.tokenize(html, url: url)
-        guard !document.blocks.isEmpty else {
-            throw ExtractionError.noReadableText(url: url)
-        }
-
-        let text = document.blocks.map(\.text).joined(separator: "\n\n")
-        let contentHash = StableIdentity.digest(text)
-        let snapshot = Snapshot(
-            id: StableIdentity.make("snapshot", sourceID, contentHash),
-            sourceID: sourceID,
-            contentHash: contentHash,
-            extractedText: text,
-            extractorVersion: policy.extractorVersion
-        )
-        let passages = document.blocks.map { block in
-            Passage(
-                id: StableIdentity.make(
-                    "passage",
-                    snapshot.id,
-                    String(block.ordinal),
-                    StableIdentity.digest(block.text)
-                ),
-                snapshotID: snapshot.id,
-                ordinal: block.ordinal,
-                heading: block.heading,
-                text: block.text,
-                textHash: StableIdentity.digest(block.text)
-            )
-        }
-
-        return ExtractedPage(
-            sourceID: sourceID,
-            requestedURL: response.requestedURL,
-            finalURL: response.finalURL,
-            title: document.title,
-            text: text,
-            contentHash: contentHash,
-            extractorVersion: policy.extractorVersion,
-            blocks: document.blocks,
-            snapshot: snapshot,
-            passages: passages
-        )
+    /// The same run as `extract`, reported instead of thrown.
+    ///
+    /// Both entry points execute one pipeline, so a refusal cannot be explained
+    /// by one and thrown by the other. The diagnostic records which boundary
+    /// decided and what it measured, and is derived from the run rather than
+    /// authored beside it.
+    public static func diagnose(
+        _ response: AcquisitionResult,
+        sourceID: String,
+        policy: ExtractionPolicy = .default
+    ) -> ExtractionOutcome {
+        ExtractionDiagnostics.run(response, sourceID: sourceID, policy: policy)
     }
 
     /// The media type with parameters removed and case folded, so
@@ -377,10 +321,23 @@ public enum HTMLExtraction {
 /// It is not a browser and does not try to be one: it understands elements,
 /// attributes it skips, comments, and the entities a document actually uses,
 /// and it refuses markup it cannot read rather than guessing at it.
-private enum HTMLTokenizer {
+enum HTMLTokenizer {
+    /// What the reader skipped or kept. The counters exist so extraction can
+    /// report where a document's characters went instead of only how many
+    /// survived.
+    struct Stats: Equatable, Sendable {
+        var headingsFound = 0
+        var runsDropped = 0
+        var nonProseElementsSkipped = 0
+        var commentsSkipped = 0
+        var declarationsSkipped = 0
+        var titleCharacters = 0
+    }
+
     struct Document {
         let title: String
         let blocks: [ExtractionBlock]
+        let stats: Stats
     }
 
     /// Elements whose text content is never readable prose.
@@ -398,6 +355,14 @@ private enum HTMLTokenizer {
 
     private static let headingElements: Set<String> = ["h1", "h2", "h3", "h4", "h5", "h6"]
 
+    /// Elements whose text content is the prose. Whitespace *between* elements
+    /// is layout, so a run only counts as dropped when it began inside one of
+    /// these; otherwise the count would measure a document's indentation.
+    private static let proseElements: Set<String> = [
+        "blockquote", "dd", "dt", "figcaption", "h1", "h2", "h3", "h4", "h5", "h6",
+        "li", "p", "pre", "td", "th",
+    ]
+
     private static let commentOpen: [Character] = Array("<!--")
     private static let commentClose: [Character] = Array("-->")
     private static let declarationOpen: [Character] = Array("<!")
@@ -414,6 +379,12 @@ private enum HTMLTokenizer {
         var currentHeading = ""
         var inHeading = false
         var blocks: [ExtractionBlock] = []
+        var stats = Stats()
+        var proseDepth = 0
+        /// The prose depth the current run began at, recorded when its first
+        /// character arrived so a tag that closes an element cannot retroactively
+        /// decide whether the run was inside it.
+        var runDepth: Int?
 
         // Text is routed to whichever run is open. A heading is not body text:
         // leaving it in `buffer` is what makes a heading read like an ordinary
@@ -422,14 +393,24 @@ private enum HTMLTokenizer {
             if inHeading {
                 headingBuffer.append(character)
             } else {
+                if buffer.isEmpty { runDepth = proseDepth }
                 buffer.append(character)
             }
         }
 
         func flushBuffer() {
-            let text = HTMLText.normalized(buffer)
+            let raw = buffer
+            let depth = runDepth ?? 0
             buffer = ""
-            guard !text.isEmpty else { return }
+            runDepth = nil
+            let text = HTMLText.normalized(raw)
+            guard !text.isEmpty else {
+                // A run that held characters but no readable character is a
+                // drop worth counting: it is the difference between a document
+                // that said nothing and one whose words were lost.
+                if !raw.isEmpty, depth > 0 { stats.runsDropped += 1 }
+                return
+            }
             blocks.append(ExtractionBlock(ordinal: blocks.count, heading: currentHeading, text: text))
         }
 
@@ -450,6 +431,7 @@ private enum HTMLTokenizer {
                 ) else {
                     throw ExtractionError.malformedMarkup(url: url, reason: "a comment was never closed")
                 }
+                stats.commentsSkipped += 1
                 index = end + Self.commentClose.count
                 continue
             }
@@ -459,6 +441,7 @@ private enum HTMLTokenizer {
                 guard let end = HTMLExtraction.find(characters, from: index + 2, Self.tagClose) else {
                     throw ExtractionError.malformedMarkup(url: url, reason: "a declaration was never closed")
                 }
+                stats.declarationsSkipped += 1
                 index = end + 1
                 continue
             }
@@ -475,6 +458,10 @@ private enum HTMLTokenizer {
                 .lowercased()
             guard !name.isEmpty else { continue }
 
+            if Self.proseElements.contains(name) {
+                proseDepth = max(0, proseDepth + (isClosing ? -1 : 1))
+            }
+
             if Self.skipElements.contains(name) {
                 guard !isClosing else { continue }
                 let swallowed = "an unclosed <\(name)> element swallowed the rest of the document"
@@ -484,6 +471,7 @@ private enum HTMLTokenizer {
                 guard let closingEnd = HTMLExtraction.find(characters, from: closing, Self.tagClose) else {
                     throw ExtractionError.malformedMarkup(url: url, reason: swallowed)
                 }
+                stats.nonProseElementsSkipped += 1
                 index = closingEnd + 1
                 continue
             }
@@ -511,6 +499,7 @@ private enum HTMLTokenizer {
                     inHeading = false
                     if !heading.isEmpty {
                         currentHeading = heading
+                        stats.headingsFound += 1
                         // A heading is emitted as its own block so a document
                         // that is nothing but headings is still readable, and
                         // the blocks that follow carry the same heading.
@@ -532,7 +521,9 @@ private enum HTMLTokenizer {
         }
 
         flushBuffer()
-        return Document(title: HTMLText.normalized(titleBuffer), blocks: blocks)
+        let title = HTMLText.normalized(titleBuffer)
+        stats.titleCharacters = title.count
+        return Document(title: title, blocks: blocks, stats: stats)
     }
 }
 

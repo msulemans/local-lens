@@ -1,0 +1,323 @@
+{
+  "_fixture": {
+    "synthetic": true,
+    "license": "redistributable",
+    "shape": "DiagnosticFixture",
+    "note": "Hand-authored diagnostic scenarios. Every body is written here, every host is a non-resolvable documentation name, and extraction is a pure function of the bytes, so the suite opens no socket and reads no live page. Each entry freezes the measurable facts the diagnostic must report, so a diagnostic that stops counting a fact fails here rather than quietly reporting less."
+  },
+  "source_id": "diagnostics-fixture",
+  "policy": {
+    "maximum_bytes": 4096,
+    "extractor_version": "html-extractor-1"
+  },
+  "cases": [
+    {
+      "id": "headings-script-comment-and-blank-run",
+      "why": "a document that exercises every skip the tokenizer performs and every counter the diagnostic reports",
+      "url": "https://example.invalid/research/coffee",
+      "requested_url": "https://example.invalid/research/coffee",
+      "content_type": "text/html; charset=utf-8",
+      "body": "<!DOCTYPE html>\n<html><head><title>Coffee Notes</title><script>var x = 1;</script></head>\n<body><h1>Roast</h1><p>Dark roast tastes bitter.</p><!-- a note --><h2></h2><p>   </p><p>Light roast tastes bright.</p></body></html>",
+      "expected": {
+        "title": "Coffee Notes",
+        "text": "Roast\n\nDark roast tastes bitter.\n\nLight roast tastes bright.",
+        "blocks": [
+          {
+            "heading": "Roast",
+            "text": "Roast"
+          },
+          {
+            "heading": "Roast",
+            "text": "Dark roast tastes bitter."
+          },
+          {
+            "heading": "Roast",
+            "text": "Light roast tastes bright."
+          }
+        ],
+        "metrics": {
+          "media_type": "text/html",
+          "bytes_offered": 223,
+          "byte_ceiling": 4096,
+          "within_byte_ceiling": true,
+          "characters_decoded": 223,
+          "characters_kept": 60,
+          "blocks_kept": 3,
+          "headings_found": 1,
+          "title_characters": 12,
+          "runs_dropped": 1,
+          "non_prose_elements_skipped": 1,
+          "comments_skipped": 1,
+          "declarations_skipped": 1,
+          "charset": "utf-8",
+          "charset_source": "header"
+        }
+      }
+    },
+    {
+      "id": "utf8-characters-are-not-bytes",
+      "why": "the diagnostic counts characters, not bytes, so a multi-byte document cannot look bigger after decoding than it was on the wire",
+      "url": "https://example.invalid/menu/cafe",
+      "requested_url": "https://example.invalid/menu/cafe",
+      "content_type": "text/html",
+      "body": "<html><head><title>Café</title></head><body><p>The café serves crème.</p></body></html>",
+      "expected": {
+        "title": "Café",
+        "text": "The café serves crème.",
+        "blocks": [
+          {
+            "heading": "",
+            "text": "The café serves crème."
+          }
+        ],
+        "metrics": {
+          "media_type": "text/html",
+          "bytes_offered": 90,
+          "byte_ceiling": 4096,
+          "within_byte_ceiling": true,
+          "characters_decoded": 87,
+          "characters_kept": 22,
+          "blocks_kept": 1,
+          "headings_found": 0,
+          "title_characters": 4,
+          "runs_dropped": 0,
+          "non_prose_elements_skipped": 0,
+          "comments_skipped": 0,
+          "declarations_skipped": 0,
+          "charset": "utf-8",
+          "charset_source": "assumed"
+        }
+      }
+    },
+    {
+      "id": "meta-declared-latin1",
+      "why": "nothing in the transport declared an encoding, so the document's own declaration decides and the diagnostic says so",
+      "url": "https://example.invalid/menu/creme",
+      "requested_url": "https://example.invalid/menu/creme",
+      "content_type": "text/html",
+      "body_base64": "PGh0bWw+PGhlYWQ+PG1ldGEgY2hhcnNldD0iaXNvLTg4NTktMSI+PHRpdGxlPkNy6G1lPC90aXRsZT48L2hlYWQ+PGJvZHk+PHA+Q3LobWUgYnL7bOllLjwvcD48L2JvZHk+PC9odG1sPg==",
+      "expected": {
+        "title": "Crème",
+        "text": "Crème brûlée.",
+        "blocks": [
+          {
+            "heading": "",
+            "text": "Crème brûlée."
+          }
+        ],
+        "metrics": {
+          "media_type": "text/html",
+          "bytes_offered": 106,
+          "byte_ceiling": 4096,
+          "within_byte_ceiling": true,
+          "characters_decoded": 106,
+          "characters_kept": 13,
+          "blocks_kept": 1,
+          "headings_found": 0,
+          "title_characters": 5,
+          "runs_dropped": 0,
+          "non_prose_elements_skipped": 0,
+          "comments_skipped": 0,
+          "declarations_skipped": 0,
+          "charset": "iso-8859-1",
+          "charset_source": "meta"
+        }
+      }
+    },
+    {
+      "id": "header-declared-charset-beats-the-meta-declaration",
+      "why": "the transport's statement about the bytes outranks the document's statement about itself, and the diagnostic records which one was believed",
+      "url": "https://example.invalid/menu/noir",
+      "requested_url": "https://example.invalid/menu/noir",
+      "content_type": "text/html; charset=ISO-8859-1",
+      "body_base64": "PGh0bWw+PGhlYWQ+PG1ldGEgY2hhcnNldD0idXRmLTgiPjx0aXRsZT5DYWbpPC90aXRsZT48L2hlYWQ+PGJvZHk+PHA+Q2Fm6SBub2lyLjwvcD48L2JvZHk+PC9odG1sPg==",
+      "expected": {
+        "title": "Café",
+        "text": "Café noir.",
+        "blocks": [
+          {
+            "heading": "",
+            "text": "Café noir."
+          }
+        ],
+        "metrics": {
+          "media_type": "text/html",
+          "bytes_offered": 97,
+          "byte_ceiling": 4096,
+          "within_byte_ceiling": true,
+          "characters_decoded": 97,
+          "characters_kept": 10,
+          "blocks_kept": 1,
+          "headings_found": 0,
+          "title_characters": 4,
+          "runs_dropped": 0,
+          "non_prose_elements_skipped": 0,
+          "comments_skipped": 0,
+          "declarations_skipped": 0,
+          "charset": "iso-8859-1",
+          "charset_source": "header"
+        }
+      }
+    }
+  ],
+  "refusals": [
+    {
+      "id": "refused-before-anything-was-decoded",
+      "why": "a document that cannot name its source is refused before the media type, the size, or the encoding is even considered, and the diagnostic still reports the bytes it was handed",
+      "url": "https://example.invalid/research/coffee",
+      "content_type": "text/html",
+      "body": "<html><body><p>Readable.</p></body></html>",
+      "source_id": "   ",
+      "expected_kind": "missing_source_identifier",
+      "expected_stage": "source_identifier",
+      "expected_metrics": {
+        "media_type": "text/html",
+        "bytes_offered": 42,
+        "byte_ceiling": 4096,
+        "within_byte_ceiling": true,
+        "characters_decoded": null,
+        "characters_kept": 0,
+        "blocks_kept": 0,
+        "headings_found": 0,
+        "title_characters": 0,
+        "runs_dropped": 0,
+        "non_prose_elements_skipped": 0,
+        "comments_skipped": 0,
+        "declarations_skipped": 0,
+        "charset": "undecided",
+        "charset_source": "undecided"
+      }
+    },
+    {
+      "id": "refused-on-media-type",
+      "why": "a PDF is refused by the content-type boundary, which decides before a single byte is decoded",
+      "url": "https://example.invalid/research/coffee",
+      "content_type": "application/pdf",
+      "body": "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n%%EOF\n",
+      "expected_kind": "unsupported_content_type",
+      "expected_stage": "content_type",
+      "expected_metrics": {
+        "media_type": "application/pdf",
+        "bytes_offered": 59,
+        "byte_ceiling": 4096,
+        "within_byte_ceiling": true,
+        "characters_decoded": null,
+        "characters_kept": 0,
+        "blocks_kept": 0,
+        "headings_found": 0,
+        "title_characters": 0,
+        "runs_dropped": 0,
+        "non_prose_elements_skipped": 0,
+        "comments_skipped": 0,
+        "declarations_skipped": 0,
+        "charset": "undecided",
+        "charset_source": "undecided"
+      }
+    },
+    {
+      "id": "refused-on-size-before-decoding",
+      "why": "an oversized body is refused on its measured length, so the diagnostic reports the bytes and the ceiling that decided it and nothing about text it never produced",
+      "url": "https://example.invalid/research/coffee",
+      "content_type": "text/html",
+      "body": "<html><body><p>padding padding padding padding padding padding padding padding </p></body></html>",
+      "maximum_bytes": 32,
+      "expected_kind": "document_too_large",
+      "expected_stage": "size",
+      "expected_metrics": {
+        "media_type": "text/html",
+        "bytes_offered": 97,
+        "byte_ceiling": 32,
+        "within_byte_ceiling": false,
+        "characters_decoded": null,
+        "characters_kept": 0,
+        "blocks_kept": 0,
+        "headings_found": 0,
+        "title_characters": 0,
+        "runs_dropped": 0,
+        "non_prose_elements_skipped": 0,
+        "comments_skipped": 0,
+        "declarations_skipped": 0,
+        "charset": "undecided",
+        "charset_source": "undecided"
+      }
+    },
+    {
+      "id": "refused-on-charset",
+      "why": "the header asked for an encoding the decoder does not implement, so the run refused before decoding: the refusal's reason names the requested encoding, while the facts report that no encoding was used",
+      "url": "https://example.invalid/research/coffee",
+      "content_type": "text/html; charset=shift_jis",
+      "body": "<html><body><p>Hello</p></body></html>",
+      "expected_kind": "unsupported_charset",
+      "expected_stage": "charset",
+      "expected_metrics": {
+        "media_type": "text/html",
+        "bytes_offered": 38,
+        "byte_ceiling": 4096,
+        "within_byte_ceiling": true,
+        "characters_decoded": null,
+        "characters_kept": 0,
+        "blocks_kept": 0,
+        "headings_found": 0,
+        "title_characters": 0,
+        "runs_dropped": 0,
+        "non_prose_elements_skipped": 0,
+        "comments_skipped": 0,
+        "declarations_skipped": 0,
+        "charset": "undecided",
+        "charset_source": "undecided"
+      }
+    },
+    {
+      "id": "refused-on-markup-after-decoding",
+      "why": "markup that cannot be read is refused after the body became characters, so the diagnostic proves the bytes were decoded and no block survived",
+      "url": "https://example.invalid/research/coffee",
+      "content_type": "text/html",
+      "body": "<html><body><p>unterminated <",
+      "expected_kind": "malformed_markup",
+      "expected_stage": "markup",
+      "expected_metrics": {
+        "media_type": "text/html",
+        "bytes_offered": 29,
+        "byte_ceiling": 4096,
+        "within_byte_ceiling": true,
+        "characters_decoded": 29,
+        "characters_kept": 0,
+        "blocks_kept": 0,
+        "headings_found": 0,
+        "title_characters": 0,
+        "runs_dropped": 0,
+        "non_prose_elements_skipped": 0,
+        "comments_skipped": 0,
+        "declarations_skipped": 0,
+        "charset": "utf-8",
+        "charset_source": "assumed"
+      }
+    },
+    {
+      "id": "refused-on-text-after-tokenizing",
+      "why": "a readable document that holds nothing a reader can use is refused at the text boundary, and the diagnostic accounts for where its characters went",
+      "url": "https://example.invalid/research/coffee",
+      "content_type": "text/html",
+      "body": "<html><head><script>var x = 1;</script></head><body><!-- nothing --></body></html>",
+      "expected_kind": "no_readable_text",
+      "expected_stage": "text",
+      "expected_metrics": {
+        "media_type": "text/html",
+        "bytes_offered": 82,
+        "byte_ceiling": 4096,
+        "within_byte_ceiling": true,
+        "characters_decoded": 82,
+        "characters_kept": 0,
+        "blocks_kept": 0,
+        "headings_found": 0,
+        "title_characters": 0,
+        "runs_dropped": 0,
+        "non_prose_elements_skipped": 1,
+        "comments_skipped": 1,
+        "declarations_skipped": 0,
+        "charset": "utf-8",
+        "charset_source": "assumed"
+      }
+    }
+  ]
+}

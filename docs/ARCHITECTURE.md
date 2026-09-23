@@ -286,6 +286,37 @@ Known losses, recorded rather than hidden: whitespace inside `<pre>` is
 collapsed, there is no DOM, no attribute or `<base>` handling, no full HTML5
 named-entity table, and the character-set reader is a scan rather than a parser.
 
+## Extraction diagnostics
+
+`extract` throws; `diagnose` reports. Both run one pipeline, so a refusal that
+one explains is the refusal the other throws. The outcome is a value:
+
+```
+ExtractionOutcome = extracted(ExtractedPage, ExtractionDiagnostic)
+                  | refused(ExtractionError, ExtractionDiagnostic)
+```
+
+A diagnostic names the boundary that decided (`policy`, `source_identifier`,
+`content_type`, `size`, `charset`, `markup`, `text`), the refusal kind and
+reason, the URL a reader would see, and twenty-three measured facts in a frozen
+serialized order, with a fingerprint over exactly those lines. The stage comes
+from the refusal itself through an exhaustive switch, so a new refusal cannot
+compile without naming its owner, and the mapping cannot go stale.
+
+Everything reported was already in hand when the run stopped: bytes offered and
+the ceiling they were held to, characters decoded and kept, blocks kept,
+headings found, title characters, text runs dropped, non-prose elements,
+comments and declarations skipped, the encoding used and where it came from,
+the extractor version, and the digest of the decoded characters. A run that
+refused before decoding reports `undecided` for the encoding and the digest
+rather than the encoding it asked for. No fact that could never vary is
+reported, which is why there is no truncation field: an oversized document is
+refused, not shortened.
+
+The frozen table lives in `Fixtures/html/diagnostic-scenarios.json`: four
+documents and six refusals, one per stage that can refuse, each with its
+expected facts. Every host in it is a reserved non-resolvable name.
+
 ## Snapshot and passage boundary
 
 Snapshots are content-addressed and immutable within a completed run. A
