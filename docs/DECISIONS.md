@@ -888,3 +888,47 @@ Consequences:
   core tests.
 - A model-backed Quick mode, history, the global launcher, onboarding, and
   packaging remain later M003 tasks.
+
+## D028 - Freeze infrastructure and ship the live Quick slice
+
+Context: a product review found that the foundations are real and tested (192
+deterministic tests, `make gate` green, safe acquisition through retrieval,
+citation compilation, and a native Quick view) but that no real cited answer has
+been produced, and that the sibling licence has been blocked since M001 while a
+parallel native Swift core was rebuilt.
+
+Decision: freeze new infrastructure. No new protocol, refusal family, agent
+framework, reranker, vector store, or abstraction is added unless the live slice
+cannot be built without it. The sole next task is the live Quick vertical slice:
+
+```text
+one real question
+  -> at most 2 searches
+  -> at most 6 safe parallel fetches
+  -> at most 12 retrieved passages
+  -> one selected provider
+  -> a concise answer
+  -> exact citations
+  -> the native Quick UI
+```
+
+It is evaluated on five representative questions with time to first evidence,
+total latency, answer usefulness, citation validity, citation completeness, peak
+memory, provider cost, and failure behavior. It closes with one explicit
+architecture decision: resolve the sibling licence and extract its remaining
+useful pieces, or formally choose the native Swift core and stop describing the
+sibling as the planned foundation.
+
+Rules:
+
+- The live slice is a separate binary. No default or gated test run may reach
+  the network, and the offline guards and frozen M001 evidence remain unchanged.
+- A provider may be called only after its `docs/MODEL_POLICY.md` experiment
+  record is filled. No candidate is currently eligible.
+- No silent hosted fallback: the provider is chosen, labelled, and recorded.
+
+Blocker, recorded rather than worked around: this environment has no search
+endpoint (no SearXNG or search API listening) and no answer provider (no API key,
+no local model, and no filled experiment record), so no real cited answer can be
+produced until the owner chooses a search endpoint and exactly one provider, or
+approves a specific local model path.

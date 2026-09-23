@@ -1775,6 +1775,40 @@ Next eligible task: M003.5 (local inference boundary and model eligibility),
 derived from the M003 build list in `docs/MILESTONES.md` and defined in
 `project.json`.
 
+## 2026-09-23 - Strategy correction: freeze infrastructure, ship the live Quick slice
+
+Context: a product review found the foundations are real and tested (192
+deterministic tests, `make gate` green, safe acquisition through retrieval,
+citation compilation, and a native Quick view) but that no real cited answer has
+been produced, and that the sibling licence has been blocked since M001 while a
+parallel native Swift core was rebuilt.
+
+Decision (D028): freeze new infrastructure. No new protocol, refusal family,
+agent framework, reranker, vector store, or abstraction is added unless the live
+slice cannot be built without it. The sole next task is the live Quick vertical
+slice: one real question -> at most 2 searches -> at most 6 safe parallel
+fetches -> at most 12 retrieved passages -> one selected provider -> a concise
+answer -> exact citations -> the native Quick UI; evaluated on five
+representative questions with time to first evidence, total latency, answer
+usefulness, citation validity, citation completeness, peak memory, provider
+cost, and failure behavior. It closes with one explicit architecture decision:
+resolve the sibling licence and extract its remaining useful pieces, or formally
+choose the native Swift core.
+
+Blocker (recorded, not worked around): this environment has no search endpoint
+(no SearXNG or search API listening) and no answer provider (no API key, no local
+model, and no filled `docs/MODEL_POLICY.md` experiment record). No provider may
+be called before its experiment record is filled, so no real cited answer can be
+produced until the owner chooses a search endpoint and exactly one provider, or
+approves a specific local model path.
+
+Process change: the machine-readable `verified_scope` was trimmed from
+per-capability entries to milestone-level summaries to reduce handoff overhead.
+Detailed evidence stays in this file.
+
+Next eligible task: M003.5 (live Quick vertical slice), blocked on the
+search-endpoint and provider choice above.
+
 ## Evidence append template
 
 Every completed milestone entry must include:
