@@ -3,8 +3,11 @@
 Last updated: 2026-09-23 (Australia/Sydney)
 
 Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
-Milestone 002 (safe live acquisition) is active; M002.8 (approved live
-corpus tests) is the sole next task. M002.1 delivered the search adapter
+Milestone 002 (safe live acquisition) is complete: every gate bullet has
+recorded evidence, with the live-corpus portion of bullet (a) recorded as an
+explicit blocker rather than claimed. Milestone 003 (first useful Quick
+release) is the sole next milestone; its entry task is defined in
+`project.json`. M002.1 delivered the search adapter
 boundary with a SearXNG JSON adapter, M002.2 delivered the policy-checked
 acquisition boundary with a frozen refusal matrix, M002.3 delivered the robots
 and politeness boundary, M002.4 delivered the HTML extraction boundary with a
@@ -13,8 +16,10 @@ store with retry-safe deduplication, M002.6 delivered the bounded, per-host
 polite parallel fetch scheduler that composes all four boundaries behind one
 typed per-URL outcome, and M002.7 delivered the extraction diagnostic record
 that makes every extraction outcome, page or refusal, inspectable without
-re-fetching. One hundred and forty deterministic tests pass and clean checkouts
-pass `make gate`.**
+re-fetching, and M002.8 delivered the approved-live-corpus gate, which can plan
+and judge a live run but holds no transport, so no default or gated test run
+can reach the network. One hundred and fifty-five deterministic tests pass and
+clean checkouts pass `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -1159,6 +1164,159 @@ Observations carried forward, not silently changed:
 
 Next eligible task: M002.8 approved live corpus tests, derived from the M002
 build list in `docs/MILESTONES.md`.
+
+## 2026-09-23 - M002.8 approved live corpus gate
+
+Scope actually executed: the M002.8 `next_task` only. `LiveCorpus.swift` (the
+manifest, the approval gate, and the expectation check),
+`Tests/LocalLensCoreTests/LiveCorpusTests.swift` (fifteen tests), and
+`Fixtures/corpus/live-corpus.json` (the shipped manifest) were added.
+`docs/DECISIONS.md` gains D023, `docs/ARCHITECTURE.md` gains "Approved live
+corpus", and `docs/LEARNING_PATH.md` gains "Practised in M002.8". No sibling
+code was copied (licence gate still unmet). No network, no DNS, no live page
+read, no Docker, and no model weights: the harness holds no transport, so the
+default and gated runs have nothing to reach the network with.
+
+Commit or working-tree state: implementation committed as `8d0e9b7`; this
+entry is the second commit of the pair.
+
+Commands and observed outputs:
+
+- Test-first red. The test file was written before the implementation and
+  compiled against the tree without it:
+
+  ```text
+  $ swift test --filter LiveCorpusTests
+  error: cannot find 'CorpusManifest' in scope
+  error: cannot find 'LiveCorpus' in scope
+  ```
+
+- A second red, on the verdict reason, was fixed by making the implementation
+  say more rather than by relaxing the assertion. The test requires the reason
+  to name both shapes; the reason read "expected a refusal at ... and observed
+  an extraction with ...". The mismatch branches now name the vocabulary's own
+  cases:
+
+  ```text
+  error: -[LocalLensCoreTests.LiveCorpusTests testVerdictComparesAnObservationAgainstTheFrozenExpectation] : XCTAssertTrue failed
+  ```
+
+- Focused suite, after the fix:
+
+  ```text
+  $ swift test --filter LiveCorpusTests
+  Executed 15 tests, with 0 failures (0 unexpected) in 0.006 (0.007) seconds
+  ```
+
+- Full suite, four consecutive runs, identical:
+
+  ```text
+  Executed 155 tests, with 0 failures (0 unexpected) in 0.310 (0.320) seconds
+  Executed 155 tests, with 0 failures (0 unexpected) in 0.293 (0.304) seconds
+  Executed 155 tests, with 0 failures (0 unexpected) in 0.310 (0.322) seconds
+  Executed 155 tests, with 0 failures (0 unexpected) in 0.306 (0.318) seconds
+  ```
+
+- `make gate` (validate-manifest, validate-schemas, build, verify): exit 0,
+  155 tests, 0 failures.
+
+New boundaries that fail closed, and their typed outcomes:
+
+Manifest refusal family, ten kinds, frozen and enumerated by
+`testManifestRefusalFamilyIsEnumeratedAndTyped`:
+
+- `unreadable_json` - the body is not a manifest at all;
+- `missing_manifest_identifier` - the corpus has no id, so an entry's
+  provenance cannot be attributed to a corpus;
+- `missing_identifier` - an entry has no id, so a verdict could not be
+  attributed;
+- `duplicate_identifier` - two entries share an id, so a verdict could not be
+  attributed;
+- `unrecorded_licence` - nothing is known about what may be done with the page;
+- `unrecorded_licence_reference` - a licence is claimed but its text cannot be
+  checked;
+- `missing_expectation` - an entry that cannot fail is not a test;
+- `unknown_expectation` - an outcome outside the frozen vocabulary;
+- `insecure_url` - an entry that is not https;
+- `incomplete_approval` - an approval naming no approver or no record, which is
+  not an approval.
+
+Run refusal family, two kinds, frozen and enumerated by the same test:
+
+- `no_entries` - an empty manifest is a valid document and a refused plan; and
+- `no_approved_entries(unapproved:)` - the whole manifest refuses and names
+  every unapproved entry, because a run that silently skipped one would report
+  a pass over a corpus it did not run.
+
+Verdict outcomes: `matches`, or `differs(reason:)` naming both shapes in the
+frozen `FetchStage` vocabulary - a wrong extractor version, a wrong refusal
+boundary, and an expectation/observation shape mismatch are all proven to
+differ.
+
+Gate result: `make gate` exit 0; `make validate-manifest` conforms;
+`swift test` 155 tests, 0 failures, four consecutive identical runs.
+
+Visual evidence: M002.4 through M002.8 change no UI, so this is a launch
+check rather than a design claim. The running app was captured window-only to
+`docs/evidence/M002/app-m002-corpus-gate.png` on 2026-09-23 and read back with
+the kit OCR tool, which recovered `LocalLensApp`, `Local Lens`, `Quick •
+complete • 3 citations`, `Citations`, `Map`, `Exact saved passage • text hash
+4790bbd37344...`, and the source URL `https://example.invalid/brew-review` (the
+OCR pass misread the reserved `.invalid` TLD as `Invalld`; the kit vision probe
+confirmed the claim list and the selected source's passage). The M002 gate
+audit is recorded at `docs/evidence/M002/gate-audit.md`.
+
+Failures preserved at: the two red runs above are recorded rather than
+deleted. The first is the intended test-first red. The second is a real
+implementation defect caught by the test: a mismatch reason that did not name
+both shapes. Both were fixed by strengthening the implementation.
+
+Decision: D023. The harness takes no transport and performs no fetch; a live
+run is a separate, later binary that produces observations, and the caller is
+what fetches. An unapproved entry refuses the whole manifest. An empty manifest
+decodes and refuses at the run gate. Expectations reuse the frozen `FetchStage`
+vocabulary rather than inventing a second one.
+
+Blocker, recorded rather than worked around:
+
+- No corpus is approved, so no live page has been fetched and no page body is
+  committed. `Fixtures/corpus/live-corpus.json` ships with `entries: []` and a
+  `_fixture.why_empty` naming the two unmet requirements: a recorded licence
+  and a recorded owner approval. `docs/REUSE_PROVENANCE.md` records the same
+  unmet gate for the sibling repository (no LICENSE file, D011).
+- Adding the first entry therefore also requires changing the test that asserts
+  the shipped manifest is empty, which is deliberate: an unapproved corpus
+  cannot be added quietly.
+- Consequence for the M002 gate: the live-corpus portion of bullet (a) is
+  explicitly **unproven**. Every non-live input in bullet (a) has recorded
+  evidence; the claim that the same typed outcomes hold on a real page is not
+  made, because no page may be fetched. This is a recorded blocker, not a
+  waiver.
+
+M002 gate audit, bullet by bullet, at 155 tests:
+
+- (a) static HTML, redirects, PDF, duplicates, blocked paths, oversized
+  content, invalid MIME, private addresses, timeouts, and extraction failures
+  all produce expected typed outcomes - **evidenced** for every non-live input.
+  `Fixtures/fetch/schedule-scenarios.json` freezes seven refusal kinds across
+  ten cases (`private_address`, `http_status`, `timeout`,
+  `unsupported_content_type`, `no_readable_text`, `published_rule`,
+  `fail_closed`); `Fixtures/html/diagnostic-scenarios.json` freezes one refusal
+  per stage that can refuse (`charset`, `content_type`, `markup`, `size`,
+  `source_identifier`, `text`); `Fixtures/acquisition/safe-fetch-scenarios.json`
+  and `Fixtures/html/extraction-scenarios.json` cover redirects, PDF (as
+  `unsupported_content_type`), blocked paths, oversized content, and invalid
+  MIME. The live-corpus portion is **unproven** (see the blocker above).
+- (b) search snippets never become evidence - **evidenced** in M002.5 (the
+  snapshot store stores bytes from an acquisition, never a snippet).
+- (c) retries do not duplicate snapshots - **evidenced** in M002.6
+  (`testATransientTimeoutIsRetriedAndTheRetryIsVisible` and the store's
+  attempt-keyed deduplication).
+- (d) the deterministic M001 slice remains unchanged - **evidenced**: the M001
+  slice is part of the 155-test suite and no M002 task has touched it.
+
+Next eligible task: M003 entry task, derived from the M003 build list in
+`docs/MILESTONES.md`.
 
 ## Evidence append template
 

@@ -52,8 +52,11 @@ Gate: recorded in `LOCAL_BROWSER_STATE.md`.
 Status: **active; M002.1 (search adapter boundary and SearXNG JSON adapter),
 M002.2 (safe acquisition boundary), M002.3 (robots and politeness boundary),
 M002.4 (HTML extraction boundary), M002.5 (content snapshots), and M002.6
-(bounded parallel fetch), and M002.7 (extraction diagnostics) are complete;
-M002.8 (approved live corpus tests) is defined in `project.json`.**
+(bounded parallel fetch), M002.7 (extraction diagnostics), and M002.8
+(approved live corpus tests) are complete. Milestone 003 is the active
+milestone; its entry task is defined in `project.json`. No corpus is approved,
+so no live page has been fetched: the live-corpus portion of the gate below is
+recorded as an explicit blocker rather than claimed.**
 
 Learn:
 
