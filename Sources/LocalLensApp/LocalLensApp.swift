@@ -5,6 +5,22 @@ import SwiftUI
 struct LocalLensApp: App {
     var body: some Scene {
         WindowGroup {
+            RootView()
+        }
+    }
+}
+
+/// Selects the rendered view: the M001 deterministic fixture by default, the
+/// M003.4 deterministic Quick view when asked. `quick-map` and `map` start on
+/// the evidence map instead of the citation list.
+struct RootView: View {
+    private let startView = ProcessInfo.processInfo.environment["LOCAL_LENS_START_VIEW"]
+
+    var body: some View {
+        switch startView {
+        case "quick", "quick-map":
+            QuickRunView()
+        default:
             FixtureRunView()
         }
     }
@@ -16,10 +32,117 @@ private enum LoadState {
     case failed(String)
 }
 
+/// The M001 deterministic fixture view. It is unchanged in behavior: the same
+/// fixture, the same persisted run id, the same rendering.
 struct FixtureRunView: View {
     @State private var state: LoadState = .loading
     @State private var selectedCitationID: String?
     @State private var showsMap = ProcessInfo.processInfo.environment["LOCAL_LENS_START_VIEW"] == "map"
+
+    var body: some View {
+        RunScaffold(
+            state: state,
+            selectedCitationID: $selectedCitationID,
+            showsMap: $showsMap,
+            loadingMessage: "Running the deterministic fixture…",
+            failureTitle: "Fixture run failed",
+            failureHint: "Start the app from the repository root so Fixtures/deterministic/quick-coffee.json is found."
+        )
+        .task { await load() }
+    }
+
+    @MainActor
+    private func load() async {
+        do {
+            let repositoryRoot = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            let fixtureURL = repositoryRoot.appendingPathComponent("Fixtures/deterministic/quick-coffee.json")
+            let corpus = try FixtureWorkspace.loadFixture(from: fixtureURL)
+            let store = try makeRunStore()
+
+            let persisted: PersistedRun
+            if let existing = try? store.load(runID: "fixture-run") {
+                persisted = existing
+            } else {
+                persisted = try await DeterministicPipeline.run(corpus)
+                try store.save(persisted)
+            }
+
+            let inspections = try FixtureWorkspace.inspections(in: persisted.result)
+            let map = try FixtureWorkspace.evidenceMap(in: persisted.result)
+            selectedCitationID = inspections.first?.citation.id
+            state = .loaded(persisted, inspections, map)
+        } catch {
+            state = .failed(String(describing: error))
+        }
+    }
+}
+
+/// The M003.4 deterministic Quick view. It runs the M003.3 pipeline over the
+/// frozen Quick view fixture through a real store and lexical index, persists
+/// the run under its own id, and renders retrieval-backed citations and the
+/// evidence map. No model, network, or clock is involved.
+struct QuickRunView: View {
+    @State private var state: LoadState = .loading
+    @State private var selectedCitationID: String?
+    @State private var showsMap = ProcessInfo.processInfo.environment["LOCAL_LENS_START_VIEW"] == "quick-map"
+
+    var body: some View {
+        RunScaffold(
+            state: state,
+            selectedCitationID: $selectedCitationID,
+            showsMap: $showsMap,
+            loadingMessage: "Running the deterministic Quick pipeline…",
+            failureTitle: "Quick run failed",
+            failureHint: "Start the app from the repository root so Fixtures/retrieval/quick-view.json is found."
+        )
+        .task { await load() }
+    }
+
+    @MainActor
+    private func load() async {
+        do {
+            let repositoryRoot = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            let fixtureURL = repositoryRoot.appendingPathComponent("Fixtures/retrieval/quick-view.json")
+            let corpus = try QuickCorpus.load(from: fixtureURL)
+            let runStore = try makeRunStore()
+
+            let persisted: PersistedRun
+            if let existing = try? runStore.load(runID: "quick-run") {
+                persisted = existing
+            } else {
+                guard let question = corpus.questions.first else {
+                    state = .failed("The Quick view fixture contains no question.")
+                    return
+                }
+                let indexed = try await corpus.makeIndexedStore()
+                persisted = try await QuickPipeline.run(
+                    corpus.plan(for: question),
+                    store: indexed.store,
+                    index: indexed.index,
+                    runID: "quick-run"
+                )
+                try runStore.save(persisted)
+            }
+
+            let inspections = try FixtureWorkspace.inspections(in: persisted.result)
+            let map = try FixtureWorkspace.evidenceMap(in: persisted.result)
+            selectedCitationID = inspections.first?.citation.id
+            state = .loaded(persisted, inspections, map)
+        } catch {
+            state = .failed(String(describing: error))
+        }
+    }
+}
+
+// MARK: - Shared scaffold
+
+private struct RunScaffold: View {
+    let state: LoadState
+    @Binding var selectedCitationID: String?
+    @Binding var showsMap: Bool
+    let loadingMessage: String
+    let failureTitle: String
+    let failureHint: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -28,7 +151,6 @@ struct FixtureRunView: View {
             content
         }
         .frame(minWidth: 940, minHeight: 600)
-        .task { await load() }
     }
 
     private var header: some View {
@@ -46,33 +168,51 @@ struct FixtureRunView: View {
         switch state {
         case .loading:
             Spacer()
-            ProgressView("Running the deterministic fixture…")
+            ProgressView(loadingMessage)
                 .frame(maxWidth: .infinity)
             Spacer()
         case let .failed(message):
             VStack(alignment: .leading, spacing: 8) {
-                Text("Fixture run failed")
+                Text(failureTitle)
                     .font(.headline)
                 Text(message)
                     .font(.callout)
                     .foregroundStyle(.red)
-                Text("Start the app from the repository root so Fixtures/deterministic/quick-coffee.json is found.")
+                Text(failureHint)
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
             .padding(20)
             Spacer()
         case let .loaded(persisted, inspections, map):
-            HStack(alignment: .top, spacing: 0) {
-                leftPane(persisted: persisted, inspections: inspections, map: map)
-                    .frame(minWidth: 340, idealWidth: 400, maxWidth: 480)
-                Divider()
-                inspector(inspections: inspections)
-            }
+            RunDetailView(
+                persisted: persisted,
+                inspections: inspections,
+                map: map,
+                selectedCitationID: $selectedCitationID,
+                showsMap: $showsMap
+            )
+        }
+    }
+}
+
+private struct RunDetailView: View {
+    let persisted: PersistedRun
+    let inspections: [CitationInspection]
+    let map: EvidenceMap
+    @Binding var selectedCitationID: String?
+    @Binding var showsMap: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 0) {
+            leftPane
+                .frame(minWidth: 340, idealWidth: 400, maxWidth: 480)
+            Divider()
+            inspector
         }
     }
 
-    private func leftPane(persisted: PersistedRun, inspections: [CitationInspection], map: EvidenceMap) -> some View {
+    private var leftPane: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(persisted.result.run.question)
                 .font(.headline)
@@ -90,15 +230,15 @@ struct FixtureRunView: View {
             .labelsHidden()
 
             if showsMap {
-                mapGrid(map: map)
+                mapGrid
             } else {
-                citationListBody(inspections: inspections)
+                citationListBody
             }
         }
         .padding(16)
     }
 
-    private func citationListBody(inspections: [CitationInspection]) -> some View {
+    private var citationListBody: some View {
         List(inspections, id: \.citation.id, selection: $selectedCitationID) { inspection in
             VStack(alignment: .leading, spacing: 4) {
                 Text(inspection.claim.dimension)
@@ -112,7 +252,7 @@ struct FixtureRunView: View {
         .listStyle(.sidebar)
     }
 
-    private func mapGrid(map: EvidenceMap) -> some View {
+    private var mapGrid: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(map.nodes) { node in
@@ -185,7 +325,7 @@ struct FixtureRunView: View {
             .foregroundStyle(relationColor(relation))
     }
 
-    private func inspector(inspections: [CitationInspection]) -> some View {
+    private var inspector: some View {
         Group {
             if let id = selectedCitationID, let inspection = inspections.first(where: { $0.citation.id == id }) {
                 ScrollView {
@@ -215,39 +355,14 @@ struct FixtureRunView: View {
             }
         }
     }
+}
 
-    @MainActor
-    private func load() async {
-        do {
-            let repositoryRoot = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-            let fixtureURL = repositoryRoot.appendingPathComponent("Fixtures/deterministic/quick-coffee.json")
-            let corpus = try FixtureWorkspace.loadFixture(from: fixtureURL)
-            let store = try makeStore()
-
-            let persisted: PersistedRun
-            if let existing = try? store.load(runID: "fixture-run") {
-                persisted = existing
-            } else {
-                persisted = try await DeterministicPipeline.run(corpus)
-                try store.save(persisted)
-            }
-
-            let inspections = try FixtureWorkspace.inspections(in: persisted.result)
-            let map = try FixtureWorkspace.evidenceMap(in: persisted.result)
-            selectedCitationID = inspections.first?.citation.id
-            state = .loaded(persisted, inspections, map)
-        } catch {
-            state = .failed(String(describing: error))
-        }
-    }
-
-    private func makeStore() throws -> RunStore {
-        let base = try FileManager.default.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        return RunStore(directory: base.appendingPathComponent("LocalLens/runs", isDirectory: true))
-    }
+private func makeRunStore() throws -> RunStore {
+    let base = try FileManager.default.url(
+        for: .applicationSupportDirectory,
+        in: .userDomainMask,
+        appropriateFor: nil,
+        create: true
+    )
+    return RunStore(directory: base.appendingPathComponent("LocalLens/runs", isDirectory: true))
 }

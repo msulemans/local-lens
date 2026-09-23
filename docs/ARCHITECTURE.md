@@ -462,6 +462,12 @@ snapshots, sources, and passages the compilation cites, so a citation that
 cannot resolve is a failure rather than a silent omission. The pipeline imports
 `Foundation` only and names no model, provider, socket, DNS, file, or clock.
 
+The native app selects this pipeline with `LOCAL_LENS_START_VIEW=quick` (and
+`quick-map` for the map). `QuickRunView` loads a `QuickCorpus`, builds the store
+and lexical index from its documents, runs the pipeline, renders through the
+same exact-passage inspector as the M001 view, and persists the run under
+`quick-run`. The default view remains the unchanged M001 fixture.
+
 ## Adaptive answer blocks
 
 The selected UI needs richer output than unrestricted Markdown, but generative

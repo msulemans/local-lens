@@ -852,3 +852,39 @@ Consequences:
   method of the same name; the helper was renamed to `makePayload` and no
   assertion or guard was weakened. The `missing_snapshot` guard was added while
   reviewing the boundary before commit.
+
+## D027 - The native app renders the deterministic Quick pipeline
+
+Context: M003.1 through M003.3 are core-only. The app still rendered only the
+M001 deterministic fixture, so UI verification could not exercise the new
+retrieval and citation boundaries at all. M003.4 has to surface them without
+changing the M001 view or introducing a model.
+
+Decision: the app selects its view from `LOCAL_LENS_START_VIEW`. The default is
+the unchanged M001 `FixtureRunView`; `map` is its map view; `quick` is a new
+`QuickRunView`; `quick-map` is the Quick map view.
+
+Rules:
+
+- `QuickRunView` loads `Fixtures/retrieval/quick-view.json` through the new
+  `QuickCorpus` loader, builds a real `SnapshotStore` and `LexicalIndex` from its
+  documents through the M002.4, M002.5, and M003.1 boundaries, runs
+  `QuickPipeline.run`, persists the result under `quick-run`, and renders
+  citations, the evidence map, and the exact-passage inspector.
+- The shared rendering lives in `RunScaffold` and `RunDetailView`.
+  `FixtureRunView`'s fixture, persisted run id, loading path, and rendered
+  output are unchanged, and a post-refactor capture proves it.
+- `QuickCorpus` is strict-decoded core data. Loading it reads one JSON file and
+  nothing else, and `makeIndexedStore()` is the only way it produces evidence.
+- The Quick view is a deterministic demo: no model, network, DNS, Docker, or
+  real clock.
+
+Consequences:
+
+- The app now exercises the M003 boundaries end to end, so a window capture is
+  evidence about retrieval and citation rendering rather than only a launch
+  check.
+- The app refactor is covered by a re-captured M001 view and by the unchanged
+  core tests.
+- A model-backed Quick mode, history, the global launcher, onboarding, and
+  packaging remain later M003 tasks.

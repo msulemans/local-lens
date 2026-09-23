@@ -1,0 +1,87 @@
+{
+  "_fixture": {
+    "synthetic": true,
+    "license": "redistributable",
+    "shape": "QuickViewFixture",
+    "note": "Hand-authored deterministic Quick view fixture for M003.4. Every host is a reserved .invalid documentation name, so nothing resolves or was captured from the internet. Documents are extracted through the M002.4 boundary and stored through the M002.5 store before indexing. This fixture exists so the native app renders retrieval-backed citations and the evidence map without a model or a network."
+  },
+  "sources": [
+    {
+      "id": "src-espresso",
+      "title": "Espresso Brewing",
+      "publisher": "Example Coffee",
+      "canonical_url": "https://espresso.example.invalid/guide",
+      "source_type": "article"
+    },
+    {
+      "id": "src-water",
+      "title": "Water Quality",
+      "publisher": "Example Water",
+      "canonical_url": "https://water.example.invalid/quality",
+      "source_type": "article"
+    },
+    {
+      "id": "src-pressure",
+      "title": "Pressure",
+      "publisher": "Example Pressure",
+      "canonical_url": "https://pressure.example.invalid/bars",
+      "source_type": "article"
+    }
+  ],
+  "documents": [
+    {
+      "id": "espresso-guide",
+      "source_id": "src-espresso",
+      "url": "https://espresso.example.invalid/guide",
+      "content_type": "text/html",
+      "why": "Holds the only passage that contains all of espresso, brewed and pressure.",
+      "body": "<html><body><h1>Espresso Brewing</h1><p>Espresso is brewed by forcing hot water through finely ground coffee under pressure.</p><p>An espresso extraction usually finishes in about thirty seconds.</p></body></html>"
+    },
+    {
+      "id": "water-quality",
+      "source_id": "src-water",
+      "url": "https://water.example.invalid/quality",
+      "content_type": "text/html",
+      "why": "Holds the only passage that contains all of filtered, water and taste.",
+      "body": "<html><body><h1>Water Quality</h1><p>Filtered water improves the taste of both coffee and tea.</p><p>Water that is too hot scalds the grounds.</p></body></html>"
+    },
+    {
+      "id": "pressure-bars",
+      "source_id": "src-pressure",
+      "url": "https://pressure.example.invalid/bars",
+      "content_type": "text/html",
+      "why": "Holds the only passage that contains all of nine, bars, espresso and pressure.",
+      "body": "<html><body><h1>Pressure</h1><p>Nine bars is a common espresso pressure.</p><p>Pressure drives the extraction, so weak coffee means weak pressure.</p></body></html>"
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-espresso-view",
+      "why": "Three accepted claims across three sources, so the view exercises the citation list, the evidence map, and the exact-passage inspector.",
+      "text": "What makes good espresso?",
+      "claims": [
+        {
+          "dimension": "Brewing",
+          "text": "Espresso is brewed under pressure.",
+          "query": "espresso brewed pressure",
+          "quote": "Espresso is brewed by forcing hot water through finely ground coffee under pressure.",
+          "expected_source_id": "src-espresso"
+        },
+        {
+          "dimension": "Water",
+          "text": "Filtered water improves the taste of coffee.",
+          "query": "filtered water taste",
+          "quote": "Filtered water improves the taste of both coffee and tea.",
+          "expected_source_id": "src-water"
+        },
+        {
+          "dimension": "Pressure",
+          "text": "Espresso commonly uses nine bars of pressure.",
+          "query": "nine bars espresso pressure",
+          "quote": "Nine bars is a common espresso pressure.",
+          "expected_source_id": "src-pressure"
+        }
+      ]
+    }
+  ]
+}

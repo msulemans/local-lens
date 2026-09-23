@@ -44,11 +44,35 @@ from display` and `System Events` failed with `not allowed assistive access`.
 
 ## Blocker and disposition
 
-- The M003 core boundaries are not reachable from the app, so a UI check cannot
-  verify them yet. Wiring the deterministic Quick pipeline into a second app
-  view is the next task (M003.4), after which the captures will show
-  retrieval-backed citations rather than the M001 fixture slice.
-- Screen Recording and Accessibility are denied to automated processes by
-  default. Future UI captures must be run with an explicit grant or use a
-  permission-free render path (`ImageRenderer` in a test target), which is not
-  yet built.
+The M003 core boundaries are now reachable from the app: M003.4 added the Quick
+view (below). Screen Recording and Accessibility remain denied to automated
+processes by default, so captures require an explicit grant; `screencapture`
+failed with `could not create image from display` before the grant and succeeded
+after.
+
+## M003.4 Quick view captures
+
+M003.4 wires the M003.3 pipeline into the app. `LOCAL_LENS_START_VIEW=quick`
+runs `Fixtures/retrieval/quick-view.json` through a real `SnapshotStore` and
+`LexicalIndex` and `QuickPipeline.run`, persists the run under `quick-run`, and
+renders retrieval-backed citations and the evidence map through the same
+exact-passage inspector as M001.
+
+- `app-m003-quick-citations.png` (Quick, Citations): `What makes good
+espresso?`, `Quick · complete · 3 citations`,
+`Deterministic Quick run: 3 claims resolved to 3 sources.`, the claim rows
+`Brewing`/`Water`/`Pressure`, and the inspector for the Brewing claim showing
+`Espresso Brewing`, `Example Coffee · https://espresso.example.invalid/guide`,
+the exact passage text, and `Exact saved passage · text hash 9ee19e726c5e…`.
+- `app-m003-quick-map.png` (Quick, Map, `LOCAL_LENS_START_VIEW=quick-map`): the
+same three claims as map cards with `supports` badges and source rows
+(`Espresso Brewing`, `Water Quality`, `Pressure`), the colour-plus-text legend,
+and the same inspector.
+- `app-m003-m001-recheck.png` (M001 default view after the app refactor): the
+original `Does cold brew contain less acid than hot drip coffee?` slice with
+`Fixture synthesis: 3 claims resolved to 3 synthetic sources.` and text hash
+`4790bbd37344…`, byte-for-byte layout unchanged. The refactor extracted the
+shared scaffold without changing the M001 rendering.
+- The persisted artifact at
+`~/Library/Application Support/LocalLens/runs/quick-run.json` was written on the
+first Quick launch and decoded as `complete` with 3 citations.

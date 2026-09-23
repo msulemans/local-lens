@@ -279,6 +279,23 @@ Practised in M003.3:
 - why the model remains a later, separately gated task: the deterministic half
   of Quick mode can be finished and measured without pretending a model ran.
 
+Practised in M003.4:
+
+- why a core boundary is not verified until a user-facing surface exercises it,
+  and why the honest response to "the tests pass" is to load the app and look;
+- why view selection belongs in one environment switch (`LOCAL_LENS_START_VIEW`)
+  so each rendered state is capturable deterministically;
+- why extracting a shared scaffold from a working view should be proved by
+  re-capturing the original view, not assumed because the code still compiles;
+- why a fixture loader is a boundary too: strict decoding, a single file read,
+  and a `makeIndexedStore()` that produces evidence only through the real
+  extraction, storage, and lexical paths;
+- why the app persists the Quick run under its own id, so the demo is
+  reproducible without re-running the pipeline; and
+- why a capture that requires an OS permission is still evidence, but the
+  permission dependency belongs in the record rather than in an implicit
+  assumption.
+
 ## M004 - Measured reranking
 
 This lesson exists only if M004 entry criteria are met.
