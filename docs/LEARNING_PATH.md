@@ -240,6 +240,28 @@ Practised in M003.1:
 - why an FTS5 probe is a prerequisite: a missing module must produce
   `unavailable`, not a scan that was never measured.
 
+Practised in M003.2:
+
+- why a citation compiler is a *composition* boundary: it owns the retrieval
+  call, the exact-quote test, and the identity derivation, but it opens no
+  socket and reads no page, so the only evidence it can produce is a passage the
+  index already stored;
+- why the claim id is re-derived from the claim's own dimension and text instead
+  of trusted, and why a forged id is a refusal rather than a repair;
+- why "exactly one distinct passage contains the quote" is the right rule: none
+  is missing evidence and more than one is an ambiguous binding that must not be
+  chosen silently;
+- why an empty quote is refused before retrieval, because the empty string is a
+  substring of every passage and would otherwise bind every claim to the first
+  hit;
+- why a later dangling evidence link must not be allowed to hide behind a valid
+  first one, so `resolve(_:)` validates every link, not just the one it returns;
+- why a plain `CitationCompilation` value is safer than an opaque object: the
+  same `resolve(_:)` path re-checks a hand-built or altered compilation and
+  fails closed; and
+- why a fixture that feeds real extraction and storage output into a real index
+  makes a green test prove the whole deterministic path rather than a mock.
+
 ## M004 - Measured reranking
 
 This lesson exists only if M004 entry criteria are met.

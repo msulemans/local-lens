@@ -1,0 +1,211 @@
+{
+  "_fixture": {
+    "synthetic": true,
+    "license": "redistributable",
+    "shape": "CitationCompilationFixture",
+    "note": "Hand-authored citation decision table for the M003.2 retrieval-backed compiler. Every host is a reserved .invalid documentation name, so nothing here resolves or was captured from the internet. The documents are invented prose whose term distribution makes each expected binding and each refusal explainable; the fixture is a binding rule, not a measurement of a live corpus. Bodies are extracted through the M002.4 boundary and stored through the M002.5 store before they are indexed."
+  },
+  "documents": [
+    {
+      "id": "espresso-guide",
+      "source_id": "src-espresso",
+      "url": "https://espresso.example.invalid/guide",
+      "content_type": "text/html",
+      "why": "Holds the only passage that contains all of espresso, brewed and pressure.",
+      "body": "<html><body><h1>Espresso Brewing</h1><p>Espresso is brewed by forcing hot water through finely ground coffee under pressure.</p><p>An espresso extraction usually finishes in about thirty seconds.</p></body></html>"
+    },
+    {
+      "id": "tea-steeping",
+      "source_id": "src-tea",
+      "url": "https://tea.example.invalid/steeping",
+      "content_type": "text/html",
+      "why": "Shares the phrase 'hot water' with the espresso guide, so the ambiguous-quote refusal is observable.",
+      "body": "<html><body><h1>Steeping</h1><p>Tea is steeped in hot water, not brewed under pressure.</p><p>Green tea prefers cooler water.</p></body></html>"
+    },
+    {
+      "id": "water-quality",
+      "source_id": "src-water",
+      "url": "https://water.example.invalid/quality",
+      "content_type": "text/html",
+      "why": "Holds the only passage that contains all of filtered, water and taste.",
+      "body": "<html><body><h1>Water Quality</h1><p>Filtered water improves the taste of both coffee and tea.</p><p>Water that is too hot scalds the grounds.</p></body></html>"
+    },
+    {
+      "id": "pressure-bars",
+      "source_id": "src-pressure",
+      "url": "https://pressure.example.invalid/bars",
+      "content_type": "text/html",
+      "why": "Holds the only passage that contains all of nine, bars, espresso and pressure.",
+      "body": "<html><body><h1>Pressure</h1><p>Nine bars is a common espresso pressure.</p><p>Pressure drives the extraction, so weak coffee means weak pressure.</p></body></html>"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "espresso-pressure",
+      "why": "The query terms all appear only in the first espresso body passage, which contains the exact quote.",
+      "dimension": "Brewing",
+      "text": "Espresso is brewed under pressure.",
+      "query": "espresso brewed pressure",
+      "quote": "Espresso is brewed by forcing hot water through finely ground coffee under pressure.",
+      "expected_source_id": "src-espresso",
+      "expected_ordinal": 1
+    },
+    {
+      "id": "filtered-water",
+      "why": "The query terms all appear only in the first water body passage, which contains the exact quote.",
+      "dimension": "Water",
+      "text": "Filtered water improves the taste of coffee.",
+      "query": "filtered water taste",
+      "quote": "Filtered water improves the taste of both coffee and tea.",
+      "expected_source_id": "src-water",
+      "expected_ordinal": 1
+    },
+    {
+      "id": "nine-bars",
+      "why": "The query terms all appear only in the first pressure body passage, which contains the exact quote.",
+      "dimension": "Pressure",
+      "text": "Espresso commonly uses nine bars of pressure.",
+      "query": "nine bars espresso pressure",
+      "quote": "Nine bars is a common espresso pressure.",
+      "expected_source_id": "src-pressure",
+      "expected_ordinal": 1
+    }
+  ],
+  "refusals": [
+    {
+      "id": "invalid-claim",
+      "why": "A claim id that does not follow from its dimension and text is refused before retrieval.",
+      "candidates": [
+        {
+          "dimension": "Brewing",
+          "text": "A claim with a forged identity.",
+          "claim_id": "claim-forged",
+          "query": "espresso brewed pressure",
+          "quote": "Espresso is brewed by forcing hot water through finely ground coffee under pressure."
+        }
+      ],
+      "expected_kind": "invalid_claim",
+      "expected_reason_contains": "does not follow"
+    },
+    {
+      "id": "empty-query",
+      "why": "A query of only whitespace holds no term to retrieve, so the claim cannot be bound.",
+      "candidates": [
+        {
+          "dimension": "Brewing",
+          "text": "A claim with a whitespace-only query.",
+          "query": "   ",
+          "quote": "Espresso is brewed by forcing hot water through finely ground coffee under pressure."
+        }
+      ],
+      "expected_kind": "empty_query",
+      "expected_reason_contains": "no retrievable query term"
+    },
+    {
+      "id": "no-results",
+      "why": "A query whose terms appear in no stored passage is a refused binding, not an empty citation.",
+      "candidates": [
+        {
+          "dimension": "Brewing",
+          "text": "A claim whose query matches nothing.",
+          "query": "zephyr quasar",
+          "quote": "zephyr quasar"
+        }
+      ],
+      "expected_kind": "no_results",
+      "expected_reason_contains": "retrieved no passage"
+    },
+    {
+      "id": "quote-not-retrieved",
+      "why": "A retrieved passage that does not contain the exact quote cannot support the claim.",
+      "candidates": [
+        {
+          "dimension": "Brewing",
+          "text": "A claim whose quote is in no retrieved passage.",
+          "query": "espresso brewed pressure",
+          "quote": "This sentence appears in no stored passage."
+        }
+      ],
+      "expected_kind": "quote_not_retrieved",
+      "expected_reason_contains": "contains the exact quote"
+    },
+    {
+      "id": "empty-quote",
+      "why": "An empty quote is a substring of every passage, so it can never be evidence.",
+      "candidates": [
+        {
+          "dimension": "Brewing",
+          "text": "A claim with an empty quote.",
+          "query": "espresso brewed pressure",
+          "quote": "   "
+        }
+      ],
+      "expected_kind": "empty_quote",
+      "expected_reason_contains": "empty quote"
+    },
+    {
+      "id": "wrong-snapshot",
+      "why": "A claim that names a snapshot other than the retrieved passage's snapshot is refused.",
+      "candidates": [
+        {
+          "dimension": "Water",
+          "text": "A claim that names the wrong snapshot.",
+          "query": "filtered water taste",
+          "quote": "Filtered water improves the taste of both coffee and tea.",
+          "expected_snapshot_id": "snapshot-the-wrong-one"
+        }
+      ],
+      "expected_kind": "wrong_snapshot",
+      "expected_reason_contains": "requires snapshot"
+    },
+    {
+      "id": "ambiguous-quote",
+      "why": "The exact quote appears in two distinct retrieved passages, so the binding is refused rather than chosen silently.",
+      "candidates": [
+        {
+          "dimension": "Water",
+          "text": "A claim with an ambiguous quote.",
+          "query": "hot water",
+          "quote": "hot water"
+        }
+      ],
+      "expected_kind": "ambiguous_quote",
+      "expected_reason_contains": "distinct passages"
+    },
+    {
+      "id": "duplicate-binding",
+      "why": "The same claim identity cannot be bound twice in one compilation.",
+      "candidates": [
+        {
+          "dimension": "Brewing",
+          "text": "A claim offered twice.",
+          "query": "espresso brewed pressure",
+          "quote": "Espresso is brewed by forcing hot water through finely ground coffee under pressure."
+        },
+        {
+          "dimension": "Brewing",
+          "text": "A claim offered twice.",
+          "query": "espresso brewed pressure",
+          "quote": "Espresso is brewed by forcing hot water through finely ground coffee under pressure."
+        }
+      ],
+      "expected_kind": "duplicate_binding",
+      "expected_reason_contains": "more than once"
+    },
+    {
+      "id": "retrieval-failed",
+      "why": "A limit above the recorded index policy is a retrieval refusal, not a silent cap.",
+      "candidates": [
+        {
+          "dimension": "Brewing",
+          "text": "A claim whose retrieval limit is out of policy.",
+          "query": "espresso brewed pressure",
+          "quote": "Espresso is brewed by forcing hot water through finely ground coffee under pressure."
+        }
+      ],
+      "limit": 11,
+      "expected_kind": "retrieval_failed",
+      "expected_reason_contains": "failed at limit_exceeds_policy"
+    }
+  ]
+}

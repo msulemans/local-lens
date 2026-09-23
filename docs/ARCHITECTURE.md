@@ -89,6 +89,17 @@ The writer does not receive arbitrary URLs and cannot invent citation markers.
 If a factual span has no accepted claim/evidence link, validation either removes
 the span, labels it as uncertainty, or rejects the draft.
 
+The implemented retrieval-backed compiler, `CitationCompiler`, binds a
+`ClaimCandidate` to exactly one ranked stored passage. It re-derives the claim
+id, retrieves through `LexicalIndex`, requires exactly one distinct retrieved
+passage to contain the exact quote, and derives the evidence and citation
+identity from the claim, passage, and quote. A missing passage, a non-exact or
+blank quote, a wrong snapshot, an ambiguous quote, and a duplicate binding each
+refuse with a typed `CitationCompilerError`. `CitationCompilation` re-validates
+every claim, evidence link, passage, and quote on `resolve(_:)`, so a hand-built
+or altered compilation fails closed. The compiler imports `Foundation` only and
+has no URL or snippet field: a search hit can never become evidence.
+
 ## Search boundary
 
 ```swift

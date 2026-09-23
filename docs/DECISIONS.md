@@ -749,3 +749,60 @@ Consequences:
   failed.
 - A reranker remains an adapter added only through `docs/MODEL_POLICY.md`, and
   the controller must remain functional when no reranker is configured.
+
+## D025 - Citation compilation binds a claim to exactly one retrieved passage
+
+Context: M003.1 gives the run a ranked lexical retrieval over stored passages.
+M003.2 has to connect that retrieval to the claim, evidence, and citation graph
+so the deterministic Quick path can produce inspectable citations before any
+model is asked to draft prose.
+
+Decision: `CitationCompiler` is a pure function from `[ClaimCandidate]` and a
+`LexicalIndex` to a `CitationCompilation`. A candidate carries a claim, the
+query that retrieves its support, the exact quote the supporting passage must
+contain, and an optional expected snapshot id.
+
+Rules:
+
+- The compiler re-derives the claim id from the claim's dimension and text
+  before it trusts it; a forged id is refused with `invalid_claim`.
+- For each candidate it retrieves ranked passages with the M003.1 index. A
+  query with no term is `empty_query`; any other index refusal is wrapped as
+  `retrieval_failed`; an empty result is `no_results`.
+- Exactly one distinct retrieved passage must contain the exact quote. None is
+  `quote_not_retrieved`; more than one is `ambiguous_quote`; a blank or
+  whitespace-only quote is `empty_quote`, because an empty string is a
+  substring of every passage and can never be evidence.
+- A candidate that names an expected snapshot must be supported by that
+  snapshot or is refused with `wrong_snapshot`.
+- Evidence and citation identity are content-derived with the M001 part
+  ordering: `StableIdentity.make("evidence", claimID, passageID, quote)` and
+  `StableIdentity.make("citation", claimID)`. The same claim cannot be bound
+  twice (`duplicate_binding`).
+- `CitationCompilation` is a plain value. Both `validate()` and `resolve(_:)`
+  re-check every citation's claim, every evidence link, every passage, and
+  every exact quote before returning anything, so a hand-built or altered
+  compilation fails closed with `unknown_citation`, `empty_citation`,
+  `unknown_claim`, `unknown_evidence`, `unknown_passage`, `quote_not_exact`, or
+  `inconsistent_citation`. Every link is checked, not only the returned one, so
+  a dangling later link cannot hide behind a valid first one.
+- The compiler has no URL or snippet field and imports `Foundation` only: it
+  opens no socket, resolves no name, reads no file, and consults no clock.
+
+Consequences:
+
+- The fixture `Fixtures/retrieval/citation-scenarios.json` is hand-authored,
+  synthetic, and on reserved `.invalid` hosts; its documents are extracted and
+  stored through the M002.4 and M002.5 boundaries before indexing, so a green
+  test proves the composition and not a mock.
+- Sixteen refusal kinds are frozen and enumerated by a test that also ties the
+  fixture vocabulary to the same set, so a new kind cannot be added silently:
+  nine compile refusals (`invalid_claim`, `empty_query`, `retrieval_failed`,
+  `no_results`, `quote_not_retrieved`, `empty_quote`, `wrong_snapshot`,
+  `ambiguous_quote`, `duplicate_binding`) and seven resolve refusals
+  (`unknown_citation`, `empty_citation`, `unknown_claim`, `unknown_evidence`,
+  `unknown_passage`, `quote_not_exact`, `inconsistent_citation`).
+- The first run of the new suite was green. The empty-quote guard and the
+  all-links validation were added while reviewing the new boundary before
+  commit; they are recorded because they changed the draft, not because a gate
+  failed.
