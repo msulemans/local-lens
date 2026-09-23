@@ -806,3 +806,49 @@ Consequences:
   all-links validation were added while reviewing the new boundary before
   commit; they are recorded because they changed the draft, not because a gate
   failed.
+
+## D026 - The deterministic Quick pipeline composes retrieval, compilation, and the run state machine
+
+Context: M003.1 gives a ranked lexical index, M003.2 binds claims to retrieved
+passages with typed refusals, and M001 already freezes the Quick phase order in
+`RunStateMachine`. M003.3 has to compose them into one offline run before any
+model is attached.
+
+Decision: `QuickPipeline.run` takes a `QuickRunPlan` (question, frozen
+`ClaimCandidate`s, and source metadata), a `SnapshotStore`, and a
+`LexicalIndex`, and returns a `PersistedRun` whose run always ends in a terminal
+status.
+
+Rules:
+
+- The pipeline drives the existing `RunStateMachine` through scoped, rewriting,
+  searching, acquiring, extracting, retrieving, building_evidence, drafting,
+  validating, and complete. It does not change the transition table.
+- Retrieval and citation compilation are the M003.1 and M003.2 boundaries,
+  composed unchanged.
+- A `CitationCompilerError` is caught and turned into a `.failed` terminal
+  status whose stop reason names the refusal kind
+  (`citation_compile_failed: <kind>: <reason>`). The pipeline never completes
+  with an empty citation when a claim failed to bind.
+- The result contains only the snapshots, sources, and passages the compilation
+  cites. A cited snapshot the store does not contain is `missing_snapshot`; a
+  cited source the plan does not describe is `missing_source`; both fail the
+  run rather than producing an unattributable citation.
+- `QuickRunPlan` validation refuses an empty question and duplicate source
+  identities before a run starts.
+- The pipeline imports `Foundation` only: no socket, DNS, file, clock, model, or
+  provider.
+
+Consequences:
+
+- The fixture `Fixtures/retrieval/quick-scenarios.json` holds four synthetic
+  `.invalid` documents, four source records, and four frozen questions: three
+  complete and one (`q-mercury`) whose query retrieves nothing and therefore
+  must fail with `no_results`.
+- Every completed run is re-validated through `FixtureWorkspace.inspections`,
+  the same resolver the UI uses, and two runs produce identical `PersistedRun`
+  values.
+- The first build was red because a local `payload` value shadowed the helper
+  method of the same name; the helper was renamed to `makePayload` and no
+  assertion or guard was weakened. The `missing_snapshot` guard was added while
+  reviewing the boundary before commit.

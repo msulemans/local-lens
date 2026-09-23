@@ -450,6 +450,18 @@ Still planned for the baseline:
 A reranker is an adapter added only through `docs/MODEL_POLICY.md`. The
 controller must remain functional when no reranker is configured.
 
+## Deterministic Quick pipeline
+
+`QuickPipeline.run` composes the run state machine, the lexical index, and the
+citation compiler into one offline run. A `QuickRunPlan` carries the question,
+the frozen candidate claims, and the source metadata. The pipeline walks the
+frozen Quick phase order and always ends terminal: `complete` with a
+retrieval-backed evidence graph, or `failed` with a stop reason that names the
+typed refusal (`citation_compile_failed: <kind>`). The result contains only the
+snapshots, sources, and passages the compilation cites, so a citation that
+cannot resolve is a failure rather than a silent omission. The pipeline imports
+`Foundation` only and names no model, provider, socket, DNS, file, or clock.
+
 ## Adaptive answer blocks
 
 The selected UI needs richer output than unrestricted Markdown, but generative

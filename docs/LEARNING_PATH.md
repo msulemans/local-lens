@@ -262,6 +262,23 @@ Practised in M003.2:
 - why a fixture that feeds real extraction and storage output into a real index
   makes a green test prove the whole deterministic path rather than a mock.
 
+Practised in M003.3:
+
+- why a pipeline is a *composition* boundary: it owns the run state machine's
+  phase order and the wiring of retrieval to compilation, but neither boundary
+  becomes less strict inside it;
+- why a refusal must become a terminal `.failed` status with the refusal kind in
+  the stop reason, rather than a completed run with an empty citation;
+- why the result should contain only the evidence the compilation cites: a
+  citation that cannot resolve to a stored snapshot and a described source is a
+  failure, not a silently omitted row;
+- why an offline fixture can hold both a completing question and a failing one,
+  so the pipeline's two terminal paths are both exercised by data;
+- why the same run re-validated through the UI's own resolver and repeated twice
+  is stronger evidence than a compiler-only unit test; and
+- why the model remains a later, separately gated task: the deterministic half
+  of Quick mode can be finished and measured without pretending a model ran.
+
 ## M004 - Measured reranking
 
 This lesson exists only if M004 entry criteria are met.
