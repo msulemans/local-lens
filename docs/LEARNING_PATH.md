@@ -219,6 +219,27 @@ Explain back:
 3. What work belongs in deterministic code instead of a model?
 4. What evidence justifies changing the default model?
 
+Practised in M003.1:
+
+- why a retrieval index is a *derived* artifact and the snapshot store stays the
+  source of truth, so the index can be rebuilt without redefining any cited
+  identity;
+- why `bm25()` is best-first when ascending and why the heading and body weights
+  are policy data rather than constants in the query text;
+- why a tie must be broken by a recorded rule applied in both SQL and the
+  selection pass, instead of trusting SQLite's row order;
+- why diversity is a source feature and a bound at once, and why a per-source cap
+  changes which passages survive without changing the ranking;
+- why "no readable snippet field" is a type-level guarantee that a search hit
+  can never become evidence, and why `resolve(_:)` re-derives the stored row;
+- why a result limit above the policy maximum is a refusal rather than a silent
+  cap, and why the candidate ceiling is bound as a 64-bit integer;
+- why the fixture feeds real extraction and storage output into the index rather
+  than hand-authored rows, so a green test proves the composition and not a
+  mock; and
+- why an FTS5 probe is a prerequisite: a missing module must produce
+  `unavailable`, not a scan that was never measured.
+
 ## M004 - Measured reranking
 
 This lesson exists only if M004 entry criteria are met.

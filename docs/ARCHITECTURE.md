@@ -411,14 +411,30 @@ runs cannot reach the network through it.
 
 ## Retrieval boundary
 
-The first baseline is:
+The lexical baseline is implemented as `LexicalIndex`, a Swift actor over one
+SQLite connection and one FTS5 virtual table, `passage_index`. The snapshot
+store remains the source of truth; the index is a derived artifact whose only
+retrievable unit is a stored `Passage`. Ingest re-derives snapshot and passage
+identity before it trusts a record, and returns the typed outcome `indexed` or
+`duplicate`. Query refuses an empty term set, an unusable result limit, a limit
+above the recorded policy maximum, and a corrupt stored row, and it re-validates
+every row it returns. `IndexedHit` has no snippet field: the only path from the
+index to evidence is `resolve(_:)`, which returns the exact stored passage and
+its source.
 
-1. URL canonicalization;
-2. exact-content deduplication;
-3. basic near-duplicate detection;
-4. source-type, recency, directness, and independence features;
-5. FTS5/BM25 passage retrieval; and
-6. diversity selection.
+Ranking is `bm25(passage_index, headingWeight, bodyWeight)` with more relevant
+scores more negative, so results are read best-first. Ties break on ascending
+passage ordinal and then ascending passage id. Diversity is the one source
+feature: at most `maximumPassagesPerSource` passages from one source may appear,
+applied deterministically over the ranked candidates.
+
+Still planned for the baseline:
+
+1. URL canonicalization beyond the acquisition loop key;
+2. near-duplicate detection (exact-content deduplication is implemented in the
+   snapshot store); and
+3. source-type, recency, directness, and independence features, which need
+   source metadata the snapshot record does not carry yet.
 
 A reranker is an adapter added only through `docs/MODEL_POLICY.md`. The
 controller must remain functional when no reranker is configured.

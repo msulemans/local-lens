@@ -677,3 +677,75 @@ Consequences:
   harness with the blocker recorded in the fixture and in the state file. The
   live-corpus portion of the M002 gate is therefore explicitly *unproven*
   rather than claimed, and no non-redistributable body is committed.
+
+## D024 - Lexical retrieval is a derived FTS5 index over stored passages
+
+Context: D005 selects SQLite FTS5/BM25 as the first retrieval baseline, and
+D020 makes the snapshot store the source of truth for immutable evidence. M003.1
+has to turn that store into a measurable lexical baseline before any model,
+reranker, or vector store is considered.
+
+Decision: `LexicalIndex` is an actor that owns one SQLite connection and one
+FTS5 virtual table, `passage_index`. The snapshot store stays the source of
+truth; the index is a derived artifact that can be rebuilt from it.
+
+Rules:
+
+- An FTS5 probe (`CREATE VIRTUAL TABLE ... USING fts5`) runs against the system
+  SQLite before the boundary is trusted. On this machine the probe succeeded
+  and returned a bm25 score, so FTS5 is compiled in and no fallback is written.
+  The index creation is also the runtime probe: if FTS5 is missing, the index
+  fails closed with `unavailable` rather than falling back to a scan.
+- The only unit that can be ingested or retrieved is a stored `Passage`. The
+  `passage_index` table indexes exactly two columns, `heading` and `text`; every
+  identity column (`passage_id`, `snapshot_id`, `source_id`, `ordinal`,
+  `text_hash`) is `UNINDEXED`, so the `bm25()` weight list lines up with the two
+  indexed columns in declaration order.
+- Ranking is `bm25(passage_index, headingWeight, bodyWeight)` - more relevant is
+  more negative, so ascending score is best-first - with `headingWeight` 3.0 and
+  `bodyWeight` 1.0 in the shipped policy. Ties are broken by ascending ordinal,
+  then ascending passage id, in SQL and again in the selection pass, so the
+  result never depends on SQLite's row order.
+- The one source feature is diversity: `maximumPassagesPerSource` caps how many
+  passages from one source may appear, applied deterministically over the ranked
+  candidates. Source-type and recency features need metadata the snapshot record
+  does not carry yet and are deferred, not implied.
+- Ingest and query fail closed with typed outcomes. Ingest returns `indexed` or
+  `duplicate`; query and resolve throw a `LexicalIndexError` whose nine kinds
+  are frozen by a test: `unavailable`, `invalid_policy`, `invalid_snapshot`,
+  `invalid_passage`, `empty_query`, `invalid_limit`, `limit_exceeds_policy`, and
+  `unknown_passage`, plus `inconsistent_row` for a stored row that no longer
+  describes itself. A query with no alphanumeric term is refused; each term is
+  quoted so a query is data and never FTS5 syntax.
+- Identity is re-derived on ingest and on resolve. A record whose snapshot id,
+  passage ids, ordinals, or text digests do not follow from its own source id
+  and content hash is refused, exactly as the snapshot store refuses it.
+- `IndexedHit` deliberately has no snippet field. The only path from the index
+  to evidence is `resolve(_:)`, which returns the exact stored passage and its
+  source and re-validates the stored row.
+- `maximumResults` is the hard result cap, not only a default. A caller may
+  lower it per query but not raise it; a limit above the policy maximum is
+  refused with `limit_exceeds_policy` instead of being silently capped by
+  `maximumCandidates`. The candidate ceiling is bound to SQL with
+  `sqlite3_bind_int64`, so a value at the top of `Int` binds exactly rather than
+  trapping in a narrowing conversion or becoming SQLite's `LIMIT -1`.
+
+Consequences:
+
+- The fixture `Fixtures/retrieval/lexical-scenarios.json` is hand-authored and
+  synthetic: six documents on reserved `.invalid` hosts, four frozen ranked
+  queries that make each ordering explainable, and six refusals covering the
+  empty query, a zero limit, a limit above the policy maximum, and an unknown
+  passage. Bodies are extracted through the M002.4 boundary into the M002.5
+  store before they are indexed, so the index is fed what the pipeline would
+  hand it, never fixture rows authored to look like passages.
+- Deterministic ranking is asserted across repeated queries and a second,
+  separately built index. A durable index is asserted to survive reopening and
+  to keep retrieving its stored passages.
+- The first run of the new suite was green; no gate was weakened. The two
+  repairs above (the result-cap refusal and the Int64 bind) were found by
+  reviewing the untracked draft against the milestone contract, not by a red
+  test. They are recorded because they changed the draft, not because a gate
+  failed.
+- A reranker remains an adapter added only through `docs/MODEL_POLICY.md`, and
+  the controller must remain functional when no reranker is configured.
