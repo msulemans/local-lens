@@ -7,8 +7,9 @@ Milestone 002 (safe live acquisition) is complete: every gate bullet has
 recorded evidence, with the live-corpus portion of bullet (a) recorded as an
 explicit blocker rather than claimed. Milestone 003 (first useful Quick
 release) is the sole active milestone; its first task, M003.1, delivered the
-lexical retrieval boundary (FTS5/BM25 over stored passages), and M003.2 is the
-next task defined in `project.json`. M002.1 delivered the search adapter
+lexical retrieval boundary (FTS5/BM25 over stored passages), M003.2 delivered
+retrieval-backed citation compilation, and M003.3 is the next task defined in
+`project.json`. M002.1 delivered the search adapter
 boundary with a SearXNG JSON adapter, M002.2 delivered the policy-checked
 acquisition boundary with a frozen refusal matrix, M002.3 delivered the robots
 and politeness boundary, M002.4 delivered the HTML extraction boundary with a
@@ -19,7 +20,7 @@ typed per-URL outcome, and M002.7 delivered the extraction diagnostic record
 that makes every extraction outcome, page or refusal, inspectable without
 re-fetching, and M002.8 delivered the approved-live-corpus gate, which can plan
 and judge a live run but holds no transport, so no default or gated test run
-can reach the network. One hundred and seventy-one deterministic tests pass and
+can reach the network. One hundred and seventy-nine deterministic tests pass and
 clean checkouts pass `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
@@ -1451,6 +1452,111 @@ the fixture proves ordering rules, not effectiveness on real pages.
 
 Next eligible task: M003.2 (retrieval-backed citation compilation), derived from
 the M003 build list in `docs/MILESTONES.md` and defined in `project.json`.
+
+## 2026-09-23 - M003.2 retrieval-backed citation compilation
+
+Scope actually executed: the M003.2 `next_task` only. `CitationCompiler.swift`,
+`CitationCompilerTests.swift`, and `Fixtures/retrieval/citation-scenarios.json`
+connect the M003.1 lexical index to the claim, evidence, and citation graph. No
+Quick wiring, UI, model, reranker, vector store, or network work was done, and
+no M001/M002 code or test was touched; the frozen entity and protocol
+definitions are unchanged.
+
+Commit or working-tree state: implementation commit `9ee4e93`; this entry is the
+second commit of the pair.
+
+Implementation:
+
+- `ClaimCandidate` carries a claim, the query that retrieves its support, the
+exact quote the supporting passage must contain, and an optional expected
+snapshot id. It has no URL and no snippet field.
+- `CitationCompiler.compile` re-derives the claim id, retrieves ranked passages
+through `LexicalIndex.search`, and requires exactly one distinct retrieved
+passage to contain the exact quote. Evidence identity is
+`StableIdentity.make("evidence", claimID, passageID, quote)` and citation
+identity is `StableIdentity.make("citation", claimID)`, the M001 part order.
+- `CitationCompilation` is a plain value. `resolve(_:)` and `validate()`
+re-check every citation's claim, every evidence link, every passage, and every
+exact quote. Every link is checked, not only the returned one, so a dangling
+later link cannot hide behind a valid first one.
+- `CitationCompilerError` freezes sixteen kinds: nine compile refusals
+(`invalid_claim`, `empty_query`, `retrieval_failed`, `no_results`,
+`quote_not_retrieved`, `empty_quote`, `wrong_snapshot`, `ambiguous_quote`,
+`duplicate_binding`) and seven resolve refusals (`unknown_citation`,
+`empty_citation`, `unknown_claim`, `unknown_evidence`, `unknown_passage`,
+`quote_not_exact`, `inconsistent_citation`).
+
+Two fail-open gaps were closed while reviewing the new boundary before the first
+commit. They are recorded because they changed the draft, not because a gate
+failed:
+
+1. an empty or whitespace-only quote is a substring of every passage and would
+   have bound a claim to the first hit; it now refuses with `empty_quote` before
+   retrieval and again on resolve;
+2. `resolve` originally validated only the first evidence link; it now validates
+   every link in the citation.
+
+Commands and observed results:
+
+```text
+$ swift build --build-tests
+  Build complete! (3.10 sec.)
+
+$ swift test --filter CitationCompilerTests
+  (green on the first run: 8 tests, 0 failures. The two gaps above were found
+   by review, not by a red test.)
+  Executed 8 tests, with 0 failures (0 unexpected) in 0.046 seconds
+
+$ swift test
+  Executed 179 tests, with 0 failures (0 unexpected) in 0.556 seconds
+
+$ make gate
+  project.json conforms to its schema and handoff invariants.
+  protocol v1 schemas conform; Swift parity holds (run_status=15,
+    research_mode=4, evidence_relation=3, error_code=6)
+  swift build -> Build complete
+  swift test  -> Executed 179 tests, with 0 failures (0 unexpected)
+  gate exit: 0
+```
+
+Gate result: `make gate` passed at commit `9ee4e93` with 179 tests and 0 failures
+(171 before this task, 8 added). The manifest validated and the protocol v1
+schemas and Swift enum parity were unchanged.
+
+Failures preserved at: none outstanding. No red run was observed in this
+session; the new suite was green on the first run, and the two fail-open gaps
+were found by contract review.
+
+The fixture `Fixtures/retrieval/citation-scenarios.json` is hand-authored,
+synthetic, and on reserved `.invalid` hosts. It holds four documents, three
+accepted candidates, and nine compile refusals. Its documents are extracted
+through the M002.4 boundary and stored through the M002.5 store before they are
+indexed, so a green test proves the composition and not a mock. The accepted
+test resolves every citation back through the store to its exact passage,
+source, and ordinal.
+
+Decision: D025 in `docs/DECISIONS.md` (citation compilation binds a claim to
+exactly one retrieved passage). `docs/ARCHITECTURE.md` gains the implemented
+compiler in the citation-compilation section, and `docs/LEARNING_PATH.md` gains
+a "Practised in M003.2" block.
+
+M003 progress advanced by this task:
+
+- "citation compiler and inspector" now has a verified compiler half: every
+  citation is retrieval-backed, exact-quote checked, and content-addressed;
+- every citation resolves to a passage and its snapshot, so the
+  snippet-never-evidence rule holds through the evidence graph as well; and
+- "the deterministic M001 slice remains unchanged" still holds: 179 tests pass
+  and no M001 file was modified.
+
+Proof boundary: deterministically verified. The compiler is a pure function of
+candidates and the index, with no network, DNS, file, or clock access. Its
+refusals are verified against a frozen fixture and against hand-built malformed
+compilations. No model, live corpus, UI, or retrieval-quality measurement is
+exercised: the fixture proves binding rules, not effectiveness on real pages.
+
+Next eligible task: M003.3 (deterministic Quick pipeline), derived from the M003
+build list in `docs/MILESTONES.md` and defined in `project.json`.
 
 ## Evidence append template
 

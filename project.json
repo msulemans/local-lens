@@ -94,7 +94,11 @@
       "diversity selection capping passages per source as the one deterministic source feature",
       "typed lexical ingest (indexed/duplicate) and a nine-member query/resolve refusal family, including a result limit above the policy maximum",
       "every lexical hit resolves to a stored passage and its snapshot, and IndexedHit has no snippet field",
-      "FTS5 availability probed against the system SQLite, and a durable index that survives reopening"
+      "FTS5 availability probed against the system SQLite, and a durable index that survives reopening",
+      "retrieval-backed citation compilation: each accepted claim bound to exactly one ranked stored passage whose text contains the exact quote",
+      "content-derived evidence and citation identity, deterministic across repeated runs and a separately rebuilt index",
+      "a sixteen-member CitationCompilerError family: nine compile refusals and seven resolve refusals, including an empty quote and a dangling later evidence link",
+      "every compiled citation resolves to its exact stored passage and snapshot, and the compiler holds no URL or snippet field"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
@@ -103,43 +107,44 @@
       "live SearXNG response against a running instance",
       "live models and local inference",
       "packaging and second-machine reproduction",
-      "citation compilation over retrieved passages (the M003.1 lexical index is not yet wired into the claim/evidence/citation graph)",
+      "Quick pipeline composition (retrieval and citation compilation are separate boundaries, not yet composed into one run)",
+      "citation inspector UI and Quick mode wiring (later M003 build items)",
       "source-type, recency, and independence retrieval features (the snapshot record carries no source metadata yet)",
       "live corpus execution: no page licence and no owner approval is recorded, so no live page has been fetched and the live-corpus portion of the M002 gate is explicitly unproven"
     ]
   },
   "next_task": {
-    "id": "M003.2",
-    "title": "Retrieval-backed citation compilation: bind deterministic claims to ranked stored passages with typed outcomes",
-    "objective": "Connect the M003.1 lexical index to the claim, evidence and citation graph. Given a run's stored passages and a set of candidate claims, compile a deterministic citation for each accepted claim whose supporting passage is the ranked retrieved passage, resolve every citation to its exact stored passage and snapshot, and fail closed with a typed outcome at every compile and resolve boundary - so the deterministic Quick path can produce inspectable citations over retrieved evidence before any model is asked to draft prose.",
+    "id": "M003.3",
+    "title": "Deterministic Quick pipeline: compose retrieval and citation compilation into one offline run over a frozen question set",
+    "objective": "Compose the M003.1 lexical index and the M003.2 citation compiler into a deterministic Quick run that needs no model and no network. Given a frozen question set and synthetic stored snapshots, retrieve the ranked passages, compile retrieval-backed citations for the accepted claims, drive the existing run state machine to a typed terminal status, and emit one normalized result per question - so the offline half of Quick mode is measurable and the later model task attaches to a proven retrieval-and-citation path.",
     "prerequisites": [
-      "M003.1 complete (FTS5/BM25 lexical index over stored passages with deterministic ranking and typed outcomes)",
-      "D003/D004 (evidence and citation identity), D005 (FTS5/BM25 baseline) and D020 (snapshot store) recorded; the snapshot store stays the source of truth and the retrieval index is a derived artifact",
-      "The frozen Snapshot, Passage, Claim, EvidenceLink, Citation and protocol v1 definitions must not change",
+      "M003.1 and M003.2 complete (lexical retrieval boundary and retrieval-backed citation compiler)",
+      "D005, D020, D024 and D025 recorded; the snapshot store stays the source of truth and the index is a derived artifact",
+      "The frozen Snapshot, Passage, Claim, EvidenceLink, Citation, ResearchResult and protocol v1 definitions must not change",
       "The offline guards must remain green: no network, DNS, live page read, or real clock in any default or gated test run",
       "M001 deterministic slice evidence must remain byte-identical",
       "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet"
     ],
     "allowed_scope": [
-      "a deterministic citation compiler that binds an accepted claim to the exact retrieved passage that supports it",
-      "typed compile and resolve outcomes, enumerated in the evidence, for missing evidence, unknown passages, wrong-snapshot passages, non-exact quotes, and duplicate or conflicting bindings",
-      "a frozen fixture and deterministic offline tests for the compiler, the citation identities, and every refusal",
-      "citation resolution that returns the exact stored passage and its snapshot and fails closed on any dangling reference"
+      "a deterministic Quick pipeline that composes a frozen question set, retrieval through LexicalIndex, and citation compilation through CitationCompiler",
+      "typed per-question run outcomes and terminal stop reasons over the existing RunStateMachine",
+      "a frozen question fixture and deterministic offline tests for the pipeline, the citation graph, and every refusal",
+      "normalized result identity that is identical across repeated runs"
     ],
     "forbidden_scope": [
-      "adding a third-party dependency, a vector database, embeddings, a reranker, or a model",
-      "model, provider, or network calls of any kind in a default or gated test run",
-      "UI work, Quick mode wiring, global launcher, history, onboarding, or packaging (later M003 build items)",
-      "changing the frozen Snapshot, Passage, Claim, EvidenceLink, Citation, extraction refusal, or protocol definitions",
+      "model, provider, network, Docker, or real corpus calls of any kind in a default or gated test run",
+      "UI, citation inspector, history, global launcher, onboarding, or packaging (later M003 build items)",
+      "adding a third-party dependency, a vector database, embeddings, or a reranker",
+      "changing the frozen Snapshot, Passage, Claim, EvidenceLink, Citation, ResearchResult, extraction refusal, or protocol definitions",
       "PDF extraction",
       "weakening or bypassing the offline guards",
       "copying sibling source while the licence gate is unmet"
     ],
     "done_when": [
-      "a deterministic compiler turns accepted claims and ranked stored passages into typed citations entirely offline in tests, with no network, no DNS, no live page read, and no real clock",
-      "every compile and resolve boundary fails closed with a typed outcome, enumerated in the evidence",
-      "citation and evidence identity is content-derived and deterministic: identical input produces identical identities across repeated runs",
-      "every citation resolves to its exact stored passage and snapshot, and a search snippet or bare URL is never accepted as evidence",
+      "the pipeline runs entirely offline over a frozen question set, with no network, no DNS, no live page read, and no real clock",
+      "every run reaches a typed terminal status with a recorded reason, and every refusal is typed",
+      "citation integrity is 100 percent: every citation resolves to an exact stored passage and snapshot",
+      "two runs over the same input produce identical normalized results",
       "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
     ]
   },
@@ -302,7 +307,7 @@
     "current_command_status": {
       "validate-manifest": "verified_2026-09-23",
       "build": "verified_2026-09-23",
-      "verify": "verified_2026-09-23_171_tests_0_failures"
+      "verify": "verified_2026-09-23_179_tests_0_failures"
     },
     "proof_vocabulary": [
       "planned",
