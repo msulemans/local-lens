@@ -6,8 +6,9 @@ Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
 Milestone 002 (safe live acquisition) is complete: every gate bullet has
 recorded evidence, with the live-corpus portion of bullet (a) recorded as an
 explicit blocker rather than claimed. Milestone 003 (first useful Quick
-release) is the sole next milestone; its entry task is defined in
-`project.json`. M002.1 delivered the search adapter
+release) is the sole active milestone; its first task, M003.1, delivered the
+lexical retrieval boundary (FTS5/BM25 over stored passages), and M003.2 is the
+next task defined in `project.json`. M002.1 delivered the search adapter
 boundary with a SearXNG JSON adapter, M002.2 delivered the policy-checked
 acquisition boundary with a frozen refusal matrix, M002.3 delivered the robots
 and politeness boundary, M002.4 delivered the HTML extraction boundary with a
@@ -18,7 +19,7 @@ typed per-URL outcome, and M002.7 delivered the extraction diagnostic record
 that makes every extraction outcome, page or refusal, inspectable without
 re-fetching, and M002.8 delivered the approved-live-corpus gate, which can plan
 and judge a live run but holds no transport, so no default or gated test run
-can reach the network. One hundred and fifty-five deterministic tests pass and
+can reach the network. One hundred and seventy-one deterministic tests pass and
 clean checkouts pass `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
@@ -1317,6 +1318,139 @@ M002 gate audit, bullet by bullet, at 155 tests:
 
 Next eligible task: M003 entry task, derived from the M003 build list in
 `docs/MILESTONES.md`.
+
+## 2026-09-23 - M003.1 lexical retrieval boundary
+
+Scope actually executed: the M003.1 `next_task` only. `LexicalIndex.swift`, the
+`LexicalIndexTests` suite, and `Fixtures/retrieval/lexical-scenarios.json` turn
+the M002 snapshot store into the M003 retrieval baseline: a local SQLite FTS5
+index whose only retrievable unit is a stored `Passage`, ranked with BM25 plus a
+deterministic per-source diversity bound, with typed ingest and query outcomes.
+No Quick wiring, citation compilation, UI, model, reranker, vector store, or
+network work was done, and no M001/M002 code or test was touched.
+
+Commit or working-tree state: the three files arrived untracked from an earlier
+session. They were reviewed against the M003.1 `done_when`, the frozen protocol
+v1 contracts, and the M002 precedents, then committed. The implementation is
+commit `0bc72fe`; this entry is the second commit of the pair.
+
+WIP review: kept because they matched the contract:
+
+- the `passage_index` FTS5 schema indexes exactly `heading` and `text` and marks
+every identity column `UNINDEXED`, so the `bm25()` weight list lines up with the
+two indexed columns in declaration order;
+- ranking is `bm25(passage_index, headingWeight, bodyWeight)` read ascending
+(best-first), ties broken by ascending ordinal then ascending passage id in SQL
+and again in the selection pass;
+- diversity caps passages per source, the one source feature;
+- ingest and resolve re-derive snapshot and passage identity instead of trusting
+the caller, exactly as the snapshot store does;
+- `IndexedHit` has no snippet field and the only path to evidence is
+`resolve(_:)`;
+- the fixture is hand-authored, synthetic, on reserved `.invalid` hosts, and is
+fed through the real M002.4 extraction and M002.5 store before indexing; and
+- the offline guard scans the index source for network, DNS, clock, filesystem,
+and snippet literals and fixes the import list to `Foundation` and `SQLite3`.
+
+WIP repairs, recorded because they changed the draft rather than because a gate
+failed (see D024):
+
+1. a caller-supplied `limit` above the policy's `maximumResults` was silently
+   capped by the `maximumCandidates` SQL limit. `maximumResults` is documented
+   as the hard cap, so honouring a larger request by returning fewer rows was
+   fail-open. `search` now refuses with a distinct typed outcome
+   `limit_exceeds_policy`, the fixture gains an `over-limit` refusal, and a
+   focused test covers the boundary value and one above it;
+2. the candidate ceiling was bound with `sqlite3_bind_int`, whose `Int32(value)`
+   narrowing conversion traps on a large policy value and can become SQLite's
+   `LIMIT -1` (no limit). It is now bound with `sqlite3_bind_int64`, and a test
+   drives `maximumCandidates: Int.max` through a real query.
+
+No other defect was found. Source-type, recency, directness, and independence
+features need source metadata the snapshot record does not carry yet; they are
+recorded as deferred, not implemented.
+
+Commands and observed results:
+
+```text
+$ sqlite3 :memory: "CREATE VIRTUAL TABLE probe USING fts5(x); \
+    INSERT INTO probe(x) VALUES('hello world'); \
+    SELECT bm25(probe) FROM probe WHERE probe MATCH 'hello';"
+  -1.0e-06
+  FTS5_PROBE_OK
+
+$ swift build
+  Build complete! (0.33 sec.)
+
+$ swift test --filter LexicalIndexTests
+  (green on arrival: 14 tests, 0 failures. Two repairs were then made from
+   contract review, not from a red test. One run reported the suite in 51.8s;
+   it was investigated and did not reproduce: repeated later runs completed in
+   0.110-0.112s. No test failed and no gate was weakened.)
+  Executed 16 tests, with 0 failures (0 unexpected) in 0.111 seconds
+
+$ swift test
+  Executed 171 tests, with 0 failures (0 unexpected) in 0.525 seconds
+
+$ make gate
+  project.json conforms to its schema and handoff invariants.
+  protocol v1 schemas conform; Swift parity holds (run_status=15,
+    research_mode=4, evidence_relation=3, error_code=6)
+  swift build -> Build complete
+  swift test  -> Executed 171 tests, with 0 failures (0 unexpected)
+  gate exit: 0
+```
+
+Gate result: `make gate` passed at commit `0bc72fe` with 171 tests and 0
+failures (155 before this task, 16 added). The manifest validated and the
+protocol v1 schemas and Swift enum parity were unchanged.
+
+Failures preserved at: none outstanding. No red run was observed in this
+session; the WIP's 14 tests were green on arrival, and the two repairs above
+were found by reviewing the draft against the contract. The one slow test run
+is recorded because it was observed, and it was diagnosed as a non-reproducing
+timing anomaly, not a failure.
+
+Typed boundaries that fail closed, all enumerated by
+`testTypedOutcomeFamilyIsEnumerated` (nine kinds): `unavailable` (SQLite or FTS5
+unusable), `invalid_policy`, `invalid_snapshot`, `invalid_passage`,
+`empty_query`, `invalid_limit`, `limit_exceeds_policy`, `unknown_passage`, and
+`inconsistent_row`. Ingest returns the typed values `indexed` and `duplicate`.
+A query with no alphanumeric term is refused; every term is quoted, so a query
+is data and never FTS5 syntax.
+
+Ranking determinism is asserted across repeated queries and a second,
+separately built index, and the recorded tie rule is asserted to be the order
+the index returns. Every hit is asserted to resolve through the M002.5 store to
+a stored passage of the same snapshot. A durable index is asserted to survive
+reopening and keep retrieving its stored passages.
+
+Decision: D024 in `docs/DECISIONS.md` (lexical retrieval is a derived FTS5 index
+over stored passages). `docs/ARCHITECTURE.md` gains the implemented retrieval
+boundary and keeps the still-planned baseline items; `docs/LEARNING_PATH.md`
+gains a "Practised in M003.1" block.
+
+M003 progress advanced by this task:
+
+- "FTS5/BM25 retrieval and deterministic source features" now has a verified
+  deterministic baseline: an FTS5 table over stored passages, BM25 with heading
+  and body weights, a diversity bound, a recorded tie rule, and typed outcomes;
+- every hit resolves to a passage and its snapshot, so the snippet-never-evidence
+  rule has a retrieval-side counterpart; and
+- "the deterministic M001 slice remains unchanged" still holds: 171 tests pass
+  and no M001 file was modified.
+
+Proof boundary: deterministically verified. FTS5 availability was probed on
+this machine and the index creation is the runtime probe; a missing module fails
+closed with `unavailable`. The index is verified against frozen synthetic
+documents through the real extraction and store boundaries, with no network, no
+DNS, no live page read, and no real clock. A durable file-backed index is
+verified to survive reopening. The default index is in-memory. No live corpus,
+model, or UI path is exercised, and no retrieval-quality measurement is claimed:
+the fixture proves ordering rules, not effectiveness on real pages.
+
+Next eligible task: M003.2 (retrieval-backed citation compilation), derived from
+the M003 build list in `docs/MILESTONES.md` and defined in `project.json`.
 
 ## Evidence append template
 
