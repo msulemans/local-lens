@@ -3,16 +3,18 @@
 Last updated: 2026-09-23 (Australia/Sydney)
 
 Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
-Milestone 002 (safe live acquisition) is active; M002.7 (extraction
-diagnostics) is the sole next task. M002.1 delivered the search adapter
+Milestone 002 (safe live acquisition) is active; M002.8 (approved live
+corpus tests) is the sole next task. M002.1 delivered the search adapter
 boundary with a SearXNG JSON adapter, M002.2 delivered the policy-checked
 acquisition boundary with a frozen refusal matrix, M002.3 delivered the robots
 and politeness boundary, M002.4 delivered the HTML extraction boundary with a
 frozen typed refusal family, M002.5 delivered the content-addressed snapshot
-store with retry-safe deduplication, and M002.6 delivered the bounded,
-per-host polite parallel fetch scheduler that composes all four boundaries
-behind one typed per-URL outcome. One hundred and twenty-six deterministic
-tests pass and clean checkouts pass `make gate`.**
+store with retry-safe deduplication, M002.6 delivered the bounded, per-host
+polite parallel fetch scheduler that composes all four boundaries behind one
+typed per-URL outcome, and M002.7 delivered the extraction diagnostic record
+that makes every extraction outcome, page or refusal, inspectable without
+re-fetching. One hundred and forty deterministic tests pass and clean checkouts
+pass `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -1033,6 +1035,130 @@ Observations carried forward, not silently changed:
 
 Next eligible task: M002.7 extraction diagnostics, derived from the M002 build
 list in `docs/MILESTONES.md`.
+
+## 2026-09-23 - M002.7 extraction diagnostics
+
+Scope actually executed: the M002.7 `next_task` only. `HTMLExtraction.diagnose`
+and `ExtractionDiagnostics.run` were added, `HTMLExtraction.extract` was
+rewritten as a `switch` over `diagnose`, the tokenizer was instrumented with
+counters and a prose-depth rule, and a frozen fixture plus a twelve-test suite
+were added. No sibling code was copied (licence gate still unmet). No network,
+DNS, clock, disk, model, or UI work.
+
+Commit or working-tree state: implementation committed as `8879b63` (the
+working tree was clean at that commit and `make gate` was run before it).
+
+Commands and observed results:
+
+- `swift test --filter ExtractionDiagnosticsTests` (first run, test-first) - RED:
+  `cannot find type 'ExtractionOutcome' in scope`, `cannot find type
+  'ExtractionMetrics' in scope`. The boundary did not exist yet, which is the
+  only useful red for a new boundary.
+- `swift build` - clean, no warnings.
+- `swift test --filter ExtractionDiagnosticsTests` - RED: 14 tests, 5 assertion
+  failures in 3 tests. Diagnosed, not worked around:
+  1. `runs_dropped` was 2 where the frozen expectation said 1: the counter
+     counted the newline between `</head>` and `<body>`, so it was measuring a
+     document's indentation. Fixed by recording the prose depth when a run's
+     first character arrives and counting only runs that began inside a prose
+     element (`p`, `li`, `dt`, `dd`, `blockquote`, `figcaption`, `td`, `th`,
+     `pre`, headings). The implementation was strengthened; the assertion was
+     not relaxed.
+  2. Two different bodies produced the same fingerprint: a counts-only record
+     identifies a document's shape, not the document. Fixed by adding
+     `decoded_digest`, the digest of the decoded characters. Again the
+     assertion ("a single changed character is a different outcome") was kept
+     and the implementation was made to satisfy it.
+  3. A run refused at the charset boundary reported `charset=shift_jis` and
+     `charset_source=header` - the encoding it *asked for* - as if it had been
+     used. Fixed by a single gate in the metrics builder: a run that never
+     decoded reports `undecided` for the encoding and for the digest, whatever
+     the header said. The requested encoding stays in the refusal's reason.
+  The fixture's own expectation for that refusal was inconsistent with its own
+  invariant and was corrected to `undecided`; the invariant was not.
+- `swift test --filter ExtractionDiagnosticsTests` - RED: 14 tests, 3 failures
+  (the frozen key set and frozen field order had not yet been extended for the
+  deliberately added fact).
+- `swift test --filter ExtractionDiagnosticsTests` - RED: 1 failure. The
+  `decoded_digest` literal pasted into the frozen field-order test was mistyped
+  (`...429916cc6c3d` against a measured `...42916cc6c3d`). The literal was
+  corrected against the measured value, and the test now additionally asserts
+  `decodedDigest == StableIdentity.digest(fixture body)`, so the literal cannot
+  drift from the characters it claims to identify.
+- `swift test --filter ExtractionDiagnosticsTests` - GREEN: 14 tests, 0
+  failures.
+- `swift test` (full suite) - GREEN: 140 tests, 0 failures (126 + 14).
+- `swift test` repeated four more times - GREEN: 140 tests, 0 failures each
+  time, identical counts. The diagnostic is byte-identical across runs.
+- `make gate` - exit 0 (`validate-manifest`, `validate-schemas`, `build`,
+  `verify`). Gate green before the commit.
+
+Typed boundaries that fail closed. No refusal kind was added, and the family is
+frozen at eight kinds mapped onto seven stages by an exhaustive switch:
+
+1. `policy` / `invalid_policy` - the extraction policy itself was unusable;
+2. `source_identifier` / `missing_source_identifier` - a snapshot that cannot
+   name its source could never be cited;
+3. `content_type` / `unsupported_content_type` - allowed by acquisition but not
+   HTML, such as a PDF;
+4. `size` / `document_too_large` - over the ceiling, refused rather than
+   truncated, which is why no truncation field exists;
+5. `charset` / `unsupported_charset` - a declared character set the decoder does
+   not implement;
+6. `markup` / `empty_document`, `malformed_markup` - nothing but whitespace, or
+   markup that cannot be read;
+7. `text` / `no_readable_text` - markup whose text is genuinely empty.
+
+`ExtractionStage` is derived from `ExtractionError.stage`, so a new refusal case
+cannot compile without a decision about which boundary owns it. All seven stages
+are asserted reachable, so none is decorative.
+
+The record is frozen at twenty-three serialized keys in a fixed order, with the
+fingerprint last, taken over exactly the preceding lines. A test asserts that
+the key set is exactly those twenty-three, that no key contains `timestamp`,
+`date`, `time`, `duration`, or `truncated`, and that the fingerprint equals
+`StableIdentity.make("extraction-diagnostic", lines)` over the stripped lines.
+
+Decisions: D022 in `docs/DECISIONS.md` (a diagnostic is derived from the run,
+never authored beside it). `docs/ARCHITECTURE.md` gains an "Extraction
+diagnostics" section and `docs/LEARNING_PATH.md` gains a "Practised in M002.7"
+block.
+
+M002 gate bullets advanced by this task:
+
+- "static HTML, redirects, PDF, duplicates, blocked paths, oversized content,
+  invalid MIME, private addresses, timeouts, and extraction failures all produce
+  expected typed outcomes" - the extraction-failure end of this bullet is now
+  proven at both entry points: `extract` throws the refusal and `diagnose`
+  returns it, from one pipeline, and the fixture records a refusal at every
+  stage that can refuse with the facts that were in hand when it stopped.
+- "search snippets never become evidence" is unaffected: a diagnostic is
+  derived from an `AcquisitionResult` and carries no snippet.
+- "retries do not duplicate snapshots" is unaffected; nothing in this task
+  touches the store.
+- "the deterministic M001 slice remains unchanged" still holds: 140 tests pass
+  and no M001 file was modified.
+
+Observations carried forward, not silently changed:
+
+- Nothing in extraction drops bytes, so `truncated` and `bytes_dropped` are not
+  reported. A fact that could never vary is decoration, and the frozen key-set
+  test forbids exactly those names.
+- `runs_dropped` is a narrower fact than its name suggests: it counts text runs
+  that began inside a prose element and produced no readable text, not every
+  whitespace run in the document. Its doc-comment says so.
+- `ExtractionDiagnostics` reads `HTMLExtraction`'s internal helpers
+  (`mediaType`, `supportedContentTypes`, `decode`) and the tokenizer's
+  `Document`/`Stats`. That is deliberate: the diagnostic must describe the
+  pipeline that actually ran, not a parallel reimplementation of it.
+- The M002.7 task text lists "truncation" among the measurable facts. It is
+  reported as the byte ceiling and the byte count with a boolean
+  `within_byte_ceiling`, because extraction refuses an oversized document
+  rather than shortening it; reporting a truncation flag would be reporting a
+  fact that is always false.
+
+Next eligible task: M002.8 approved live corpus tests, derived from the M002
+build list in `docs/MILESTONES.md`.
 
 ## Evidence append template
 

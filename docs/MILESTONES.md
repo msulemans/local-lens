@@ -52,8 +52,8 @@ Gate: recorded in `LOCAL_BROWSER_STATE.md`.
 Status: **active; M002.1 (search adapter boundary and SearXNG JSON adapter),
 M002.2 (safe acquisition boundary), M002.3 (robots and politeness boundary),
 M002.4 (HTML extraction boundary), M002.5 (content snapshots), and M002.6
-(bounded parallel fetch) are complete; M002.7 (extraction diagnostics) is
-defined in `project.json`.**
+(bounded parallel fetch), and M002.7 (extraction diagnostics) are complete;
+M002.8 (approved live corpus tests) is defined in `project.json`.**
 
 Learn:
 

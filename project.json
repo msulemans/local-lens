@@ -86,7 +86,8 @@
       "content-derived Snapshot and Passage identity reusing the M001 part ordering, with passages ordered and resolving back to their snapshot",
       "deterministic extraction: identical bytes produce identical text, snapshot, passages and hashes across runs",
       "content-addressed snapshot store with retry-safe deduplication and snippet-never-evidence hit resolution",
-      "bounded, per-host polite parallel fetch with typed per-URL outcomes, deterministic result ordering, and retries that store exactly one snapshot"
+      "bounded, per-host polite parallel fetch with typed per-URL outcomes, deterministic result ordering, and retries that store exactly one snapshot",
+      "extraction diagnostics: one typed diagnostic per outcome naming the deciding boundary, with measured facts, a frozen twenty-three-key record, and byte-identical determinism"
     ],
     "unverified_scope": [
       "application visual QA and interaction",
@@ -96,44 +97,41 @@
       "live models and local inference",
       "packaging and second-machine reproduction",
       "citation path over extracted pages (the M002 snapshot store is not yet wired into citation compilation)",
-      "extraction diagnostics and approved live corpus tests (the M002 remainder)"
+      "approved live corpus tests (the M002 remainder)"
     ]
   },
   "next_task": {
-    "id": "M002.7",
-    "title": "Extraction diagnostics: an inspectable account of what a page yielded and what was dropped",
-    "objective": "Make extraction loss and extraction refusal inspectable instead of opaque: for any extracted page or extraction refusal, produce a deterministic, typed diagnostic record that names the boundary that decided, the reason, and the measurable facts (bytes read, characters kept, headings found, blocks dropped, charset used, truncation), so a wrong or empty extraction can be diagnosed without re-fetching and without reading the extractor's source.",
+    "id": "M002.8",
+    "title": "Approved live corpus tests: an opt-in, licence-recorded corpus harness that fails closed without an approval",
+    "objective": "Turn the last M002 build item into something that can be run without weakening the offline guarantee: a corpus manifest whose entries each record their licence, origin, and frozen expected typed outcome, a runner that refuses to execute unless every entry carries an owner approval record, and deterministic tests that prove the refusal itself - so that adding an approved corpus later is a data change rather than a code change, and no default test run ever reaches the network.",
     "prerequisites": [
-      "M002.4 complete (HTML extraction boundary with a frozen typed refusal family)",
-      "M002.5 and M002.6 complete (snapshot store and bounded parallel fetch) so a diagnostic can be attached to a stored snapshot or to a refused target",
+      "M002.1 to M002.7 complete (search, acquisition, robots, extraction, snapshots, bounded fetch, diagnostics)",
+      "No corpus entry may be added whose licence does not permit local use and whose redistribution status is not recorded",
+      "An owner approval record is required before any entry can be executed; the harness must refuse to run without one",
+      "Live execution stays opt-in and outside make gate; the default test run must remain deterministic, offline, and stub-only",
       "No sibling code may be copied while the licence gate in docs/REUSE_PROVENANCE.md is unmet",
-      "No test may perform real network access, real DNS resolution, or read a live page",
-      "Sources/LocalLensCore/Domain.swift Snapshot and Passage definitions are frozen and must not change",
       "M001 deterministic slice evidence must remain byte-identical"
     ],
     "allowed_scope": [
-      "a typed, deterministic extraction diagnostic record produced alongside the existing extraction result",
-      "diagnostics attached to both extracted pages and every existing typed extraction refusal, without adding a new refusal kind",
-      "measurable counters derived only from bytes already in hand (no re-fetch, no network, no clock)",
-      "deterministic serialization of a diagnostic so two runs over identical bytes are byte-identical",
-      "frozen fixtures and stub-only tests"
+      "a corpus manifest format with per-entry licence, origin, approval, and frozen expected typed outcome",
+      "a fail-closed gate that refuses to execute an entry without a recorded approval, with a typed refusal naming the reason",
+      "deterministic stub-only tests for the manifest, the approval gate, and the offline default",
+      "documentation of what a live corpus run would prove and what it would not"
     ],
     "forbidden_scope": [
-      "real network calls, real DNS resolution or live page capture in tests",
-      "SQLite, FTS5, retrieval, ranking or answer generation",
-      "models, embeddings or rerankers",
-      "PDF extraction or browser rendering",
-      "changing the frozen Snapshot and Passage definitions or the existing extraction refusal family",
-      "copying sibling source while the licence gate is unmet",
-      "UI work beyond the existing shell"
+      "performing live network access in any default or gated test run",
+      "adding corpus entries whose licence or redistribution status is unrecorded",
+      "downloading or committing page bodies that may not be redistributed",
+      "SQLite, FTS5, retrieval, ranking, answer generation, models, PDF extraction, or UI work",
+      "changing the frozen Snapshot, Passage, or extraction refusal definitions",
+      "copying sibling source while the licence gate is unmet"
     ],
     "done_when": [
-      "every extraction outcome - success or refusal - carries exactly one typed diagnostic that names the deciding boundary and the reason",
-      "the diagnostic reports measurable facts (bytes read, characters kept, heading count, dropped block count, charset, truncation) with no re-fetch and no clock",
-      "diagnostics are deterministic: identical bytes produce a byte-identical diagnostic across runs",
-      "no new extraction refusal kind is introduced and the frozen Snapshot and Passage definitions are unchanged",
-      "no test performs network access, DNS resolution, or reads a live page (stub transport and frozen fixtures only)",
-      "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md"
+      "a corpus entry without an approval record is refused with a typed outcome naming the missing approval, proven by test",
+      "the manifest records licence, origin, and a frozen expected typed outcome per entry, and rejects an entry that omits any of them",
+      "no default or gated test run performs network access, DNS resolution, or reads a live page",
+      "make gate passes and evidence is recorded in LOCAL_BROWSER_STATE.md",
+      "if no corpus is approved, the blocker is recorded explicitly rather than worked around"
     ]
   },
   "architecture": {
@@ -293,9 +291,9 @@
     "swift_build_command": "make build",
     "swift_test_command": "make verify",
     "current_command_status": {
-      "validate-manifest": "verified_2026-09-22",
-      "build": "verified_2026-09-22",
-      "verify": "verified_2026-09-23_126_tests_0_failures"
+      "validate-manifest": "verified_2026-09-23",
+      "build": "verified_2026-09-23",
+      "verify": "verified_2026-09-23_140_tests_0_failures"
     },
     "proof_vocabulary": [
       "planned",
