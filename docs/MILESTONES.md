@@ -55,9 +55,10 @@ M002.4 (HTML extraction boundary), M002.5 (content snapshots), and M002.6
 (bounded parallel fetch), M002.7 (extraction diagnostics), and M002.8
 (approved live corpus tests) are complete. Milestone 003 is the active
 milestone; M003.1 (lexical retrieval boundary), M003.2 (retrieval-backed
-citation compilation), and M003.3 (deterministic Quick pipeline) are complete
-and M003.4 (local inference boundary and model eligibility) is defined in
-`project.json`. No corpus is approved,
+citation compilation), M003.3 (deterministic Quick pipeline), and M003.4
+(deterministic Quick view in the app) are complete and M003.5 (local inference
+boundary and model eligibility) is defined in `project.json`. No corpus is
+approved,
 so no live page has been fetched: the live-corpus portion of the gate below is
 recorded as an explicit blocker rather than claimed.**
 

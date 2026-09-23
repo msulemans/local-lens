@@ -9,8 +9,8 @@ explicit blocker rather than claimed. Milestone 003 (first useful Quick
 release) is the sole active milestone; its first task, M003.1, delivered the
 lexical retrieval boundary (FTS5/BM25 over stored passages), M003.2 delivered
 retrieval-backed citation compilation, M003.3 delivered the deterministic Quick
-pipeline, and M003.4 is the next task defined in `project.json`. M002.1
-delivered the search adapter
+pipeline, M003.4 delivered the deterministic Quick view in the app, and M003.5
+is the next task defined in `project.json`. M002.1 delivered the search adapter
 boundary with a SearXNG JSON adapter, M002.2 delivered the policy-checked
 acquisition boundary with a frozen refusal matrix, M002.3 delivered the robots
 and politeness boundary, M002.4 delivered the HTML extraction boundary with a
@@ -21,7 +21,7 @@ typed per-URL outcome, and M002.7 delivered the extraction diagnostic record
 that makes every extraction outcome, page or refusal, inspectable without
 re-fetching, and M002.8 delivered the approved-live-corpus gate, which can plan
 and judge a live run but holds no transport, so no default or gated test run
-can reach the network. One hundred and eighty-eight deterministic tests pass and
+can reach the network. One hundred and ninety-two deterministic tests pass and
 clean checkouts pass `make gate`.**
 
 This is the canonical chronological record. Future work must read this file
@@ -1664,6 +1664,116 @@ deterministic Quick pipeline into the app.
 
 Next eligible task: M003.4 (deterministic Quick view in the app), derived from
 the M003 build list in `docs/MILESTONES.md` and defined in `project.json`.
+
+## 2026-09-23 - M003.4 deterministic Quick view in the app
+
+Scope actually executed: the M003.4 `next_task` only.
+`Sources/LocalLensApp/LocalLensApp.swift`, `Sources/LocalLensCore/QuickCorpus.swift`,
+`QuickCorpusTests.swift`, and `Fixtures/retrieval/quick-view.json` surface the
+M003 boundaries in the native UI. No model, network, DNS, Docker, history,
+launcher, onboarding, or packaging work was done. The M001 fixture view,
+`DeterministicPipeline`, and the frozen entities are unchanged.
+
+Commit or working-tree state: implementation commit `4689a86`; this entry is the
+second commit of the pair.
+
+Implementation:
+
+- `QuickCorpus` is a strict-decoded core fixture loader: it reads one JSON file
+  and exposes `domainSources`, `plan(for:)`, and `makeIndexedStore()`. The store
+  and index are built from the documents through the real M002.4, M002.5, and
+  M003.1 boundaries.
+- The app selects its view from `LOCAL_LENS_START_VIEW`: default and `map`
+  select the unchanged M001 `FixtureRunView`; `quick` and `quick-map` select the
+  new `QuickRunView`.
+- The shared rendering was extracted into `RunScaffold`/`RunDetailView`.
+  `FixtureRunView`'s fixture, run id, loading path, and rendered output are
+  unchanged.
+- `QuickRunView` runs `QuickPipeline.run` over the view fixture, persists the
+  run under `quick-run`, and renders retrieval-backed citations, the evidence
+  map, and the exact-passage inspector.
+
+Commands and observed results:
+
+```text
+$ swift build --build-tests
+  (red first: `QuickCorpus.Question`'s decoder could not resolve the nested
+   `ClaimEntry`; qualified it as `QuickCorpus.ClaimEntry`. No rule was changed.)
+
+$ swift test --filter QuickCorpusTests
+  Executed 4 tests, with 0 failures (0 unexpected) in 0.013 seconds
+
+$ swift test
+  Executed 192 tests, with 0 failures (0 unexpected) in 0.741 seconds
+
+$ make gate
+  project.json conforms to its schema and handoff invariants.
+  protocol v1 schemas conform; Swift parity holds (run_status=15,
+    research_mode=4, evidence_relation=3, error_code=6)
+  swift build -> Build complete
+  swift test  -> Executed 192 tests, with 0 failures (0 unexpected)
+  gate exit: 0
+
+$ LOCAL_LENS_START_VIEW=quick .build/debug/LocalLensApp
+  screencapture -l <window id> -o -x docs/evidence/M003/app-m003-quick-citations.png
+$ LOCAL_LENS_START_VIEW=quick-map .build/debug/LocalLensApp
+  screencapture -l <window id> -o -x docs/evidence/M003/app-m003-quick-map.png
+$ .build/debug/LocalLensApp
+  screencapture -l <window id> -o -x docs/evidence/M003/app-m003-m001-recheck.png
+```
+
+Gate result: `make gate` passed at commit `4689a86` with 192 tests and 0
+failures (188 before this task, 4 added). The manifest validated and the
+protocol v1 schemas and Swift enum parity were unchanged.
+
+Failures preserved at: the compile red above is recorded with its cause; it was
+a name-resolution defect in the new source, fixed in the source. No assertion or
+guard was weakened.
+
+UI evidence, read back with the vision tool:
+
+- `app-m003-quick-citations.png`: `What makes good espresso?`, `Quick ·
+  complete · 3 citations`, `Deterministic Quick run: 3 claims resolved to 3
+  sources.`, the Brewing/Water/Pressure claim rows, and the inspector for
+  Brewing showing `Espresso Brewing`, `Example Coffee ·
+  https://espresso.example.invalid/guide`, the exact passage, and text hash
+  `9ee19e726c5e…`.
+- `app-m003-quick-map.png`: the same three claims as map cards with `supports`
+  badges and source rows (`Espresso Brewing`, `Water Quality`, `Pressure`) and
+  the colour-plus-text legend.
+- `app-m003-m001-recheck.png`: the M001 view unchanged after the shared-scaffold
+  refactor (`Fixture synthesis: 3 claims resolved to 3 synthetic sources.`,
+  text hash `4790bbd37344…`).
+- The persisted `quick-run.json` decoded as `complete` with 3 citations.
+
+The capture required Screen Recording permission, which was granted;
+`docs/evidence/M003/runtime-check.md` records the commands and the permission
+dependency.
+
+Decision: D027 in `docs/DECISIONS.md` (the native app renders the deterministic
+Quick pipeline). `docs/ARCHITECTURE.md` extends the "Deterministic Quick
+pipeline" section with the app selection, and `docs/LEARNING_PATH.md` gains a
+"Practised in M003.4" block.
+
+M003 progress advanced by this task:
+
+- the M003 boundaries are now exercised by the UI, not only by tests: a window
+  capture is evidence about retrieval and citation rendering;
+- every rendered citation resolves to an exact stored passage and snapshot
+  through the same inspector M001 uses; and
+- "the deterministic M001 slice remains unchanged" still holds: the view was
+  re-captured unchanged and the M001 tests pass.
+
+Proof boundary: deterministically verified and locally captured. The Quick view
+runs offline with no model or network, and the captures prove the rendered
+citations and map. The capture is a UI regression and rendering check, not an
+interaction test: pointer interaction, accessibility traversal, and the Quick
+result's usefulness are not measured. The `ImageRenderer` permission-free path
+is not built.
+
+Next eligible task: M003.5 (local inference boundary and model eligibility),
+derived from the M003 build list in `docs/MILESTONES.md` and defined in
+`project.json`.
 
 ## Evidence append template
 
