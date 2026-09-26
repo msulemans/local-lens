@@ -76,7 +76,7 @@ complete unless every done_when item in project.json has observed evidence.
 ## What exists already
 
 The latest recorded state is M003.5 active, M003.4 complete, and a clean work
-tree at commit `5e79633`. The existing package has a native deterministic
+tree at commit `40c7ec3`. The existing package has a native deterministic
 Quick view, SearXNG JSON adapter, bounded safe fetch scheduler, HTML extraction,
 content addressed snapshot store, FTS5 index, Quick pipeline, citation compiler,
 and exact passage inspector. At preparation time `make gate` last passed with

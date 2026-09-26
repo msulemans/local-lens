@@ -100,7 +100,7 @@
       "diversity selection capping passages per source as the one deterministic source feature",
       "typed lexical ingest (indexed/duplicate) and a nine-member query/resolve refusal family, including a result limit above the policy maximum",
       "every lexical hit resolves to a stored passage and its snapshot, and IndexedHit has no snippet field",
-      "M003.4 deterministic Quick view and window captures are present in commit 4689a86; this working-tree manifest had incorrectly reopened that completed task",
+      "M003.4 deterministic Quick view and window captures are present in commit 0d160bf; this working-tree manifest had incorrectly reopened that completed task",
       "M003.5 live hosted answer and five-question baseline are recorded in docs/evidence/M003; no answer-quality promotion is claimed",
       "M003.6 live Quick workspace builds in the Mac app, with in-app question entry, hosted disclosure, exact-quote rail, fetched-source link, optional safe direct-page path, Keychain key storage, and a Research menu command; a locally built development app opened with the offline fixture, live window, and missing-key and invalid-URL interactions verified; no in-app cited answer yet",
       "M003.6 development app built and ad-hoc signed locally, with bundle plist and signature checks passing; distribution and second-machine reproduction remain unverified",

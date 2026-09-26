@@ -1,7 +1,7 @@
 # M004.1 - Living Research Map and four-mode surface
 
 Date: 2026-09-26 (Australia/Sydney)
-Working tree: `main` at `5e79633` plus uncommitted M003.5-M003.10 work and this
+Working tree: `main` at `40c7ec3` plus uncommitted M003.5-M003.10 work and this
 session's changes. Nothing staged or committed.
 
 ## Measured defect

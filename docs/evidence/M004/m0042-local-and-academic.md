@@ -1,7 +1,7 @@
 # M004.2 - Academic evidence, News independence, and the local answer boundary
 
 Date: 2026-09-26 (Australia/Sydney)
-Working tree: uncommitted on top of `5e79633`. Nothing staged or committed.
+Working tree: uncommitted on top of `40c7ec3`. Nothing staged or committed.
 
 ## 1. Academic evidence (was 0 passages)
 

@@ -1,7 +1,7 @@
 # M005.3 - Held-out academic comparison (M005 gate)
 
 Date: 2026-09-26 (Australia/Sydney)
-Working tree: uncommitted on top of `5e79633`. Nothing staged or committed.
+Working tree: uncommitted on top of `40c7ec3`. Nothing staged or committed.
 
 ## Frozen held-out questions
 

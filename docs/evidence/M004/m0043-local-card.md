@@ -1,7 +1,7 @@
 # M004.3 - Local answer card and promotion decision
 
 Date: 2026-09-26 (Australia/Sydney)
-Working tree: uncommitted on top of `5e79633`. Nothing staged or committed.
+Working tree: uncommitted on top of `40c7ec3`. Nothing staged or committed.
 
 Candidate: `qwen2.5-coder:14b-instruct-q4_K_M` through the loopback
 OpenAI-compatible endpoint (`docs/MODEL_POLICY.md`, experiment

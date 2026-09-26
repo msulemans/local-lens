@@ -28,7 +28,7 @@ release) is the sole active milestone; its first task, M003.1, delivered the
 lexical retrieval boundary (FTS5/BM25 over stored passages), M003.2 delivered
 retrieval-backed citation compilation, M003.3 delivered the deterministic Quick
 pipeline, M003.4 delivered the native deterministic Quick view at commit
-`4689a86`, and M003.5 recorded a live hosted citation slice. M003.6 is
+`0d160bf`, and M003.5 recorded a live hosted citation slice. M003.6 is
 complete: a current-build in-app hosted answer with two exact citations is
 recorded in `docs/evidence/M003/m0036-current-app-proof.md`, and the unchanged
 card measured 2/10 in `docs/evidence/M003/m0036-frozen-card-rerun.md`. A
@@ -288,7 +288,7 @@ M000 correction gate:
 - `make validate-manifest`: pass; JSON schema and handoff invariants conform.
 - `make run`: pass; the app process launches and shuts down cleanly. GUI
   content and interaction were not manually inspected.
-- All baseline files were committed as the first repository commit `d3af88a`
+- All baseline files were committed as the first repository commit `43f720a`
   on `main` (34 files); the working tree is clean afterwards.
 
 Proof boundary: the package and four initial core behaviors are
@@ -309,8 +309,8 @@ path has been tested. M001 remains active.
   library validator; `make validate-schemas` and `make gate` expose the new
   checks.
 - Commands and observed results: `make validate-schemas` pass (run_status=15,
-  research_mode=4, evidence_relation=3); `make verify` pass; commits `762cf55`
-  and `2522780`.
+  research_mode=4, evidence_relation=3); `make verify` pass; commits `b789138`
+  and `e8ee70e`.
 - Next eligible task: M001.2 deterministic offline fixture slice.
 
 ### 2026-09-22 - M001.2 deterministic offline fixture slice
@@ -325,7 +325,7 @@ path has been tested. M001 remains active.
   fixture, run-event, and persisted-run decoding reject unknown fields.
 - `RunStore` persists and reloads a completed run unchanged.
 - Commands and observed results: `make verify` pass; 11 tests, 0 failures
-  (7 new). Commit `75f50cc`.
+  (7 new). Commit `cc7e866`.
 - Boundary note: this slice is clean-room Swift; sibling extraction remains
   gated by `docs/REUSE_PROVENANCE.md` and is not claimed here.
 - Handoff correction: the first M001.3 manifest dropped the blocked-reuse
@@ -348,7 +348,7 @@ path has been tested. M001 remains active.
 - D013 records newline-delimited JSON over stdio as the first local IPC
   transport.
 - Commands and observed results: `make gate` pass; 21 tests, 0 failures
-  (10 new). Commit `5ba762d`.
+  (10 new). Commit `7a07c53`.
 - Next eligible task: M001.4 native fixture slice in the app with
   clean-checkout verification.
 
@@ -366,11 +366,11 @@ path has been tested. M001 remains active.
   Smoke run: process launched and persisted `fixture-run.json`, which decodes
   as status `complete` with 3 citations, 4 passages, and 11 events. Clean
   checkout: `git clone` into a temporary directory and `make gate` pass on
-  revision `386aafd`.
+  revision `f8c1831`.
 - Proof boundary: GUI appearance and pointer interaction were not visually
   inspected; persistence, resolution, and gate behavior are covered by tests
   and the persisted artifact.
-- Commit `386aafd`. Next eligible task: M001.5 Living Research Map minimal
+- Commit `f8c1831`. Next eligible task: M001.5 Living Research Map minimal
   screen and M001 gate audit.
 
 ### 2026-09-22 - M001.5 living research map, visual evidence, and gate audit
@@ -394,8 +394,8 @@ path has been tested. M001 remains active.
   sibling extraction, UI-automation decision, full map design, interaction
   testing).
 - Commands and observed results: `make gate` pass; 25 tests, 0 failures.
-  Clean checkout: `git clone` plus `make gate` pass on revision `912b563`.
-  Commit `912b563`.
+  Clean checkout: `git clone` plus `make gate` pass on revision `f82d893`.
+  Commit `f82d893`.
 - Next eligible task: M001.6 close-out (UI-verification decision and
   milestone declaration).
 
@@ -457,7 +457,7 @@ path has been tested. M001 remains active.
 - Commands and observed results: `make gate` pass; 43 tests, 0 failures
   (18 new); `make validate-schemas` reports protocol parity
   (run_status=15, research_mode=4, evidence_relation=3, error_code=6);
-  `make validate-manifest` pass. Commit `6d6e4a9`.
+  `make validate-manifest` pass. Commit `b44b3c6`.
 - Decisions: D016 records the boundary, the typed outcome family, and hit
   identity. `docs/ARCHITECTURE.md` search boundary now records the implemented
   signatures; `docs/LEARNING_PATH.md` records what M002.1 practised.
@@ -538,7 +538,7 @@ path has been tested. M001 remains active.
   source may reference `URLSession`, `SystemHostResolver`, or `getaddrinfo`.
 - Commands and observed results: `swift test --filter SafeAcquisitionTests`
   pass, 15 tests, 0 failures; `make gate` pass; 58 tests, 0 failures (15 new);
-  `make validate-manifest` pass. Commit `080db9d`.
+  `make validate-manifest` pass. Commit `a5c7ad2`.
 - Decisions: D017 records the boundary, the address-based fail-closed rule, the
   normalization requirement, the typed refusal families, and the frozen matrix.
   `docs/ARCHITECTURE.md` acquisition boundary now records the implemented
@@ -656,7 +656,7 @@ $ make gate
   Executed 81 tests, with 0 failures (0 unexpected)
 ```
 
-Gate result: `make gate` passed at commit `19a9d1f` with 81 tests and 0
+Gate result: `make gate` passed at commit `a4840b2` with 81 tests and 0
 failures (58 before this task, 23 added). The manifest validated and the
 protocol v1 schemas and Swift enum parity were unchanged.
 
@@ -814,7 +814,7 @@ $ make gate
   gate exit: 0
 ```
 
-Gate result: `make gate` passed at commit `dfff4a8` with 96 tests and 0 failures
+Gate result: `make gate` passed at commit `7030e03` with 96 tests and 0 failures
 (81 before this task, 15 added). The manifest validated and the protocol v1
 schemas and Swift enum parity were unchanged.
 
@@ -1097,7 +1097,7 @@ counters and a prose-depth rule, and a frozen fixture plus a twelve-test suite
 were added. No sibling code was copied (licence gate still unmet). No network,
 DNS, clock, disk, model, or UI work.
 
-Commit or working-tree state: implementation committed as `8879b63` (the
+Commit or working-tree state: implementation committed as `636ff1a` (the
 working tree was clean at that commit and `make gate` was run before it).
 
 Commands and observed results:
@@ -1224,7 +1224,7 @@ code was copied (licence gate still unmet). No network, no DNS, no live page
 read, no Docker, and no model weights: the harness holds no transport, so the
 default and gated runs have nothing to reach the network with.
 
-Commit or working-tree state: implementation committed as `8d0e9b7`; this
+Commit or working-tree state: implementation committed as `3d434cc`; this
 entry is the second commit of the pair.
 
 Commands and observed outputs:
@@ -1378,7 +1378,7 @@ network work was done, and no M001/M002 code or test was touched.
 Commit or working-tree state: the three files arrived untracked from an earlier
 session. They were reviewed against the M003.1 `done_when`, the frozen protocol
 v1 contracts, and the M002 precedents, then committed. The implementation is
-commit `0bc72fe`; this entry is the second commit of the pair.
+commit `0bc906c`; this entry is the second commit of the pair.
 
 WIP review: kept because they matched the contract:
 
@@ -1447,7 +1447,7 @@ $ make gate
   gate exit: 0
 ```
 
-Gate result: `make gate` passed at commit `0bc72fe` with 171 tests and 0
+Gate result: `make gate` passed at commit `0bc906c` with 171 tests and 0
 failures (155 before this task, 16 added). The manifest validated and the
 protocol v1 schemas and Swift enum parity were unchanged.
 
@@ -1507,7 +1507,7 @@ Quick wiring, UI, model, reranker, vector store, or network work was done, and
 no M001/M002 code or test was touched; the frozen entity and protocol
 definitions are unchanged.
 
-Commit or working-tree state: implementation commit `9ee4e93`; this entry is the
+Commit or working-tree state: implementation commit `8a35034`; this entry is the
 second commit of the pair.
 
 Implementation:
@@ -1564,7 +1564,7 @@ $ make gate
   gate exit: 0
 ```
 
-Gate result: `make gate` passed at commit `9ee4e93` with 179 tests and 0 failures
+Gate result: `make gate` passed at commit `8a35034` with 179 tests and 0 failures
 (171 before this task, 8 added). The manifest validated and the protocol v1
 schemas and Swift enum parity were unchanged.
 
@@ -1612,7 +1612,7 @@ compiler into one offline run. No model, network, UI, history, launcher,
 onboarding, packaging, or live corpus work was done, and no M001/M002 file was
 modified.
 
-Commit or working-tree state: implementation commit `d16132b`; this entry is the
+Commit or working-tree state: implementation commit `f774e75`; this entry is the
 second commit of the pair.
 
 Implementation:
@@ -1656,7 +1656,7 @@ $ make gate
   gate exit: 0
 ```
 
-Gate result: `make gate` passed at commit `d16132b` with 188 tests and 0
+Gate result: `make gate` passed at commit `f774e75` with 188 tests and 0
 failures (179 before this task, 9 added). The manifest validated and the
 protocol v1 schemas and Swift enum parity were unchanged.
 
@@ -1711,7 +1711,7 @@ the M003 build list in `docs/MILESTONES.md` and defined in `project.json`.
 
 ## 2026-09-25 - M003.6 live Quick workspace implementation (not complete)
 
-The working-tree handoff had regressed to M003.4 even though commit `4689a86`
+The working-tree handoff had regressed to M003.4 even though commit `0d160bf`
 contains the completed deterministic Quick view. This entry corrects the task
 pointer without discarding that work or altering the M001 fixture view. M003
 remains the sole active milestone.
@@ -2944,6 +2944,16 @@ than an unverified claim. `make dist` produced an Apple-Development-signed
 archive, copied MIT `LICENSE` into the bundle, and passed nine release checks;
 it explicitly reports `notarized: no` because there is no Developer ID
 identity. Decision D049.
+
+Public-release preparation: the owner explicitly authorized rewriting the
+40 earlier commits from a company identity to the GitHub account `msulemans`.
+The release commit was included in the rewrite, so all 41 commits on `main`
+now have `msulemans <53903082+msulemans@users.noreply.github.com>` as both
+author and committer. Historical short commit references in this repository
+were mechanically updated to the rewritten IDs. `make validate-manifest` and
+`git diff --check` pass. A public `msulemans/local-lens` GitHub repository was
+created for this first publication; remote availability and second-Mac
+reproduction are distinct checks, and publication is not notarization.
 
 ## Evidence append template
 

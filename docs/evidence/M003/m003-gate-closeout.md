@@ -45,7 +45,7 @@ container, SearXNG endpoint, or terminal command was involved in that app run.
 
 ```text
 $ git clone -q . /tmp/locallens-clean && cd /tmp/locallens-clean
-HEAD: 5e79633 Freeze infrastructure and open M003.5 (live Quick vertical slice)
+HEAD: 40c7ec3 Freeze infrastructure and open M003.5 (live Quick vertical slice)
 dirty files: 0
 $ swift build   -> Build complete!
 $ swift test    -> Executed 192 tests, with 0 failures (0 unexpected)

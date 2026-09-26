@@ -1,7 +1,7 @@
 # M005.2 - Page-aware PDF evidence and citation export
 
 Date: 2026-09-26 (Australia/Sydney)
-Working tree: uncommitted on top of `5e79633`. Nothing staged or committed.
+Working tree: uncommitted on top of `40c7ec3`. Nothing staged or committed.
 
 ## Page-aware PDF evidence
 

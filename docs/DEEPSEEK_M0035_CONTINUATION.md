@@ -20,7 +20,7 @@ M003 evidence files. Inspect git status and the existing live code before
 editing. Preserve every uncommitted change; none has been committed.
 
 Current state, to VERIFY:
-- Branch main at 5e79633, with M003.5 uncommitted files. project.json still
+- Branch main at 40c7ec3, with M003.5 uncommitted files. project.json still
   says M003.5 is active. Do not treat its older no-key blocker as current.
 - SearXNG is already configured at 127.0.0.1:8888 and live search/fetch has
   worked. Check the existing container before touching Docker. Do not create a
