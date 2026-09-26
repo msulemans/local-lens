@@ -170,7 +170,14 @@ public enum SafeAcquisition {
         let port = url.port ?? AcquisitionPolicy.defaultPort(for: scheme)
         let defaultPort = AcquisitionPolicy.defaultPort(for: scheme)
         let portPart = (port == nil || port == defaultPort) ? "" : ":\(port!)"
-        let path = url.path.isEmpty ? "/" : url.path
+        // `URL.path` drops a trailing slash, so `/a/` and `/a` collapse to the
+        // same key and a server's legitimate redirect from `/a` to `/a/` is
+        // misread as a loop (observed on developer.apple.com, swift.org, and a
+        // personal blog). The percent-encoded path from `URLComponents` keeps
+        // the trailing slash, so only a genuinely repeated URL is a loop;
+        // `maxRedirects` still bounds a pathological ping-pong.
+        let encodedPath = URLComponents(url: url, resolvingAgainstBaseURL: false)?.percentEncodedPath
+        let path = (encodedPath?.isEmpty ?? true) ? "/" : encodedPath!
         let query = url.query.map { "?\($0)" } ?? ""
         return "\(scheme)://\(host)\(portPart)\(path)\(query)"
     }

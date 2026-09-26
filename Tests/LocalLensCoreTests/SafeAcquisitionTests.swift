@@ -413,6 +413,36 @@ final class SafeAcquisitionTests: XCTestCase {
         XCTAssertEqual(SafeAcquisition.canonicalKey(origin), SafeAcquisition.canonicalKey(loop))
     }
 
+    func testTrailingSlashRedirectIsFollowedRatherThanTreatedAsALoop() async throws {
+        // Servers commonly redirect `/page` to `/page/`. `URL.path` drops the
+        // trailing slash, so a loop key built from it made the redirect target
+        // look identical to the URL just visited and refused a legitimate hop
+        // (observed live on developer.apple.com, swift.org, and a blog). The
+        // percent-encoded path keeps the slash, so only a real repeat is a loop.
+        let origin = try url("https://example.com/a")
+        let target = try url("https://example.com/a/")
+        let transport = ScriptedSearchTransport(responses: [
+            .init(status: 302, headers: ["Location": "/a/"], body: nil),
+            .init(
+                status: 200,
+                headers: ["Content-Type": "text/html"],
+                body: "<html><body>readable sentence of evidence</body></html>"
+            ),
+        ])
+        let result = try await SafeAcquisition.fetch(
+            origin,
+            transport: transport,
+            resolver: StubHostResolver(answers: ["example.com": ["93.184.216.34"]]),
+            policy: try policy()
+        )
+        XCTAssertEqual(result.finalURL, target)
+        XCTAssertNotEqual(
+            SafeAcquisition.canonicalKey(origin),
+            SafeAcquisition.canonicalKey(target),
+            "a trailing slash must not be normalised away"
+        )
+    }
+
     // MARK: Address classification
 
     func testEquivalentLoopbackEncodingsNormalizeToTheSameAddress() {

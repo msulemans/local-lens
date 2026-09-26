@@ -307,6 +307,19 @@ public actor LexicalIndex {
     /// `query` is reduced to its alphanumeric terms and each term is quoted, so
     /// a query is data and never FTS5 syntax. A query with no term is refused.
     public func search(_ query: String, limit: Int? = nil) throws -> [IndexedHit] {
+        try select(match: try Self.matchExpression(for: query), limit: limit)
+    }
+
+    /// A relaxed query used only when the strict all-term query found nothing.
+    /// It matches passages containing any of the query's terms, ranked by bm25,
+    /// so a page whose text is present but not concentrated in one passage is
+    /// not discarded. Precision first, relaxation second: it is never the
+    /// default, and the caller decides when the stored evidence justifies it.
+    public func searchAnyTerm(_ query: String, limit: Int? = nil) throws -> [IndexedHit] {
+        try select(match: try Self.anyTermExpression(for: query), limit: limit)
+    }
+
+    private func select(match: String, limit: Int?) throws -> [IndexedHit] {
         let effectiveLimit = limit ?? policy.maximumResults
         guard effectiveLimit >= 1 else {
             throw LexicalIndexError.invalidLimit(limit: effectiveLimit)
@@ -317,10 +330,7 @@ public actor LexicalIndex {
                 maximum: policy.maximumResults
             )
         }
-        let match = try Self.matchExpression(for: query)
-        let connection = database.handle
-
-        let candidates = try rankedCandidates(match: match, connection: connection)
+        let candidates = try rankedCandidates(match: match, connection: database.handle)
 
         var selected: [IndexedHit] = []
         var perSource: [String: Int] = [:]
@@ -554,6 +564,17 @@ public actor LexicalIndex {
     /// Each term is quoted, so the result cannot become FTS5 syntax. A query
     /// with no term is refused rather than silently matching nothing.
     static func matchExpression(for query: String) throws -> String {
+        try terms(in: query).map { "\"\($0)\"" }.joined(separator: " AND ")
+    }
+
+    /// The same terms joined with `OR`, for the relaxed fallback query.
+    static func anyTermExpression(for query: String) throws -> String {
+        try terms(in: query).map { "\"\($0)\"" }.joined(separator: " OR ")
+    }
+
+    /// Reduces a query to its alphanumeric terms. A query with no term is
+    /// refused rather than silently matching nothing.
+    static func terms(in query: String) throws -> [String] {
         var terms: [String] = []
         var current = ""
         for character in query {
@@ -566,7 +587,7 @@ public actor LexicalIndex {
         }
         if !current.isEmpty { terms.append(current) }
         guard !terms.isEmpty else { throw LexicalIndexError.emptyQuery }
-        return terms.map { "\"\($0)\"" }.joined(separator: " AND ")
+        return terms
     }
 
     static func validate(_ record: SnapshotRecord) throws {

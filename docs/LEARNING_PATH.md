@@ -296,6 +296,92 @@ Practised in M003.4:
   permission dependency belongs in the record rather than in an implicit
   assumption.
 
+Practised in M003.6:
+
+- A search result or a user-pasted URL is a discovery target. Neither its
+  snippet nor its title is citation evidence; only a safely fetched, stored
+  passage can support a claim.
+- A known-page path can make the Mac app useful while a metasearch engine is
+  unavailable, but one page cannot establish source independence or answer a
+  broad web question.
+- An exact substring proves a quotation matches stored bytes. It does not
+  prove the claim is entailed by the quote. The frozen five-question card must
+  still be judged for source relevance and answer usefulness.
+- A compiled app screen and offline tests are not an observed live interaction
+  or answer-quality result; record these proof levels separately.
+- A fetch that returns HTTP 200 is not necessarily readable research content:
+  a JavaScript documentation shell or an HTML meta-refresh page can yield no
+  answer-bearing stored passages. Diagnose extraction and passage counts before
+  spending a provider call; do not fill the gap with search snippets.
+- An ad-hoc-signed development `.app` proves a local launch path, not a
+  distributable, notarized app or a second-machine reproduction. Likewise,
+  exercising a key/URL error state is UI proof, not a cited-answer run.
+- A provider can name an exact stored quote that appears in two passages.
+  The compiler must refuse that ambiguity; isolate the affected claim so an
+  independently unique, cited claim can survive without weakening the
+  citation rule. A deterministic regression is not a live quality score.
+- A source preview can be useful before synthesis: show the fetched, stored
+  passage and URL without implying that it is already an answer or citation.
+  This lets someone inspect a public page without an API key while keeping
+  the local and hosted paths visibly separate.
+- The same query string is not equally good for two consumers. A metasearch
+  engine ranks a natural-language question well; an FTS5 index needs short
+  strict windows because a long all-term match falls back to chrome. Feeding
+  one keyword list to both silently traded away web-search relevance for the
+  index's convenience. Measured before changing: search for the natural
+  question surfaced the primary/comparison sources, while the four-term window
+  split "Grand Central Dispatch" and returned nothing useful.
+- A narrow strict retrieval pass that returns one passage is not a two-source
+  answer. A ranked any-term fill, appended after the strict hits and filtered
+  by the same readability rule, gives the provider a real choice without
+  lowering the precision floor.
+- A current-build proof is worth more than a loaded artifact: the app's own
+  ask path wrote the completed citations. Use an explicit, off-by-default
+  environment hook to reproduce it rather than faking keystrokes or capturing
+  the user's whole desktop.
+
+Practised in M003.7:
+
+- A free metasearch baseline is an infrastructure dependency with its own
+  failure modes. SearXNG's stock `general` engines were all scrape engines that
+  soft-block under repeated use, so the fix was not in the app: measure each
+  engine, pin a curated set, and record why the rest are off.
+- A search engine can serve *stale or unrelated* results while reporting HTTP
+  200. Bing-via-SearXNG returned veterinary and StackOverflow-cache pages for a
+  SQLite query. An engine returning bytes is not an engine returning answers.
+- A licence can rule out an otherwise working endpoint: Bing's RSS output is
+  trivially parseable but Microsoft's terms forbid non-aggregator use, so it is
+  not a product backend.
+- Exact quotes are not truth. The card's false-premise question was answered
+  with three exact quotes from one blog that stated the misconception. The
+  pipeline endorsed a falsehood with perfect citation integrity.
+- Source *type* is a real, deterministic retrieval feature that needs no model:
+  opening conventional documentation/forum hosts before personal blogs moved Q1
+  to a primary Apple source and removed the Q5 endorsement. It is discovery
+  ordering, not a citation rule, and it is not a correctness guarantee.
+- Measure the treatment on exactly the cases it can affect. When the full card
+  could not reach its threshold anyway, a two-call re-run of the two affected
+  questions tested the hypothesis at a fraction of the cost, and the result was
+  reported as a projection, not a full card score.
+
+Practised in M003.8:
+
+- Query ambiguity is a retrieval failure, not a model failure: `Swift` meant a
+  programming language in Q4 but also matched financial-SWIFT release pages.
+  A measured, narrow disambiguation exposed an official dated passage without
+  changing the model or the local FTS5 query.
+- A source-looking hostname is not ownership proof. `docs.untrusted.net` can
+  be a blog; only known project/vendor domains receive the official discovery
+  tier now. Even that tier is a preference, not a truth guarantee.
+- Readability is weaker than relevance. A body that simply repeats its heading
+  must not use a synthesis slot, and a passage about what an ISP can see does
+  not answer what a destination website sees. The five fresh retrieval runs
+  preserve these misses instead of giving them answer-quality credit.
+- Process peak RSS from `/usr/bin/time -l` is useful but only covers that
+  short-lived CLI. It is not Mac-app or SearXNG peak memory. Record measured
+  scope beside the number and leave first-evidence time unknown until it is
+  instrumented.
+
 ## M004 - Measured reranking
 
 This lesson exists only if M004 entry criteria are met.
@@ -323,6 +409,54 @@ Learn:
 - citation graphs versus relevance;
 - primary and secondary evidence; and
 - PDF structure and extraction limits.
+
+### M003.9 - A free search key is not a free answer, or a citation
+
+Try the current Mac app with a pasted public URL and **Inspect page without
+AI**; no key is needed. Then add a free Tavily search key and choose **Find
+evidence without AI**. Compare the URL/title/content returned by search with
+the text actually fetched and stored from a page. Only the latter may support
+an answer citation. A DeepSeek key is separate, and selecting Ask may incur a
+hosted inference charge. The Tavily adapter has now run in the Mac app, and
+one DeepSeek answer displayed four exact citations; this is not a full
+answer-quality benchmark. This exercise should record search credits,
+opened-source refusals, selected passages, and any missing evidence before
+considering a paid answer-card rerun. Verify the app by driving its own
+controls too: the F1 check was re-run through **Find evidence without AI**
+under driven UI and reproduced the official first passage
+([app check](evidence/M003/m0039-f1-app-check.md)).
+
+The frozen Swift/GCD CPU-work comparison demonstrates that two independent
+search queries can find sources on both sides while still selecting generic
+passages. Compare the [provider-free Q2 run](evidence/M003/m0039-q2-provider-free.md)
+with the older one-query baseline: source discovery, passage relevance, and
+answer entailment are separate gates. Do not score retrieval as a good answer.
+In the [F1 passage probe](evidence/M003/m0039-f1-passage-probe.md), the
+official Python page was fetched on both runs, but only a lexical query using
+the source's actual failure wording selected the answer-bearing paragraph.
+The [F5 counterclaim probe](evidence/M003/m0039-f5-counterclaim-probe.md)
+shows the opposite limit: better query wording cannot create a direct saved
+passage when most candidate pages refuse safe acquisition.
+
+### M003 close-out - The refusal was in our code, not the web
+
+- Two questions could not reach Apple or Swift.org primary pages. The refusals
+  looked like network or rate-limit problems; instrumenting the acquisition
+  boundary showed the app was normalising a trailing slash away and calling an
+  ordinary `/page` -> `/page/` redirect a loop. Read the typed refusal before
+  blaming the network.
+- One identity fix took the unchanged card from 2/10 to 6/10, and reordering
+  one lexical query took it to 7/10. Acquisition and query shape dominate
+  retrieval quality; a bigger model would not have fixed either.
+- A false refusal hides real work: after the redirect fix, extraction (not
+  acquisition) became the Apple limiter, because the API reference pages are
+  JavaScript-rendered. Fixing one boundary just moves the frontier.
+- Keep a canary question untuned. The fifth question was the last
+  below-threshold one, but tuning it would have destroyed the only measurement
+  that is not fitted to the benchmark. A promotion that needs a tuned canary is
+  not a promotion.
+- Measure the ceiling that matters: 140 MB peak RSS for the app and 30.8 MB for
+  the CLI retrieval path are recorded numbers, not adjectives.
 
 ## M006 - Temporal evidence
 
@@ -373,3 +507,14 @@ For a completed run, learning mode shows:
 
 The view consumes the same typed events as the application. It does not invent
 a parallel story about what happened.
+
+### UI trust lesson from M009.4
+
+The live research workspace, legacy Quick prototype, and M001 fixture were all
+exposed as app windows. The normal Research menu now exposes only the four-mode
+workspace; the other scenes stay internal for deterministic regression. A
+citation proves linkage to a saved passage, not that the publisher is correct.
+An empty custom plan must stop before search, and editing a question must clear
+the answer that belonged to the previous question. See the before/after
+screenshots and unresolved answer-quality boundary in
+`docs/evidence/M009/m0094-ui-closeout-audit.md`.

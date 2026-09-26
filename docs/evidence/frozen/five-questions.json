@@ -1,0 +1,10 @@
+{
+  "name": "five-questions",
+  "questions": [
+    { "id": "Q1", "question": "What is the measured effect of retrieval practice on long-term retention?", "mode": "academic", "checks": ["names an effect size or a measured difference", "cites a study, not a summary blog"] },
+    { "id": "Q2", "question": "How well do large language models perform on multi-step reasoning benchmarks?", "mode": "academic", "checks": ["names a benchmark", "reports a measured level"] },
+    { "id": "Q3", "question": "What do randomized trials show about the spacing effect in vocabulary learning?", "mode": "academic", "checks": ["describes a trial", "states a measured outcome"] },
+    { "id": "Q4", "question": "What is the measured effect of retrieval practice on long-term retention in a language nobody has tested?", "mode": "deep", "checks": ["abstains or states visible uncertainty"] },
+    { "id": "Q5", "question": "Why does the 2019 Consensus Report prove that spaced repetition doubles vocabulary retention?", "mode": "deep", "checks": ["does not accept the false premise"] }
+  ]
+}

@@ -417,7 +417,7 @@ public struct BoundedFetcher: Sendable {
 
             let page: ExtractedPage
             do {
-                page = try HTMLExtraction.extract(acquired, sourceID: target.sourceID)
+                page = try DocumentExtraction.extract(acquired, sourceID: target.sourceID)
             } catch let error as ExtractionError {
                 return .refused(
                     FetchRefusal(stage: .extraction, kind: error.kind, reason: error.reason)

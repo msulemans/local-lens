@@ -853,82 +853,663 @@ Consequences:
   assertion or guard was weakened. The `missing_snapshot` guard was added while
   reviewing the boundary before commit.
 
-## D027 - The native app renders the deterministic Quick pipeline
+## D027 - Web search and lexical retrieval take different query shapes
 
-Context: M003.1 through M003.3 are core-only. The app still rendered only the
-M001 deterministic fixture, so UI verification could not exercise the new
-retrieval and citation boundaries at all. M003.4 has to surface them without
-changing the M001 view or introducing a model.
+Context: M003.6 fed the same four-term keyword windows to both SearXNG web
+search and the FTS5 lexical index. Measured on 2026-09-25, that split "Grand
+Central Dispatch" into `swift structured concurrency grand` and returned no
+independent comparison source for Q2, no macOS system-SQLite source for Q3,
+and no correction thread for Q5, while the natural-language question surfaced
+all three.
 
-Decision: the app selects its view from `LOCAL_LENS_START_VIEW`. The default is
-the unchanged M001 `FixtureRunView`; `map` is its map view; `quick` is a new
-`QuickRunView`; `quick-map` is the Quick map view.
+Decision: the two consumers get different queries. `QuickQueryPlanner.webQueries`
+returns the trimmed natural-language question for web search;
+`QuickQueryPlanner.plan` returns the keyword windows for the lexical index.
+`LiveQuickRunner.retrieve` and `run` take an optional `retrievalQueries` list
+that defaults to the search queries, so existing callers and deterministic
+tests are unchanged and the two lists can diverge only where a caller chooses
+to.
 
 Rules:
 
-- `QuickRunView` loads `Fixtures/retrieval/quick-view.json` through the new
-  `QuickCorpus` loader, builds a real `SnapshotStore` and `LexicalIndex` from its
-  documents through the M002.4, M002.5, and M003.1 boundaries, runs
-  `QuickPipeline.run`, persists the result under `quick-run`, and renders
-  citations, the evidence map, and the exact-passage inspector.
-- The shared rendering lives in `RunScaffold` and `RunDetailView`.
-  `FixtureRunView`'s fixture, persisted run id, loading path, and rendered
-  output are unchanged, and a post-refactor capture proves it.
-- `QuickCorpus` is strict-decoded core data. Loading it reads one JSON file and
-  nothing else, and `makeIndexedStore()` is the only way it produces evidence.
-- The Quick view is a deterministic demo: no model, network, DNS, Docker, or
-  real clock.
+- Search is handed the question; the index is handed short strict windows.
+- A long all-term FTS5 query still strict-matches nothing; the runner's
+  ranked any-term pass now fills remaining synthesis budget instead of running
+  only when the strict pass is empty, so a two-source question can receive more
+  than one fragment. Strict hits stay first and the fill is still
+  `EvidenceText`-filtered.
+- Both lists remain capped by the frozen Quick `searchQueries` limit.
+- Neither change touches ranking identity, citation identity, the offline
+  guards, or the M001 fixture slice.
 
 Consequences:
 
-- The app now exercises the M003 boundaries end to end, so a window capture is
-  evidence about retrieval and citation rendering rather than only a launch
-  check.
-- The app refactor is covered by a re-captured M001 view and by the unchanged
-  core tests.
-- A model-backed Quick mode, history, the global launcher, onboarding, and
-  packaging remain later M003 tasks.
+- `testWebSearchQueryIsSeparateFromRetrievalQuery` fails if the runner reuses
+  one query list for both paths, and a planner test pins `webQueries` against
+  `plan`.
+- Live retrieval observations while the engines answered are recorded in
+  `docs/evidence/M003/m0036-source-relevance.md`; Q2 and Q3 now open the
+  comparison and system-SQLite material the card needed.
+- This is a deterministic source-relevance fix, not a model, embedding, or
+  reranker change. The frozen-card usefulness effect is unmeasured because the
+  SearXNG engines suspended before a provider re-run; that re-measure stays
+  owed and must not be reported as a promotion.
 
-## D028 - Freeze infrastructure and ship the live Quick slice
+## D028 - Source authority orders discovery, it does not certify claims
 
-Context: a product review found that the foundations are real and tested (192
-deterministic tests, `make gate` green, safe acquisition through retrieval,
-citation compilation, and a native Quick view) but that no real cited answer has
-been produced, and that the sibling licence has been blocked since M001 while a
-parallel native Swift core was rebuilt.
+Context: the M003.7 card measured 1/10 and, worse, answered the false-premise
+question Q5 entirely from one Medium post that states the misconception, while
+Q1 answered a Swift question from two personal blogs. Search returned both
+official and non-official pages; the runner opened them in the metasearch
+gine's order, so a blog could supply the citation.
 
-Decision: freeze new infrastructure. No new protocol, refusal family, agent
-framework, reranker, vector store, or abstraction is added unless the live slice
-cannot be built without it. The sole next task is the live Quick vertical slice:
-
-```text
-one real question
-  -> at most 2 searches
-  -> at most 6 safe parallel fetches
-  -> at most 12 retrieved passages
-  -> one selected provider
-  -> a concise answer
-  -> exact citations
-  -> the native Quick UI
-```
-
-It is evaluated on five representative questions with time to first evidence,
-total latency, answer usefulness, citation validity, citation completeness, peak
-memory, provider cost, and failure behavior. It closes with one explicit
-architecture decision: resolve the sibling licence and extract its remaining
-useful pieces, or formally choose the native Swift core and stop describing the
-sibling as the planned foundation.
+Decision: `SourceAuthority` assigns a discovery tier to each search hit -
+`0` for conventional official documentation or project-forum hosts (`docs.*`,
+`developer.*`, `forums.*`, or a known official registrable domain) and `1`
+otherwise - and `LiveQuickRunner.prepare` opens tier-0 hits before tier-1 hits
+with a stable sort that preserves the search engine's order inside each tier.
 
 Rules:
 
-- The live slice is a separate binary. No default or gated test run may reach
-  the network, and the offline guards and frozen M001 evidence remain unchanged.
-- A provider may be called only after its `docs/MODEL_POLICY.md` experiment
-  record is filled. No candidate is currently eligible.
-- No silent hosted fallback: the provider is chosen, labelled, and recorded.
+- This is a source-type discovery feature, not a reranker and not a citation
+  rule. It changes which pages are fetched, never which claims are accepted.
+- The snippet-never-evidence rule, exact-quote validation, and the citation
+  boundary are unchanged. A non-authoritative page is still opened when it is
+  all that was found, and its passages can still be cited if exact.
+- It adds no model, embedding, vector store, or network call, and it is
+  deterministic and unit-tested.
 
-Blocker, recorded rather than worked around: this environment has no search
-endpoint (no SearXNG or search API listening) and no answer provider (no API key,
-no local model, and no filled experiment record), so no real cited answer can be
-produced until the owner chooses a search endpoint and exactly one provider, or
-approves a specific local model path.
+Consequences:
+
+- Targeted two-call verification: Q1 gained an Apple WWDC23 citation and scored
+  2/2 (was 1/2); Q5 stopped endorsing the false premise and scored 1/2 (was
+  0/2 with a hard false-premise failure). Projected card 3/10, still below the
+  four-question promotion threshold, so Quick is **not** promoted.
+- Source authority is not correctness: Q1 still cites two personal blogs beside
+  the Apple source, and Q5's correction is blog-sourced. An exact quote can
+  still be a misconception, so exactness stays distinct from entailment.
+- Q2 and Q4 still abstain for recall, which this treatment does not address.
+
+The generic `docs.*`/`developer.*` part of this rule was later narrowed by
+D029 after a spoofable-prefix review; this entry preserves the original
+M003.7 decision and measurement.
+
+## D029 - Disambiguate measured search intent and do not equate a docs prefix with authority
+
+Context: M003.8's provider-free Q4 run searched the word `Swift` and opened
+financial-SWIFT standards material. A disambiguated search surfaced an
+official dated programming-language release passage. Q2 and the five fresh
+searches showed that readable passages can still be irrelevant. The M003.7
+generic source-authority rule also promoted any `docs.`/`developer.` prefix,
+even on an unrelated domain.
+
+Decision: the narrow `latest stable Swift release` web query includes
+`programming language`; the local lexical plan and Quick cap are unchanged.
+Body text identical to its heading is refused as answer evidence. Tier-0
+source discovery requires a known official domain or the existing Swift GitHub
+path, not a documentation-looking subdomain on an arbitrary host.
+
+Consequences: Q4 default retrieval selected a Swift.org passage containing
+both the version and release date, but no hosted answer was re-run. Q2 remains
+unstable; no frozen-card quality promotion is claimed. Five fresh retrieval
+outcomes, CLI latency/RSS, and misses are recorded in `docs/evidence/M003/`.
+`make gate` passed with 234 tests. The next task is M003.9, not a model
+comparison or packaging declaration.
+
+## D030 - Default Quick web discovery to a no-card free tier
+
+Context: the owner has no Brave Search key. The Mac product cannot require a
+Docker SearXNG endpoint for normal open-web use. The measured SearXNG baseline
+and vendor comparison are in
+`docs/evidence/M003/m0039-search-backend-decision.md`.
+
+Decision: use Tavily basic search as the default, user-owned free-tier web
+discovery adapter; keep Brave optional and SearXNG for contributors. Keep a
+keyless supplied-page path. Expose **Find evidence without AI** so a search
+key alone can deliver fetched, inspectable passages. Explicit Keychain saving
+and network/hosted disclosure remain in the Mac app. No Tavily answer or raw
+page body bypasses our own safe fetch, snapshot, and exact-passage citation
+boundary.
+
+Consequences: the adapter and app build are deterministic/local proof only;
+the supplied-page Mac path was observed without keys, but Tavily live API
+behavior and relevance await a user key. DeepSeek remains a separate hosted
+answer provider and may cost money. M003.9 and the unchanged card stay open;
+there is no Quick-quality promotion or packaged second-machine proof.
+
+## D031 - Live Tavily proof does not waive retrieval preflight
+
+Context: the owner's Tavily key made normal-user no-Docker search testable. A
+pre-recorded single Mac Ask produced four exact citations in 6.0 seconds, but
+one was a redundant claim from a weaker third-party forum. A separate
+provider-free Tavily preflight found Q2/Q3/F1/F5 retrieval misses before any
+new frozen answer-card spend.
+
+Decision: record the app run as live integration proof, not Quick-quality
+promotion. Preserve Q2/Q3/F5 misses and typed safe-fetch refusals. Treat F1's
+measured query-to-passage mismatch with a narrow deterministic lexical query
+using the official page's failure wording; leave its natural-language web
+search and the citation boundary unchanged. A counterclaim search for F5 did
+not recover direct evidence, so no speculative F5 rule is adopted. Close
+Connection on a valid app run to give the evidence rail space, while keeping
+it expanded for configuration errors.
+
+Consequences: F1's official child-failure rule became the first selected
+passage on a default Tavily recheck; no F1 answer quality was measured. The
+current ad-hoc app then reproduced the F1 selection through its own no-AI path
+under driven UI, with the Connection disclosure collapsed
+(`docs/evidence/M003/m0039-f1-app-check.md`). The one-call app smoke is spent
+(cumulative recorded provider-attempt minimum 37). A full unchanged card
+remains ineligible until retrieval preflight is stronger; no model, reranker,
+new service, or later milestone was added.
+
+## D032 - Redirect identity must keep the trailing slash
+
+Context: Q1 and Q4 could not reach Apple or Swift.org primary pages. The
+provider-free retrieval opened only two sources for Q1 and refused
+`developer.apple.com/videos/play/wwdc2021/10134`, `swift.org/blog`, and a
+personal blog post as `acquisition/redirect_loop`. Instrumentation showed each
+of those servers redirects `/page` to `/page/` and then returns 200, so the
+refusals were false.
+
+Cause: `SafeAcquisition.canonicalKey` built the loop-detection key from
+`URL.path`. Foundation's `URL.path` drops a trailing slash, so the redirect
+target `/page/` produced the same key as the URL just visited and the
+legitimate hop was rejected as a loop.
+
+Decision: build the key's path from
+`URLComponents(url:resolvingAgainstBaseURL:false)?.percentEncodedPath`, which
+preserves the trailing slash and percent-encoding. A URL that differs only by
+a trailing slash is a distinct resource; `maxRedirects` still bounds a
+pathological ping-pong, and a genuinely repeated URL is still a loop.
+
+Consequences:
+
+- Deterministic and unit-tested
+  (`testTrailingSlashRedirectIsFollowedRatherThanTreatedAsALoop`). No safety
+  rule was relaxed: every hop is still validated before it is requested.
+- Measured: Q1 opened 5 sources instead of 2 and gained Apple WWDC21 10134 and
+  WWDC23 10170; Q2 gained the two-sided Apple/Swift-Forums comparison; Q4
+  reached the dated `swift.org/blog` release note.
+- Extraction, not acquisition, is now the Apple limiter:
+  `developer.apple.com/documentation/...` still refuses as
+  `no_readable_text` because the page is JavaScript-rendered.
+
+## D033 - Quick is promoted on the treated card; the fifth question stays a canary
+
+Context: the unchanged card measured 2/10 (M003.6), 1/10 (M003.7 first pass),
+projected 3/10 (M003.7 targeted), and 6/10 with only the acquisition fix
+applied (Q3/Q5 abstaining). A targeted Q3 rerun then scored 1/2 with an exact
+`PRAGMA compile_options` citation.
+
+Decision: promote Quick on one coherent re-run of the unchanged card that
+scored **7/10 with 13/13 exact citations**, four of five questions at >=1/2,
+Q5 abstaining without endorsing its false premise, Q1 citing an Apple primary
+source, and Q4 showing dated freshness. The Q3 treatment is deterministic and
+regression-tested. The fifth question is the project's untuned canary and is
+**not** given a targeted treatment, even though it is the last below-threshold
+question.
+
+Consequences:
+
+- Promotion is a per-run card result, not a claim that every question is
+  answerable. Q5 abstains rather than correcting the false premise, and Q3
+  gives the check step but not the build-it-yourself step.
+- The card threshold no longer fails, so the M004 entry criterion (a stable
+  retrieval failure the lexical/source baseline cannot meet) is not obviously
+  satisfied; M004 opens with an entry check and may be recorded `not needed`.
+- No model, reranker, vector store, or external service was added to reach this
+  result; the only changes were the redirect fix and one planner query order.
+
+## D034 - The owner redefines M004 as the four-mode product surface
+
+Context: the shipped development app was one Quick-only live form. The owner
+stated that the agreed product was a complete four-mode application and that
+the visible surface was different and missing features. The repository record
+agrees: `docs/PRODUCT.md` specifies a mode toolbar, a living brief, an evidence
+map with provenance ribbons, exact-passage inspection, and a bounded gap action,
+and `docs/MILESTONES.md` lists history, a global launcher, onboarding, and a
+packaged build inside M003 while the M003 gate does not test them. The
+milestone-gated approach had delivered a strong Quick retrieval/citation engine
+and almost none of the agreed surface.
+
+Decision: treat the owner directive as authoritative and redefine **M004** as
+the Living Research Map and four-mode product surface. M004.1 (surface, frozen
+mode policies, planner, multi-round runner, history, launcher, pause/cancel,
+OpenAlex discovery, News independence clustering) is implemented and locally
+observed. M004.2 closes the measured gaps: Academic discovers scholarly landing
+pages but selects 0 usable passages, and News independence is unobserved on an
+answered run. M005-M009 keep their original scopes. The original M004
+retrieval-treatment entry check is deferred and remains unanswered.
+
+Consequences:
+
+- Modes remain frozen execution policies, not prompt labels: Quick 2/6/12/60s,
+  Deep 6/16/24 with 2 follow-up rounds/180s, Academic scholarly-first
+  5/14/24/180s, News 14-day window 5/14/20/120s. The runner refuses a plan that
+  does not match its policy.
+- Every mode still reaches citations only through the unchanged
+  provider-to-verification-to-compilation boundary; the surface cannot promote
+  a snippet to evidence.
+- The surface is implemented and locally measured, not proven complete:
+  Academic evidence, News independence answer verification, local inference,
+  notarized packaging, and second-Mac reproduction remain open.
+- No model, reranker, embedding, vector database, or external service was added.
+
+## D035 - The local answer boundary is explicit and never a silent fallback
+
+Context: M004.1 had no local answer path; every answer left the machine through
+hosted DeepSeek. The first live local run produced a useful Quick answer with
+four exact citations in 34.1 s at US$0, and the same endpoint then produced an
+irrelevant answer on "what changed in the latest Swift release", choosing the
+financial-messaging sense of SWIFT and citing clearstream.com while apple.com
+and swift.org programming passages were stored.
+
+Decision: keep `LocalAnswerProvider` as an explicit, labelled boundary selected
+by the user in Connection, record its candidate per `docs/MODEL_POLICY.md`, and
+**not** promote it to default until the frozen card is scored. A local failure
+never falls back to a hosted provider; it abstains or shows the failure. The
+`AnswerPrompt` function owns the provider instruction so hosted and local
+cannot drift, and every artifact carries `local/<model>` or the hosted model
+name.
+
+Consequences:
+
+- Local and hosted results stay visibly and analytically separate; the toolbar
+  shows `LOCAL · <model>` or `HOSTED · DEEPSEEK`.
+- The trust boundary does not weaken for a local model: `AnswerTrust` still
+  verifies every quote against a stored passage, so a local model can only
+  propose fewer accepted claims, never a weaker citation.
+- The wrong-sense answer is preserved as a measured local quality failure; the
+  query planner is not tuned against a single observed question.
+- The local runtime is the user's own installed server; the repository does not
+  download, install, or manage model weights.
+
+## D036 - The local model is measured, useful in part, and not promoted
+
+Context: the local boundary from D035 had produced one useful Quick answer and
+one wrong-sense "Swift" answer. The pre-recorded experiment threshold in
+`docs/MODEL_POLICY.md` required at least four of five frozen questions at
+>=1/2 with 100% citation integrity before the local path could become default.
+
+Decision: run the frozen card and record **6/10 usefulness with 10/10 exact
+citations**. Q1 and Q2 scored 2/2, Q3 1/2, Q4 abstained, and Q5 answered
+adjacent claims that can read as endorsing its false premise instead of
+correcting or abstaining, so only three questions reached >=1/2. Q2 also took
+82.69 s against a 60 s ceiling. The local path is **not promoted**.
+
+Consequences:
+
+- `LOCAL · <model>` stays an explicit Connection choice and never a silent
+  fallback; hosted remains the default.
+- The threshold was applied as written and was not weakened after the result.
+- No prompt or planner change was made in response to the card, because that
+  would be tuning against the observed sample.
+- The failure set (Q5 non-correction, Q2 latency, Q3 partial, Q4 abstention,
+  and M004.2's wrong-sense answer) is the local quality record a future
+  treatment must move against.
+
+## D037 - Scholarly discovery is multi-provider, and fallback slots are reserved
+
+Context: M004's Academic path used one OpenAlex adapter. M005.1 added arXiv and
+Crossref with DOI/arXiv identity reconciliation. The first three-provider run
+was a measured regression: scholarly targets filled all 14 fetch slots, the
+readable general-web fallback never opened, and only 3 passages were selected
+against 22 before the change.
+
+Decision: keep the three boundaries, reconcile duplicates by DOI and
+versionless arXiv identity, and reserve fetch budget for the web fallback with a
+run-scoped scholarly cap of 8 targets split 3/2/2 across OpenAlex, arXiv, and
+Crossref. Crossref emits the canonical DOI resolver because that URL carries
+the identity, and the bounded fetch follows the redirect to the publisher.
+
+Consequences:
+
+- Academic measured 24 passages from 9 opened sources in 17.8 s with arXiv,
+  DOI, and web sources all present.
+- A provider cannot starve the fallback, and one work cannot occupy three
+  fetch slots.
+- PDF/page-aware evidence and BibTeX/RIS export remain open; a paper claim
+  still requires an HTML page.
+- The 8 and 3/2/2 constants are measured, not proven optimal.
+
+## D038 - PDFKit for page-aware paper evidence, and a deliberate refusal change
+
+Context: M005.1 could reach an open-access paper only when an HTML landing page
+existed. DOI resolvers often land on a PDF or a bot-walled publisher page, so a
+paper claim frequently had no readable target.
+
+Decision: use **PDFKit**, the macOS system framework, for page-aware PDF text.
+It adds no package dependency, downloads nothing, needs no model, and exposes
+text per page, which is what a page citation requires. A passage keeps the exact
+page text and carries `Page N` in its heading, because the frozen `Passage`
+entity has no page field and must not change. An alternative in-repository PDF
+parser was rejected as larger and less reliable for no licensing benefit.
+
+The same change turns the fixture target that declares `application/pdf` with a
+deliberately malformed body from `unsupported_content_type` into
+`malformed_markup`. The fixture, the frozen-matrix text, and the test were
+updated together with a comment. This is a deliberate expectation change on a
+now-supported media type, not a weakened gate: the target still refuses with a
+typed reason on the same stage.
+
+Consequences:
+
+- A live arXiv PDF extracted 12 page-headed passages through the unchanged
+  acquisition boundary in 0.63 s.
+- Scanned or image-only PDFs refuse as `no_readable_text`; there is no OCR and
+  none is planned without a measured need and a model-policy record.
+- BibTeX, RIS, and Markdown export now ship in `CitationExport`, with an EXPORT
+  row in the app's completed brief and history replay.
+- The M005 gate still needs its held-out academic comparison; M005.3 owns it.
+
+## D039 - The academic held-out comparison is a no-benefit result and is kept
+
+Context: the M005 gate requires the academic held-out set to beat generic web
+search on citation quality. M005.1-M005.2 built multi-provider scholarly
+discovery, DOI/version reconciliation, page-aware PDF evidence, and export. The
+M005.3 held-out comparison then measured scholarly-first discovery against a
+generic-web-only baseline, provider-free, on three frozen questions.
+
+Result: scholarly-source share was 58% for the scholarly path against 54% for
+the generic web, the web baseline surfaced the same key papers on the third
+question, and the scholarly path cost 7-43x the latency (up to 89.76 s). That is
+not a clear citation-quality win.
+
+Decision: record the M005 gate as **not met** and preserve the no-benefit
+result. Do not reframe the scaffold (Findings/Method/Limitations) as a win, and
+do not weaken the gate. Treat the measured defects instead: aggregator pages
+outranked primary sources inside the scholarly list, and three providers were
+called per query across up to five queries.
+
+Consequences:
+
+- M005 stays open with M005.4 as the next treatment: primary-source ordering
+  for discovery and a conditional Crossref call, re-measured on the same frozen
+  set.
+- Academic remains available to users; the mode's discovery is not disabled.
+- The negative result is the baseline M005.4 must move against.
+
+## D040 - Academic discovery is primary-first, and the M005 gate is met on the held-out answer card
+
+Context: M005.3 recorded a no-benefit retrieval result (58% vs 54% scholarly
+share, 7-43x latency). M005.4 then ordered primary paper targets before
+aggregators and called Crossref only when OpenAlex and arXiv left fewer than six
+scholarly candidates.
+
+Decision: keep both treatments and record the M005 gate as **met on the
+answer-level measurement**. On the same frozen held-out set the shipped Academic
+policy produced 5/6 usefulness against the generic-web policy's 3/6, at 100%
+citation integrity on both paths. Latency fell 19% on retrieval (120.98 s
+against 150.15 s) and `Limitations` coverage became non-zero on all three
+questions.
+
+Consequences:
+
+- The confound is explicit and preserved: the two paths ran their own frozen
+  budgets (Academic 14 sources/24 passages, Quick 6/12), so this compares the
+  shipped modes, not scholarly discovery at equal budget. The M005.3
+  retrieval-share tie stands as a negative result.
+- Aggregators still appear after primary sources, and publisher refusals remain.
+- Academic latency remains far above the web baseline; that is documented, not
+  hidden.
+- News mode's unenforced time window is the next measured defect and M006.1 owns
+  it.
+
+## D041 - News enforces its window at discovery and counts independent voices
+
+Context: News mode's frozen policy declares a 14-day window and independent
+confirmation, but only the query text carried the month: nothing filtered by
+date and the independence count was a raw domain count.
+
+Decision: enforce the window at discovery, before any fetch is planned, and drop
+both stale and undated results while counting each. Treat two domains that
+published the same headline as one independent voice, and mark every cited claim
+with the number of voices behind its page so a single-source answer is shown as
+uncertain rather than confirmed.
+
+Consequences:
+
+- Live measurement: 7 of 30 discovery results were outside the window and were
+  excluded; the surface shows `WINDOW · 23 dated results inside the window, 7
+  outside it`.
+- An undated page is excluded rather than assumed fresh. This is the strict
+  reading and it can starve a query; the ledger reports that instead of hiding
+  it.
+- The copy test is verified by fixture only: no observed live run contained a
+  syndicated copy, so that gate part is recorded as not demonstrated.
+- News headings are frequently navigation text, so the voice count is only as
+  good as the stored heading. This is recorded as an open defect.
+
+## D042 - The dimension plan is editable, and every loop states why it stopped
+
+Context: Deep mode ran bounded follow-up rounds but its dimension plan was fixed
+and a stop was inferable only from the round count.
+
+Decision: make the plan editable and validate it against the frozen per-mode caps
+(empty, oversized, duplicated case-insensitively, and over-long labels are
+refused with typed errors; whitespace collapses, nothing is dropped or merged),
+and record exactly one typed reason per round plus a terminal reason in the
+report.
+
+Consequences:
+
+- `STOP · <reason> — <explanation>` is shown in the brief, so "it stopped
+  because the evidence saturated" is visible rather than guessed.
+- A later round that stores nothing is `no_new_evidence`, not `no_evidence`: the
+  distinction is meaningful to a reader.
+- Coverage still matches the dimension *label*, which is measured as wrong for
+  Deep's generic scaffold (Evidence 0 and Tradeoffs 0 for passages that discuss
+  both). M007.2 owns that, along with contradictions and a diminishing-evidence
+  stop rule.
+- The app's invalid-plan refusal is wired to the proven core call but was not
+  observable through the accessibility tree; recorded as an open verification
+  gap rather than claimed.
+
+## D043 - Coverage reads content terms, and the loose contradiction detectors are rejected
+
+Context: M007.1 measured that coverage matched the dimension's own label, so
+Deep reported `Evidence 0` and `Tradeoffs 0` for passages that plainly discuss
+both, and spent a follow-up round on a gap that did not exist. M007.2 also
+attempted a deterministic numeric-contradiction detector.
+
+Decision: ship `DimensionLexicon` so coverage matches a dimension by label or by
+a fixed, in-code term list (a custom dimension falls back to its own content
+terms), and ship the strict numeric-contrast rule that requires identical context
+words across two pages. Reject the two looser rules that were implemented and
+measured.
+
+Consequences:
+
+- The same Deep question moved from `Overview 0, Evidence 0, Tradeoffs 0, Gaps 1`
+  to `Overview 1, Evidence 4, Tradeoffs 2, Gaps 1`, and the run no longer spends a
+  follow-up round on a false gap.
+- A follow-up round that adds half or less of the previous round stops with
+  `diminishing_returns`.
+- The rejected rules are preserved as measured failures: shared sentence terms
+  paired citation-list years (`2000, 2005, 2006` against `1978`), and a shared
+  unit word still joined unrelated numbers under contexts like "after" and
+  "memory". Neither ships, because both would assert a disagreement the evidence
+  does not contain.
+- The M007 gate item "contradictions are not silently flattened" is recorded as
+  only partially met: nothing is averaged or resolved and a strict detector
+  exists and is tested, but live detection was not demonstrated.
+
+## D044 - The scorecard keeps usefulness, integrity, and latency apart, and the card says when it is unscored
+
+Context: earlier milestones recorded usefulness by hand in prose, in a way that
+could drift from the run it described, and there was no deterministic proof that
+the citation boundary refuses a corrupted compilation.
+
+Decision: add a JSON benchmark card, a scorecard that stores one row per question
+with separate citation-integrity, human-usefulness, and latency fields, and four
+corruption checks that must all be refused. Usefulness is `nil` until a human
+scores it and is reported only over scored questions.
+
+Consequences:
+
+- The five-question replay against the local model reports 100% citation
+  integrity and `usefulness unscored over 0/5 scored`; it does not invent a
+  number from citation counts.
+- A local run and a hosted run are two documents, each with one label.
+- Intentional corruptions are detected: an altered quote, a missing passage, a
+  mismatched claim, and an unknown citation are all refused.
+- There are still no human usefulness labels, so the semantic-evaluator part of
+  the M008 gate is not started; M008.2 owns the review workflow.
+
+## D045 - A review packet is data, a scorecard is two documents, and the release script refuses to imply notarization
+
+Context: usefulness had been recorded in prose, the release path was a
+development bundle signed ad hoc, and there was no way for a user to hand over a
+failure without handing over their research.
+
+Decision: generate a review packet from a run so a person can judge each claim
+against its exact quote and source URL in a file; keep answer usefulness and
+citation integrity in separate fields of a scorecard, with one label per
+document so a local run and a hosted run are never averaged; generate learning
+cards from the run itself; ship a diagnostics bundle that carries counts,
+versions, and typed reasons only; and have the release build sign with the best
+identity it has while stating in `BUILD-INFO.json` exactly why it did not
+notarize.
+
+Consequences:
+
+- The reviewed run reports 100% citation integrity, mean usefulness 1.40 over
+  5/5 scored, and 5 supported plus 1 partial citation. The labels are
+  provisional and were written by the assistant.
+- The deterministic evaluator agrees with 3 of 5 provisional labels (mean error
+  0.40) and reports itself **not calibrated**, because five labels cannot
+  calibrate anything against the 20-label minimum.
+- `dist/release/BUILD-INFO.json` records `signature: apple-development` and
+  `notarized: no` with the reason: no Developer ID Application identity is
+  installed.
+- A licence has not been selected. `docs/LICENSING.md` records that the
+  repository bundles no third-party code and names the one file that closes the
+  gate; the choice is the owner's, and M009.2 exists so the other three external
+  dependencies (independent review, second machine, Developer ID) are not lost.
+
+## D046 - The four modes are verified with the hosted provider, and three mode defects are recorded from that run
+
+Context: the record showed two hosted Quick answers from M004.1 and nothing else.
+Deep, Academic, and News had only ever been answered by the local model, and no
+mode had been driven through the interface with the hosted provider since the
+Living Research Map was built. Separately, the app's saved keys were not
+prefilling, which made every first Ask fail.
+
+Decision: verify all four modes through both the command-line tool and the app
+with hosted DeepSeek, fix the credential path, and record what the runs measured
+about the modes.
+
+Consequences:
+
+- Quick 6 passages/6.3 s, Deep 12/8.0 s with the comparison plan and decision
+  criteria, Academic 13/25.2 s with a paper matrix, News 3/15.9 s with the
+  14-day window, 10 domains, and a dated timeline. Eight hosted calls; the
+  cumulative minimum moves from 39 to 47.
+- Two credential faults are fixed: the provider check ran before the keychain
+  read, so the first Ask always failed; and a refused read was reported as an
+  empty slot, which is false. A rebuilt development bundle loses its keychain
+  grant because macOS ties the grant to the code signature; the panel now says
+  so and offers a deliberate Grant access action.
+- Three mode defects are measured and left open, owned by M009.3: News enforces
+  recency but not topical relevance (a stablecoin approval and a biodiversity
+  brief reached the citations), a News answer rested on three claims with
+  `Independent confirmation · 1`, and Deep stopped on `dimensions_covered` with
+  `Gaps · 2` because two dimensions matched by keyword rather than being
+  addressed.
+- These runs prove routing and the citation boundary. They do not prove answer
+  quality, and that is stated rather than implied.
+
+## D047 - The three mode defects measured by the four-mode run are treated, and two wiring bugs are recorded
+
+Context: the hosted four-mode run (M009.2) measured three defects in the modes
+themselves, not in the plumbing: News enforced its 14-day window but not topical
+relevance, so a stablecoin approval and a biodiversity brief reached the
+citations; a News answer reported ten domains and ten voices while every claim
+rested on one; and coverage counted keyword coincidence, so `Gaps · 2` was
+reported for a gap nothing had addressed and `Timeline · 16` counted any passage
+containing a year.
+
+Decision: treat each with a deterministic, testable rule, and preserve the first
+attempt at the relevance rule as a measured failure rather than quietly
+replacing it.
+
+Consequences:
+
+- `NewsRelevance` keeps a result only when it shares an adjacent phrase from the
+  question, two of its content terms, or one distinctive term, and refuses to
+  starve a run: if it would drop everything it keeps everything and says so. The
+  first version kept anything sharing a single term and measured **zero** drops
+  on a live run, because the question contains `month` and `act`. Both the rule
+  and its failed predecessor are in the tests.
+- `NewsClaimDepth` reports how many accepted claims a second independent voice
+  carries, and the News brief leads with it. The honest sentence is "Thin claim
+  set: none of the 7 claims is carried by a second independent voice", not the
+  domain count that used to imply confirmation.
+- `DimensionLexicon` matches whole words, separates strong from weak terms, and
+  requires one strong term or two weak ones. A year is not timeline evidence and
+  one "however" is not a gap.
+- Two fields were computed and then dropped on the way into the report: the
+  contradiction scan, and the claim depth. The contrast panel therefore could
+  not have rendered for any run, and the M007.2 note that it "stays empty" was
+  true for the wrong reason. Both are passed now, with a test for the pair the
+  fixture produces and a live run for the render.
+- `swift test`: **315 tests, 0 failures**. Evidence:
+  `docs/evidence/M009/m0093-defects-and-redesign.md`.
+
+## D048 - The workspace is rebuilt against the product's own mockup, with no invented verdicts
+
+Context: `docs/design/local-lens-living-research-map.png` is the layout
+PRODUCT.md selects, and the shipped surface had drifted from it into a scaffold:
+tracked-out all-caps labels on every section, `·`-joined counters, monospaced
+micro-text, and a single-line question field that lost its edges in a crowded
+row so a long question appeared cut off at both ends.
+
+Decision: rebuild the surface on a small design system, follow the mockup's
+structure, and refuse the one thing the mockup shows that this product cannot
+honestly produce.
+
+Consequences:
+
+- `Sources/LocalLensApp/DesignSystem.swift` holds the tokens: semantic system
+  surfaces (so light and dark both work), one accent for evidence, two semantic
+  flags, sentence case, monospaced digits only where numbers align, one card
+  radius with hairline borders.
+- The question field grows from one to six lines with a visible boundary and its
+  own clear button; the mode and status controls moved to a second row so
+  neither can squeeze the other.
+- The mockup's `Excellent / Good / Fair` verdicts are **not** reproduced: the
+  product has no basis for them, so a comparison cell reports the measured
+  count of stored passages that satisfy the criterion and mention that side. The
+  first implementation of that table counted a passage whenever it matched the
+  criterion and produced `211 matches` for a side it never checked; the rule is
+  now stated in the view and tested by the numbers it renders.
+- The surface adapts: below 1080 points the evidence column becomes a sheet, and
+  the window opens at a size the layout is designed for.
+- The idle screen no longer claims a key is missing. The keychain is read only
+  when a run starts or the panel is opened, so the old sentence asserted a state
+  the app had not checked.
+- Not proven: that the redesign is better for a person using it. That is a human
+  judgement, and no measurement here claims it.
+
+## D049 - Present one product workspace and label evidence honestly
+
+Context: an every-screen Mac audit found two additional Research-menu windows:
+an old Quick-only live prototype and a synthetic offline fixture. Their
+presence made it look like Local Lens had three competing interfaces. The audit
+also found stale answer state, unconfirmed bulk history deletion, privacy copy
+that hid hosted passage sharing, and a citation seal that implied factual
+verification.
+
+Decision: the default four-mode Living Research Map is the sole normal product
+window. Remove both historical windows from the Research menu, retaining their
+internal scenes and the unchanged M001 fixture for deterministic regression
+evidence. Reset visible answers when the question changes, confirm destructive
+history deletion, refuse an empty custom plan, and describe a citation as a
+link to stored source text rather than independent truth verification. Preserve
+the saved answer bytes while improving display-only paragraph breaks.
+
+Consequence: UI confusion is reduced without claiming improved answer quality.
+The News single-source allegation observed in a saved replay remains unverified;
+it is not a suitable verified-news demo. Evidence and limits:
+`docs/evidence/M009/m0094-ui-closeout-audit.md`.

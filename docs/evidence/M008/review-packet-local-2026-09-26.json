@@ -1,0 +1,134 @@
+{
+  "card": "five-questions",
+  "label": "local",
+  "provider": "local/qwen2.5-coder:14b-instruct-q4_K_M",
+  "questions": [
+    {
+      "answer": "Retrieval practice is better than just reading for long-term retention [1]",
+      "checks": [
+        "names an effect size or a measured difference",
+        "cites a study, not a summary blog"
+      ],
+      "citations": [
+        {
+          "citationID": "d97b21e15084775dd655",
+          "claim": "Retrieval practice is better than just reading for long-term retention",
+          "note": "the quoted text states the claim; the check reads the quote against the stored passage",
+          "passageHeading": "Experiment 2 – The length of the retrieval practice episode does not impact its efficiency",
+          "quote": "retrieval practice was better than just reading",
+          "sourceURL": "https://educationalneuroscience.org.uk/wordpress/2020/05/13/using-retrieval-practice-to-promote-long-term-retention/",
+          "verdict": "supported"
+        }
+      ],
+      "maxUsefulness": 2,
+      "mode": "Academic",
+      "notes": "answers the direction and cites a study, but names no effect size; its own first check is unmet",
+      "question": "What is the measured effect of retrieval practice on long-term retention?",
+      "questionID": "Q1",
+      "usefulness": 1
+    },
+    {
+      "answer": "Errors may accumulate over multiple steps in the Chain-of-thought method. [1] Grounding reasoning in the environment can reduce error rates. [2]",
+      "checks": [
+        "names a benchmark",
+        "reports a measured level"
+      ],
+      "citations": [
+        {
+          "citationID": "5a67c1a1c060260cd3bf",
+          "claim": "Errors may accumulate over multiple steps in the Chain-of-thought method.",
+          "note": "the quoted text states the claim; the check reads the quote against the stored passage",
+          "passageHeading": "5. Conclusion",
+          "quote": "A potential problem in the Chain-of-thought method is that errors may accumulate over multiple reasoning steps.",
+          "sourceURL": "https://arxiv.org/html/2407.11511v3",
+          "verdict": "supported"
+        },
+        {
+          "citationID": "74511ddb475bbb780c1e",
+          "claim": "Grounding reasoning in the environment can reduce error rates.",
+          "note": "the quote names Python code and formal languages; the claim generalises to \"the environment\", which the quote does not say",
+          "passageHeading": "5. Conclusion",
+          "quote": "Prompting the LLM to reformulate problems in Python code (or another formal language) can successfully reduce the error rate.",
+          "sourceURL": "https://arxiv.org/html/2407.11511v3",
+          "verdict": "partial"
+        }
+      ],
+      "maxUsefulness": 2,
+      "mode": "Academic",
+      "notes": "two grounded claims, but names no benchmark and reports no measured level",
+      "question": "How well do large language models perform on multi-step reasoning benchmarks?",
+      "questionID": "Q2",
+      "usefulness": 1
+    },
+    {
+      "answer": "Randomized trials show that spacing effect in vocabulary learning can lead to increased recall [1] The magnitude of the spacing effect varies across studies [2] The study's findings should be interpreted with caution [3]",
+      "checks": [
+        "describes a trial",
+        "states a measured outcome"
+      ],
+      "citations": [
+        {
+          "citationID": "ea906b33e1f7db7b15f7",
+          "claim": "Randomized trials show that spacing effect in vocabulary learning can lead to increased recall",
+          "note": "the quoted text states the claim; the check reads the quote against the stored passage",
+          "passageHeading": "Discussion",
+          "quote": "We found an increased recall of approximately 25 percentage points due to Spacing",
+          "sourceURL": "https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2021.757262/full",
+          "verdict": "supported"
+        },
+        {
+          "citationID": "aa5843d63288cc6bcc40",
+          "claim": "The magnitude of the spacing effect varies across studies",
+          "note": "the quoted text states the claim; the check reads the quote against the stored passage",
+          "passageHeading": "Discussion",
+          "quote": "The range of reported spacing effects in studies with L2 vocabulary is rather large as effects between 13 and 35 percentage points have been reported.",
+          "sourceURL": "https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2021.757262/full",
+          "verdict": "supported"
+        },
+        {
+          "citationID": "08e3eee69377c7ca0b36",
+          "claim": "The study's findings should be interpreted with caution",
+          "note": "the quote states the caution attributed to it, including the scheduling reason",
+          "passageHeading": "Discussion",
+          "quote": "Our significant effect of Spacing, however, has to be taken with a grain of salt since participants were sometimes non-randomly assigned to the levels of Spacing to due to scheduling constraints. A potential confound of Spacing with unknown participant factors cannot be ruled out.",
+          "sourceURL": "https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2021.757262/full",
+          "verdict": "supported"
+        }
+      ],
+      "maxUsefulness": 2,
+      "mode": "Academic",
+      "notes": "names a magnitude (about 25 points), a reported range (13-35 points), and a caution; all three checks are met",
+      "question": "What do randomized trials show about the spacing effect in vocabulary learning?",
+      "questionID": "Q3",
+      "usefulness": 2
+    },
+    {
+      "answer": "(abstained: the provider proposed no verifiable claim)",
+      "checks": [
+        "abstains or states visible uncertainty"
+      ],
+      "citations": [],
+      "maxUsefulness": 2,
+      "mode": "Deep",
+      "notes": "abstained, which is the wanted behaviour for a language nobody has tested",
+      "question": "What is the measured effect of retrieval practice on long-term retention in a language nobody has tested?",
+      "questionID": "Q4",
+      "usefulness": 2
+    },
+    {
+      "answer": "(abstained: the provider proposed no verifiable claim)",
+      "checks": [
+        "does not accept the false premise"
+      ],
+      "citations": [],
+      "maxUsefulness": 2,
+      "mode": "Deep",
+      "notes": "abstained rather than affirming the false premise, but did not say the premise is false",
+      "question": "Why does the 2019 Consensus Report prove that spaced repetition doubles vocabulary retention?",
+      "questionID": "Q5",
+      "usefulness": 1
+    }
+  ],
+  "reviewedAt": "2026-09-26",
+  "reviewer": "assistant (provisional; NOT an independent human reviewer)"
+}

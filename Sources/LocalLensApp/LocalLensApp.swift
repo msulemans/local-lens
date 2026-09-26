@@ -7,12 +7,47 @@ struct LocalLensApp: App {
         WindowGroup {
             RootView()
         }
+        // A first launch opens at a size the workspace is designed for: the
+        // brief, the evidence column, and the question field all visible at
+        // once. The window stays resizable, and the layout adapts downward.
+        .defaultSize(width: 1320, height: 880)
+        .restorationBehavior(.disabled)
+        .defaultLaunchBehavior(.presented)
+        WindowGroup("Live Quick", id: "live-quick") {
+            LiveQuickView()
+        }
+        .restorationBehavior(.disabled)
+        .defaultLaunchBehavior(.suppressed)
+        WindowGroup("Offline demo", id: "offline-demo") {
+            FixtureRunView()
+        }
+        .restorationBehavior(.disabled)
+        .defaultLaunchBehavior(.suppressed)
+        .commands {
+            CommandMenu("Research") {
+                OpenLauncherCommand()
+            }
+        }
     }
 }
 
-/// Selects the rendered view: the M001 deterministic fixture by default, the
-/// M003.4 deterministic Quick view when asked. `quick-map` and `map` start on
-/// the evidence map instead of the citation list.
+extension Notification.Name {
+    /// Posted by the menu command so the focused window can open the launcher.
+    static let localLensOpenLauncher = Notification.Name("dev.locallens.openLauncher")
+}
+
+private struct OpenLauncherCommand: View {
+    var body: some View {
+        Button("New question…") {
+            NotificationCenter.default.post(name: .localLensOpenLauncher, object: nil)
+        }
+        .keyboardShortcut(" ", modifiers: [.command, .shift])
+    }
+}
+
+/// The normal launch opens the real research workspace without making a
+/// network call. Historical fixture and Quick views remain explicitly
+/// addressable for deterministic evidence, but are not normal product UI.
 struct RootView: View {
     private let startView = ProcessInfo.processInfo.environment["LOCAL_LENS_START_VIEW"]
 
@@ -20,8 +55,12 @@ struct RootView: View {
         switch startView {
         case "quick", "quick-map":
             QuickRunView()
-        default:
+        case "fixture", "map":
             FixtureRunView()
+        case "live-quick":
+            LiveQuickView()
+        default:
+            LivingResearchMapView()
         }
     }
 }
@@ -54,8 +93,7 @@ struct FixtureRunView: View {
     @MainActor
     private func load() async {
         do {
-            let repositoryRoot = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-            let fixtureURL = repositoryRoot.appendingPathComponent("Fixtures/deterministic/quick-coffee.json")
+            let fixtureURL = fixtureResource("Fixtures/deterministic/quick-coffee.json")
             let corpus = try FixtureWorkspace.loadFixture(from: fixtureURL)
             let store = try makeRunStore()
 
@@ -101,8 +139,7 @@ struct QuickRunView: View {
     @MainActor
     private func load() async {
         do {
-            let repositoryRoot = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-            let fixtureURL = repositoryRoot.appendingPathComponent("Fixtures/retrieval/quick-view.json")
+            let fixtureURL = fixtureResource("Fixtures/retrieval/quick-view.json")
             let corpus = try QuickCorpus.load(from: fixtureURL)
             let runStore = try makeRunStore()
 
@@ -365,4 +402,15 @@ private func makeRunStore() throws -> RunStore {
         create: true
     )
     return RunStore(directory: base.appendingPathComponent("LocalLens/runs", isDirectory: true))
+}
+
+/// Source launches use repository fixtures. A development `.app` launched from
+/// Finder has a different working directory and uses the bundled copies.
+private func fixtureResource(_ relativePath: String) -> URL {
+    let source = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        .appendingPathComponent(relativePath)
+    if FileManager.default.fileExists(atPath: source.path) { return source }
+    if let bundled = Bundle.main.resourceURL?.appendingPathComponent(relativePath),
+       FileManager.default.fileExists(atPath: bundled.path) { return bundled }
+    return source
 }

@@ -1,0 +1,86 @@
+use_default_settings: true
+server:
+  secret_key: "locallens-dev-only-2026-not-for-production"
+  bind_address: "0.0.0.0"
+  limiter: false
+  public_instance: false
+  image_proxy: false
+search:
+  formats:
+    - html
+    - json
+  default_lang: "en"
+# Curated dev search set (2026-09-25). No single free engine is reliable:
+# duckduckgo web returns the cleanest primary pages but rate-limits quickly,
+# while yandex/reloado/mwmbl/360search/encyclosearch/wiby/quark keep a query
+# non-empty under load but return more noise. Keep the broad set for recall and
+# weight the clean engines above the noisy ones so their results rank first.
+# The default scrape engines (brave, duckduckgo html, google cse, startpage,
+# qwant, yahoo) soft-block/CAPTCHA under repeated use and stay off.
+engines:
+  - name: duckduckgo web
+    disabled: false
+    weight: 3.0
+  - name: bing
+    disabled: true
+    weight: 2.0
+  - name: yandex
+    disabled: false
+    weight: 3.0
+  - name: mwmbl
+    disabled: false
+    weight: 0.5
+  - name: wiby
+    disabled: false
+    weight: 0.5
+  - name: 360search
+    disabled: false
+    weight: 0.5
+  - name: encyclosearch
+    disabled: false
+    weight: 0.5
+  - name: quark
+    disabled: false
+    weight: 0.5
+  - name: reloado
+    disabled: false
+    weight: 0.3
+  - name: mojeek
+    disabled: true
+  - name: crowdview
+    disabled: true
+  - name: searchmysite
+    disabled: true
+  - name: seznam
+    disabled: true
+  - name: privacywall
+    disabled: true
+  - name: resulthunter
+    disabled: true
+  - name: tusksearch
+    disabled: true
+  - name: baidu
+    disabled: true
+  - name: sogou
+    disabled: true
+  - name: wolframalpha
+    disabled: true
+  - name: brave
+    disabled: true
+  - name: duckduckgo
+    disabled: true
+  - name: google
+    disabled: true
+  - name: google cse
+    disabled: true
+  - name: startpage
+    disabled: true
+  - name: qwant
+    disabled: true
+  - name: yahoo
+    disabled: true
+  - name: wikipedia
+    disabled: true
+outgoing:
+  request_timeout: 4.0
+  max_request_timeout: 8.0

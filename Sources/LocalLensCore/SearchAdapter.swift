@@ -11,17 +11,22 @@ public struct SearchRequest: Equatable, Sendable {
     public let method: String
     public let headers: [String: String]
     public let timeoutSeconds: Double
+    /// An optional request body. Search leaves it `nil`; a provider POST sets
+    /// it. The transport stays payload-agnostic.
+    public let body: Data?
 
     public init(
         url: URL,
         method: String = "GET",
         headers: [String: String] = [:],
-        timeoutSeconds: Double = 10
+        timeoutSeconds: Double = 10,
+        body: Data? = nil
     ) {
         self.url = url
         self.method = method
         self.headers = headers
         self.timeoutSeconds = timeoutSeconds
+        self.body = body
     }
 }
 
@@ -63,8 +68,10 @@ public struct TransportFailure: Error, Equatable, LocalizedError, Sendable {
 }
 
 /// The only production transport. It is deliberately thin: no retries, no
-/// redirect policy, and no payload knowledge, because those decisions belong
-/// to the adapter and to the M002.2 acquisition policy.
+/// payload knowledge, and one redirect rule - it refuses to follow any HTTP
+/// redirect, so a 3xx is returned to the caller. The acquisition boundary
+/// validates each hop itself; a transport that followed redirects internally
+/// would bypass that check.
 public struct URLSessionSearchTransport: SearchTransport {
     private let session: URLSession
 
@@ -78,11 +85,15 @@ public struct URLSessionSearchTransport: SearchTransport {
         for (field, value) in request.headers {
             urlRequest.setValue(value, forHTTPHeaderField: field)
         }
+        urlRequest.httpBody = request.body
 
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await session.data(for: urlRequest)
+            (data, response) = try await session.data(
+                for: urlRequest,
+                delegate: RedirectRefusingDelegate()
+            )
         } catch is CancellationError {
             throw CancellationError()
         } catch {
@@ -100,6 +111,22 @@ public struct URLSessionSearchTransport: SearchTransport {
             }
         }
         return SearchResponse(statusCode: http.statusCode, body: data, headers: headers)
+    }
+}
+
+// MARK: - Redirect refusal
+
+/// Returns `nil` for every redirect so `URLSession` reports the 3xx response
+/// instead of following it. Stateless, so it is safe to share.
+private final class RedirectRefusingDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping (URLRequest?) -> Void
+    ) {
+        completionHandler(nil)
     }
 }
 

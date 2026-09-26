@@ -1,4 +1,4 @@
-.PHONY: bootstrap validate-manifest validate-schemas gate build verify run
+.PHONY: bootstrap validate-manifest validate-schemas gate build verify run app dist verify-release demo reproduce
 
 bootstrap:
 	@swift --version
@@ -21,3 +21,19 @@ verify:
 
 run:
 	swift run LocalLensApp
+
+app:
+	sh ./scripts/build_dev_app.sh
+
+dist:
+	sh ./scripts/build_release.sh
+	sh ./scripts/verify_release.sh
+
+verify-release:
+	sh ./scripts/verify_release.sh
+
+demo:
+	sh ./scripts/run_demo.sh
+
+reproduce:
+	sh ./scripts/verify_clean_clone.sh

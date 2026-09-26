@@ -478,7 +478,7 @@
           "url": "https://example.org/paper",
           "kind": "refused",
           "refusal_stage": "extraction",
-          "refusal_kind": "unsupported_content_type",
+          "refusal_kind": "malformed_markup",
           "attempt": 1,
           "attempts": 1
         },
@@ -890,7 +890,7 @@
     {
       "stage": "extraction",
       "kind": "unsupported_content_type",
-      "why": "the bytes were allowed by acquisition but are not HTML, such as a PDF"
+      "why": "the bytes were allowed by acquisition but are neither HTML nor PDF, such as an image"
     },
     {
       "stage": "extraction",

@@ -491,9 +491,13 @@ final class BoundedFetchTests: XCTestCase {
         XCTAssertEqual(outcome.kinds, testCase.expected.map(\.kind))
         let refusals = outcome.results.compactMap(\.outcome.refusal)
         XCTAssertEqual(refusals.map(\.stage.rawValue), ["robots", "acquisition", "extraction"])
+        // The third target declares application/pdf with a deliberately
+        // unreadable body. PDF is now a supported extraction type (M005.2), so
+        // the refusal is the malformed body, not the media type. The change is
+        // deliberate and recorded in D038.
         XCTAssertEqual(
             refusals.map(\.kind),
-            ["published_rule", "private_address", "unsupported_content_type"]
+            ["published_rule", "private_address", "malformed_markup"]
         )
         // The permitted target is still stored: one source failing is a result,
         // not a reason to discard the sources that succeeded.

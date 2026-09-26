@@ -1,6 +1,24 @@
 # Local Lens - Canonical State
 
-Last updated: 2026-09-23 (Australia/Sydney)
+Last updated: 2026-09-26 (Australia/Sydney)
+
+Owner directive (2026-09-26): the owner ordered the agreed four-mode product
+surface completed rather than the conditional M004 entry check first. M004 is
+redefined as the Living Research Map and four-mode surface. M004 is complete
+(M004.1 surface, M004.2 Academic/News/local boundary, M004.3 local card) and
+M005 is complete (M005.1 scholarly boundaries, M005.2 page-aware PDF and
+export, M005.3 held-out retrieval comparison, M005.4 primary-source ordering
+and the held-out answer card), M006 is complete (M006.1 News window,
+syndication voices, timeline, and claim support), and M007 is complete (M007.1
+editable plan, typed loop reasons, resume without duplication; M007.2
+content-term coverage, diminishing returns, strict numeric contrasts). M008 is complete
+except the calibration target (M008.1 benchmark card, scorecard, corruption
+checks; M008.2 human review; M008.3 evaluator, calibration, learning cards) and
+M009 is partially complete (M009.1 release artifact, storage and privacy,
+diagnostics, demo and reproduction; M009.2 packages the four external gates).
+The original M004 retrieval-treatment entry check is deferred with its
+decision still unrecorded. Full record in the 2026-09-26 M004, M005, and M006
+sections below.
 
 Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
 Milestone 002 (safe live acquisition) is complete: every gate bullet has
@@ -9,8 +27,33 @@ explicit blocker rather than claimed. Milestone 003 (first useful Quick
 release) is the sole active milestone; its first task, M003.1, delivered the
 lexical retrieval boundary (FTS5/BM25 over stored passages), M003.2 delivered
 retrieval-backed citation compilation, M003.3 delivered the deterministic Quick
-pipeline, M003.4 delivered the deterministic Quick view in the app, and M003.5
-is the next task defined in `project.json`. M002.1 delivered the search adapter
+pipeline, M003.4 delivered the native deterministic Quick view at commit
+`4689a86`, and M003.5 recorded a live hosted citation slice. M003.6 is
+complete: a current-build in-app hosted answer with two exact citations is
+recorded in `docs/evidence/M003/m0036-current-app-proof.md`, and the unchanged
+card measured 2/10 in `docs/evidence/M003/m0036-frozen-card-rerun.md`. A
+deterministic source-relevance treatment (natural-language web queries
+separated from keyword retrieval queries, with a ranked any-term fill) is
+recorded in `docs/evidence/M003/m0036-source-relevance.md`. M003.7 completed
+its bounded task: the live SearXNG engine set was repaired and pinned in
+`scripts/searxng/settings.yml`, and a deterministic `SourceAuthority`
+discovery ordering was added after the frozen card re-measured **1/10** and
+endorsed the Q5 false premise. A targeted two-call verification projected
+**3/10** with the false-premise endorsement removed. M003.8 is complete as a
+measurement task: five fresh searches and CLI peak RSS are recorded. M003.9
+is complete: the no-Docker Tavily path is live-verified in the Mac app,
+including one hosted four-citation answer, and F1's official passage is
+selected under one narrow deterministic lexical treatment. M003.10 is complete,
+and **M003 is complete with every gate bullet met**: a trailing-slash redirect
+bug that refused Apple and swift.org primary pages as `redirect_loop` was
+fixed with a deterministic, tested change, and the unchanged five-question
+card then measured **7/10 with 13/13 exact citations**
+(`docs/evidence/M003/m003-frozen-card-treated.md`), so **Quick is promoted**
+from the 2/10 M003.6 baseline. Peak app RSS was 140 MB, the app path needs no
+Docker or terminal, and the committed deterministic path reproduces from a
+clean checkout (192 tests). Q5 still abstains rather than correcting its false
+premise; the bundle is ad-hoc signed without second-Mac proof. M002.1
+delivered the search adapter
 boundary with a SearXNG JSON adapter, M002.2 delivered the policy-checked
 acquisition boundary with a frozen refusal matrix, M002.3 delivered the robots
 and politeness boundary, M002.4 delivered the HTML extraction boundary with a
@@ -21,8 +64,9 @@ typed per-URL outcome, and M002.7 delivered the extraction diagnostic record
 that makes every extraction outcome, page or refusal, inspectable without
 re-fetching, and M002.8 delivered the approved-live-corpus gate, which can plan
 and judge a live run but holds no transport, so no default or gated test run
-can reach the network. One hundred and ninety-two deterministic tests pass and
-clean checkouts pass `make gate`.**
+can reach the network. Two hundred and forty-six deterministic tests pass in
+the current working tree; clean-checkout proof is recorded for earlier committed
+milestones.**
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
@@ -1665,149 +1709,1241 @@ deterministic Quick pipeline into the app.
 Next eligible task: M003.4 (deterministic Quick view in the app), derived from
 the M003 build list in `docs/MILESTONES.md` and defined in `project.json`.
 
-## 2026-09-23 - M003.4 deterministic Quick view in the app
+## 2026-09-25 - M003.6 live Quick workspace implementation (not complete)
 
-Scope actually executed: the M003.4 `next_task` only.
-`Sources/LocalLensApp/LocalLensApp.swift`, `Sources/LocalLensCore/QuickCorpus.swift`,
-`QuickCorpusTests.swift`, and `Fixtures/retrieval/quick-view.json` surface the
-M003 boundaries in the native UI. No model, network, DNS, Docker, history,
-launcher, onboarding, or packaging work was done. The M001 fixture view,
-`DeterministicPipeline`, and the frozen entities are unchanged.
+The working-tree handoff had regressed to M003.4 even though commit `4689a86`
+contains the completed deterministic Quick view. This entry corrects the task
+pointer without discarding that work or altering the M001 fixture view. M003
+remains the sole active milestone.
 
-Commit or working-tree state: implementation commit `4689a86`; this entry is the
-second commit of the pair.
+Implemented in this working tree: a native live Quick window selected by the
+Research menu command (Shift-Command-N) or `LOCAL_LENS_START_VIEW=live`. The
+view accepts a typed question and is wired to the existing planner, search adapter,
+bounded safe fetch, lexical retrieval, hosted provider, and citation compiler
+in-process. The screen labels the provider HOSTED, shows typed abstentions and
+failures, and renders only accepted claims with a selectable exact-passage
+rail showing the full stored passage, exact cited quote, and a link to the
+fetched source URL. An optional user-supplied
+page URL skips SearXNG but still passes through the same safe fetch, stored
+passage, retrieval, and citation checks; its search hit has an empty snippet.
+Connection settings expose the search endpoint and an explicit
+macOS-Keychain save action for the DeepSeek key. A default app launch remains
+the offline M001 fixture. No provider call starts merely by opening the window.
 
-Implementation:
+Verification: `swift build` passed; `make gate` passed on 2026-09-25 with 226
+tests, zero failures, protocol parity, manifest validation, and unchanged
+offline guards. Three added deterministic tests prove the provided URL is only
+a discovery hit, reject non-web/credential-bearing URLs, and run a stored-page
+answer through the real citation boundary with its fetched source link. The
+new window and its menu command have not been visually captured or interacted
+with in this session: the executable is not exposed as a selectable app to the
+available computer-use surface. No live provider call or frozen-card rerun was
+made. The earlier M003.5 19/20-call record and two later M003.6 in-app provider
+runs still require a distinct bounded M003.6 experiment before paid reruns.
+The SearXNG outage is not assumed to have recovered. Therefore M003.6 is
+**implemented in part, not complete**, and Quick is not yet a proven useful
+release. Evidence: `docs/evidence/M003/m0036-product-surface.md`.
 
-- `QuickCorpus` is a strict-decoded core fixture loader: it reads one JSON file
-  and exposes `domainSources`, `plan(for:)`, and `makeIndexedStore()`. The store
-  and index are built from the documents through the real M002.4, M002.5, and
-  M003.1 boundaries.
-- The app selects its view from `LOCAL_LENS_START_VIEW`: default and `map`
-  select the unchanged M001 `FixtureRunView`; `quick` and `quick-map` select the
-  new `QuickRunView`.
-- The shared rendering was extracted into `RunScaffold`/`RunDetailView`.
-  `FixtureRunView`'s fixture, run id, loading path, and rendered output are
-  unchanged.
-- `QuickRunView` runs `QuickPipeline.run` over the view fixture, persists the
-  run under `quick-run`, and renders retrieval-backed citations, the evidence
-  map, and the exact-passage inspector.
+## 2026-09-25 - M003.6 development app and retrieval-only QA (not complete)
 
-Commands and observed results:
+Scope actually executed: build and exercise a local development `.app` for the
+existing M003.6 Quick flow, plus diagnose three known-page retrieval attempts
+without calling the hosted provider. Working-tree changes remain unstaged and
+uncommitted; unrelated changes were preserved.
+
+Commands and observed outputs: `make app` exited 0 and produced an ad-hoc
+signed `dist/Local Lens.app` with the offline fixtures. `codesign --verify
+--deep --strict` and `plutil -lint` exited 0. Computer use opened the bundle:
+the default M001 fixture rendered; Research → New live question opened the live
+workspace; Connection exposed the configured controls. Question submission
+without a key showed a missing-key state, and `not-a-url` showed an HTTP(S)
+validation state before key checking. No provider call was made. No screenshot
+was persisted. `LocalLensLive --mode retrieve --source-url` produced a typed
+no-readable-evidence stop for the JavaScript-shell TaskGroup documentation;
+the older Swift Book address opened a meta-refresh page with zero passages;
+the GitHub source page opened with zero matching passages, with its cause not
+yet isolated. No fetched page body or search snippet was promoted to citation
+evidence. Full observations: `docs/evidence/M003/m0036-dev-app-qa.md`.
+
+Gate result: `make gate` exited 0 with 226 tests and unchanged offline guards;
+`make validate-manifest` passed. Decision: the local UI launch and these error
+interactions are verified, not a useful live answer. The development bundle is
+not notarized, distributed, or reproduced on a second machine. M003.6 remains
+the sole active task. Next: reconcile prior provider calls and record a distinct
+bounded M003.6 experiment before a paid in-app run; diagnose readable source
+selection and rerun the unchanged five-question card when search is available.
+
+## 2026-09-25 - M003.6 answer-bearing retrieval and ambiguous-citation treatment (not complete)
+
+Scope actually executed: improve the existing direct-page Quick selection
+against a measured question-paragraph failure, perform one pre-recorded
+native-app provider attempt, and treat the resulting ambiguous-citation
+failure. No later milestone, model, search service, or citation boundary was
+changed. Working tree remains unstaged and uncommitted.
+
+Retrieval-only observation: the public Swift forum page at
+`https://forums.swift.org/t/does-taskgroup-cancelall-require-active-co-operation-to-finish-properly/75057`
+stored successfully. For “How does Swift cancel a task group?”, the original
+single-source two-passage cap selected only a question-shaped paragraph.
+Letting one opened source supply up to twelve candidates and filtering
+question-ending paragraphs selected six passages, including a declarative
+explanation of cooperative cancellation. This was a direct-page diagnostic,
+not benchmark Q1 success: the forum is not the required Apple/Swift primary
+documentation.
+
+One bounded provider attempt was recorded **before** the app Ask action in
+`docs/evidence/M003/m0036-provider-experiment.md`. The native app entered its
+running state and then showed a typed `ambiguousQuote` compilation failure
+between two duplicate stored passages. No citation or answer appeared. The
+experiment's one-call budget is spent, bringing the recorded cumulative
+minimum to 22 attempts. Tokens, cost, elapsed time, and peak RSS were not
+measured in the UI. No screenshot or raw provider body was persisted. The
+failed result remains in the experiment record; it was not silently retried.
+
+Treatment: the unchanged citation compiler is now probed separately for each
+accepted provider claim. Ambiguous claims are rejected rather than failing
+an otherwise independently supportable batch; a batch with no unique cited
+claim abstains. Question-ending passages are excluded from provider evidence.
+New deterministic tests cover question-only selection, one-source answer
+selection behind questions, and survival of a unique claim beside an ambiguous
+duplicate. `make gate` exited 0 with 229 tests, zero failures and unchanged
+offline guards. `make app` rebuilt the local development bundle. The
+post-treatment app/provider path and frozen five-question card are **not**
+live-verified, and M003.6 remains the sole active task. Next: do not spend
+another provider call without a new bounded experiment and reconciled budget;
+first diagnose source availability and show a genuinely cited in-app answer,
+then score the unchanged card. Evidence:
+`docs/evidence/M003/m0036-dev-app-qa.md` and
+`docs/evidence/M003/m0036-provider-experiment.md`.
+
+Provider-free product slice added within M003.6: the live Mac window now has
+**Inspect page without AI** for a question and one public URL. It runs bounded
+safe fetch, storage, and retrieval without requiring an API key or contacting
+DeepSeek, then displays matching saved passages, the full selected passage,
+and a fetched-source link. The preview is labelled as source text rather than
+an answer or citation. A supplied page no longer depends on the search
+endpoint field being valid. Computer-use QA with no key showed six stored
+passages from one Swift forum page and the evidence rail/source link; the
+first ranked passage was low-relevance chrome, so this is useful inspectability,
+not quality promotion. The final **LOCAL · NO AI** badge correction was
+visually confirmed in a fresh computer-use check; the screenshot was not
+persisted to a file. `make gate` remained green at 229 tests, and
+`make app` rebuilt the ad-hoc-signed development bundle. M003.6 remains open.
+
+One further, separately pre-recorded M003.6 verification attempt was made after
+the ambiguity treatment (`docs/evidence/M003/m0036-provider-verification-2.md`).
+The native app reached DeepSeek but stopped with `emptyAnswer`; no citation or
+answer was displayed. That one-call limit is spent, making the recorded
+cumulative minimum **23 provider attempts**. The ambiguity treatment was not
+live-evaluated because the provider returned no content to compile. No further
+paid retry was made. The app now maps the typed empty-result error to a
+plain-language explanation and explicitly says it will not retry
+automatically. This is implemented and gate-verified, not provider-verified.
+The no-AI page inspection remains the only locally exercised useful live UI
+path in M003.6; hosted cited answer and the frozen quality card remain open.
+
+## 2026-09-25 - M003.6 source-relevance treatment and current-build in-app answer
+
+Scope actually executed: the M003.6 `next_task` only. Two things were done that
+the earlier M003.6 entries left open: a deterministic source-relevance
+treatment for the recorded frozen-card failures, and a current-build in-app
+hosted answer with exact citations. No model, search service, embedding,
+reranker, vector store, later milestone, or frozen question was changed. The
+M001 fixture slice, frozen entities, protocol v1, and offline guards are
+untouched. Working-tree changes remain unstaged and uncommitted; unrelated
+changes were preserved.
+
+Measured failure and treatment. The frozen card measured 2/10 with exact but
+irrelevant citations. Free search probes showed the planner's four-term keyword
+windows ("swift structured concurrency grand") were trained on the lexical
+index, not on web search, and never surfaced the comparison or correction
+sources. `QuickQueryPlanner.webQueries` now returns the natural-language
+question for search while `plan` keeps the keyword windows for FTS5;
+`LiveQuickRunner.retrieve`/`run` take an optional `retrievalQueries` list that
+defaults to the search queries, and the ranked any-term pass now fills the
+remaining synthesis budget instead of running only when strict matching is
+empty. Decision D027.
+
+Commands and observed outputs:
 
 ```text
-$ swift build --build-tests
-  (red first: `QuickCorpus.Question`'s decoder could not resolve the nested
-   `ClaimEntry`; qualified it as `QuickCorpus.ClaimEntry`. No rule was changed.)
-
-$ swift test --filter QuickCorpusTests
-  Executed 4 tests, with 0 failures (0 unexpected) in 0.013 seconds
-
 $ swift test
-  Executed 192 tests, with 0 failures (0 unexpected) in 0.741 seconds
+  Executed 231 tests, with 0 failures (0 unexpected) in 0.794 seconds
 
 $ make gate
-  project.json conforms to its schema and handoff invariants.
-  protocol v1 schemas conform; Swift parity holds (run_status=15,
-    research_mode=4, evidence_relation=3, error_code=6)
-  swift build -> Build complete
-  swift test  -> Executed 192 tests, with 0 failures (0 unexpected)
-  gate exit: 0
+  Executed 231 tests, with 0 failures (0 unexpected); validate-manifest and
+  validate-schemas pass; gate exit 0
 
-$ LOCAL_LENS_START_VIEW=quick .build/debug/LocalLensApp
-  screencapture -l <window id> -o -x docs/evidence/M003/app-m003-quick-citations.png
-$ LOCAL_LENS_START_VIEW=quick-map .build/debug/LocalLensApp
-  screencapture -l <window id> -o -x docs/evidence/M003/app-m003-quick-map.png
-$ .build/debug/LocalLensApp
-  screencapture -l <window id> -o -x docs/evidence/M003/app-m003-m001-recheck.png
+$ make app
+  Built development app: dist/Local Lens.app (ad-hoc signed)
+
+$ LOCAL_LENS_START_VIEW=live LOCAL_LENS_LIVE_QUESTION="How does Swift cancel a
+  task group?" LOCAL_LENS_LIVE_SOURCE_URL=<forum page /75057>
+  LOCAL_LENS_LIVE_OUT=/tmp/m0036-app-proof/artifact.json \
+  "./dist/Local Lens.app/Contents/MacOS/LocalLensApp"
+  -> app wrote artifact.json: 2 exact citations, 3.07 s, deepseek-flash,
+     label=hosted, both source URLs the fetched page
 ```
 
-Gate result: `make gate` passed at commit `4689a86` with 192 tests and 0
-failures (188 before this task, 4 added). The manifest validated and the
-protocol v1 schemas and Swift enum parity were unchanged.
+Live retrieval observation (free, no provider call) while the search engines
+answered: Q1 opened WWDC21 and Task Cancellation sources with 6 passages; Q2
+opened 6 sources and selected 12 passages including both structured-concurrency
+and Grand Central Dispatch material; Q3 opened `sqlite.org/compile.html` and
+SQLite configuration/extension passages; Q4 opened Swift 6.3, Swift Evolution,
+and July-2026 release material. Q5's preflight was cut off when every SearXNG
+engine suspended (brave/google CSE too many requests, duckduckgo access denied,
+startpage CAPTCHA, wikipedia timeout). Full detail in
+`docs/evidence/M003/m0036-source-relevance.md`.
 
-Failures preserved at: the compile red above is recorded with its cause; it was
-a name-resolution defect in the new source, fixed in the source. No assertion or
-guard was weakened.
+Gate result: `make gate` exit 0 with 231 tests and 0 failures (229 before this
+task, 2 added: a `webQueries` planner test and
+`testWebSearchQueryIsSeparateFromRetrievalQuery`). `make validate-manifest`
+conforms. No red run was observed; no gate was weakened.
 
-UI evidence, read back with the vision tool:
+Failures preserved at: the frozen card remains 2/10 and the pre-declared
+quality promotion threshold was not met; the Q5 preflight engine suspension is
+recorded rather than worked around; and no provider call was spent while every
+engine was suspended. The current-build app run used the single call
+pre-recorded in `m0036-current-app-proof.md`, bringing the recorded cumulative
+provider-attempt minimum to 29 (excluding the earlier app answer of uncertain
+provenance).
 
-- `app-m003-quick-citations.png`: `What makes good espresso?`, `Quick ·
-  complete · 3 citations`, `Deterministic Quick run: 3 claims resolved to 3
-  sources.`, the Brewing/Water/Pressure claim rows, and the inspector for
-  Brewing showing `Espresso Brewing`, `Example Coffee ·
-  https://espresso.example.invalid/guide`, the exact passage, and text hash
-  `9ee19e726c5e…`.
-- `app-m003-quick-map.png`: the same three claims as map cards with `supports`
-  badges and source rows (`Espresso Brewing`, `Water Quality`, `Pressure`) and
-  the colour-plus-text legend.
-- `app-m003-m001-recheck.png`: the M001 view unchanged after the shared-scaffold
-  refactor (`Fixture synthesis: 3 claims resolved to 3 synthetic sources.`,
-  text hash `4790bbd37344…`).
-- The persisted `quick-run.json` decoded as `complete` with 3 citations.
+Proof boundary: the query decoupling, the default, the ranked fill, and
+citation integrity are **deterministically verified** at 231 tests. The current
+build's in-app ask path is **locally measured** to produce a two-citation
+hosted answer whose quotes entail the claims and whose source URLs are the
+fetched page; the artifact is the evidence, not human pointer interaction. The
+improved retrieval's effect on frozen-card usefulness is **not** measured,
+because the engines suspended before a provider re-run, and must not be
+reported as a promotion. The app still requires a separately managed SearXNG
+endpoint for open-web search; that is unchanged and blocking for the M003
+no-terminal gate.
 
-The capture required Screen Recording permission, which was granted;
-`docs/evidence/M003/runtime-check.md` records the commands and the permission
-dependency.
+Decision: D027 in `docs/DECISIONS.md`.
 
-Decision: D027 in `docs/DECISIONS.md` (the native app renders the deterministic
-Quick pipeline). `docs/ARCHITECTURE.md` extends the "Deterministic Quick
-pipeline" section with the app selection, and `docs/LEARNING_PATH.md` gains a
-"Practised in M003.4" block.
+Next eligible task: M003.7 - re-measure the frozen card and record five fresh
+representative searches for the M003 quality gate, using retrieval-only
+preflight and the provided-page path while the approved engines recover.
 
-M003 progress advanced by this task:
+## 2026-09-25 - M003.7 search reliability, frozen card, and source authority
 
-- the M003 boundaries are now exercised by the UI, not only by tests: a window
-  capture is evidence about retrieval and citation rendering;
-- every rendered citation resolves to an exact stored passage and snapshot
-  through the same inspector M001 uses; and
-- "the deterministic M001 slice remains unchanged" still holds: the view was
-  re-captured unchanged and the M001 tests pass.
+Scope actually executed: the M003.7 search-quality gate and the smallest
+treatment its first measurement justified. No model, embedding, vector store,
+agent framework, or later milestone was added; the frozen questions, the M001
+fixture slice, protocol v1, and the offline guards are unchanged. Working-tree
+changes remain unstaged and uncommitted.
 
-Proof boundary: deterministically verified and locally captured. The Quick view
-runs offline with no model or network, and the captures prove the rendered
-citations and map. The capture is a UI regression and rendering check, not an
-interaction test: pointer interaction, accessibility traversal, and the Quick
-result's usefulness are not measured. The `ImageRenderer` permission-free path
-is not built.
+Search reliability repair. The live blocker was the development SearXNG: with
+`use_default_settings: true` its `general` category was the scrape engines that
+soft-block under repeated use (brave, duckduckgo html, google cse, startpage,
+qwant, yahoo), so every query fanned out into suspended engines and returned
+zero results. After measuring individual engines, the reliable/curated set was
+pinned in `scripts/searxng/settings.yml` with `scripts/run_searxng.sh`, and all
+five frozen queries now return results. Bing-via-SearXNG was found to serve
+stale/unrelated results and was disabled; Bing's direct RSS endpoint was
+rejected because Microsoft's terms forbid non-aggregator use.
 
-Next eligible task: M003.5 (local inference boundary and model eligibility),
-derived from the M003 build list in `docs/MILESTONES.md` and defined in
-`project.json`.
+Frozen card measurement (seven calls total, pre-recorded in
+`docs/evidence/M003/m0037-frozen-card-improved.md`). First pass, five calls:
+Q1 completed 2/2 citations but from two personal blogs; Q2 abstained; Q3
+completed from `sqlite.org/fts5.html` with compile-time FTS5 facts, not the
+macOS system library; Q4 abstained; Q5 completed and **endorsed the false
+premise**, all three citations from one Medium post. Usefulness **1/10**, below
+the M003.6 2/10, with a hard Q5 false-premise failure.
 
-## 2026-09-23 - Strategy correction: freeze infrastructure, ship the live Quick slice
+Treatment: `SourceAuthority` (new) gives official documentation/forum hosts
+(`docs.*`, `developer.*`, `forums.*`, known official domains) discovery tier 0
+and everything else tier 1; `LiveQuickRunner.prepare` opens tier 0 first with a
+stable sort. It is a source-type discovery feature, not a citation rule.
+Decision D028.
 
-Context: a product review found the foundations are real and tested (192
-deterministic tests, `make gate` green, safe acquisition through retrieval,
-citation compilation, and a native Quick view) but that no real cited answer has
-been produced, and that the sibling licence has been blocked since M001 while a
-parallel native Swift core was rebuilt.
+Targeted verification, two calls: Q1 gained an Apple WWDC23 citation and scored
+**2/2** (was 1/2); Q5 stopped endorsing the false premise and scored **1/2**
+(was 0/2, hard failure). Projected card **3/10**, still below the pre-declared
+four-question promotion threshold, so Quick is **not promoted** and Q2/Q4 still
+abstain for recall.
 
-Decision (D028): freeze new infrastructure. No new protocol, refusal family,
-agent framework, reranker, vector store, or abstraction is added unless the live
-slice cannot be built without it. The sole next task is the live Quick vertical
-slice: one real question -> at most 2 searches -> at most 6 safe parallel
-fetches -> at most 12 retrieved passages -> one selected provider -> a concise
-answer -> exact citations -> the native Quick UI; evaluated on five
-representative questions with time to first evidence, total latency, answer
-usefulness, citation validity, citation completeness, peak memory, provider
-cost, and failure behavior. It closes with one explicit architecture decision:
-resolve the sibling licence and extract its remaining useful pieces, or formally
-choose the native Swift core.
+Commands and observed outputs:
 
-Blocker (recorded, not worked around): this environment has no search endpoint
-(no SearXNG or search API listening) and no answer provider (no API key, no local
-model, and no filled `docs/MODEL_POLICY.md` experiment record). No provider may
-be called before its experiment record is filled, so no real cited answer can be
-produced until the owner chooses a search endpoint and exactly one provider, or
-approves a specific local model path.
+```text
+$ swift test
+  Executed 233 tests, with 0 failures (0 unexpected) in 0.660 seconds
 
-Process change: the machine-readable `verified_scope` was trimmed from
-per-capability entries to milestone-level summaries to reduce handoff overhead.
-Detailed evidence stays in this file.
+$ swift run LocalLensLive --question <q> --mode retrieve
+  all five questions opened 3-6 sources and selected 8-12 passages once the
+  curated engine set was in place
 
-Next eligible task: M003.5 (live Quick vertical slice), blocked on the
-search-endpoint and provider choice above.
+$ swift run LocalLensLive --question <q> --mode answer
+  Q1/Q3/Q5 completed; Q2/Q4 abstained; targeted Q1/Q5 re-run as recorded above
+```
+
+Gate result: `make gate` exit 0 with 233 tests and 0 failures (231 before this
+task, 2 added for source authority). `make validate-manifest` conforms. No red
+run was observed and no gate was weakened.
+
+Failures preserved at: the frozen card's first-pass 1/10, the Q5 false-premise
+endorsement, the run's two abstentions, and the below-threshold projected 3/10
+are recorded rather than hidden. The treatment improved discovery but did not
+make Quick useful.
+
+Proof boundary: the source-authority ordering and the search config are
+**deterministically verified** (233 tests) and **locally measured** on the live
+card. The card is not promoted. Live open-web search still depends on a Docker
+SearXNG for development, so the M003 no-terminal gate is unproven. Latency was
+recorded per question (~5-12 s); peak memory was not measured.
+
+Decision: D028 in `docs/DECISIONS.md`.
+
+Next eligible task: M003.8 - five fresh representative searches, latency and
+peak-resource recording, and closure of the M003 quality gate; packaging and
+the no-terminal release path remain after it.
+
+### 2026-09-26 - M003.8 fresh searches and bounded recall repair
+
+Scope actually executed: reviewed DeepSeek's M003.7 source-ordering work and
+the current dirty working tree; ran the unchanged gate before editing; diagnosed
+frozen Q2/Q4 through provider-free live retrieval; added a narrow
+Swift-programming-language disambiguation for the measured Q4 ambiguity;
+rejected heading-echo passages before synthesis and proposal acceptance; and
+made `SourceAuthority` conservative about arbitrary `docs.`/`developer.`
+subdomains. Five fresh representative questions were frozen before retrieval
+and run once each with typed fetch outcomes, CLI latency, and process peak RSS.
+No hosted provider call was made, no secret was printed, and no commit was
+created. The working tree remains dirty from the prior M003.5-M003.7 work.
+
+Evidence: `docs/evidence/M003/m0038-recall-diagnostic.md` and
+`docs/evidence/M003/m0038-fresh-searches.md`. Q4's default planner now opens
+Swift.org and selects a passage containing both `Swift 6.4` and its dated
+release; Q2's default search still varies and does not reliably select
+independent two-sided authoritative evidence. Of the five fresh retrievals,
+F2/F3 met their retrieval checks, F4 found a dated official source but did not
+prove "latest", and F1/F5 exposed evidence-selection gaps. These are **not**
+answer-quality scores. Five CLI elapsed times were 8.58-11.94 s (p50 10.27 s);
+highest fresh-run CLI peak RSS was 36,929,536 B. Frozen Q4's peak was
+55,033,856 B. App and SearXNG memory, first-evidence latency, provider
+latency/cost, and fresh answer/citation quality remain unmeasured.
+
+Commands and observed outputs:
+
+```text
+$ make gate
+  exit 0; 234 tests, 0 failures; manifest and protocol validators conform
+$ /usr/bin/time -l ./.build/debug/LocalLensLive --question <each frozen diagnostic or fresh question> --mode retrieve
+  Q2 and Q4 default rechecks and F1-F5 each exited 0 with typed fetch results;
+  individual timings, passage counts, and RSS are in the two evidence records
+$ git diff --check
+  clean
+```
+
+Gate result for **M003.8 measurement task**: five fresh searches complete with
+typed outcomes; elapsed time and CLI peak RSS recorded, full-app/resource
+limits explicitly unmeasured; Q4 retrieval improved and Q2 preserved as a gap;
+`make gate` exit 0 with offline guards unchanged. This does **not** complete
+M003 or satisfy its first-useful-product gate: the frozen answer card remains
+below threshold, full app memory and no-terminal/no-Docker search are unproven,
+and history, launcher, local inference, and portable packaging are unfinished.
+
+Decision: D029 in `docs/DECISIONS.md`. Cumulative recorded provider-attempt
+minimum remains **36**. Next eligible task: **M003.9**, evidence availability
+and relevance for the measured Q2/Q3/F1/F5 gaps before any new bounded answer
+card; no model bake-off. Packaging follows only after the Quick quality gate.
+
+### 2026-09-26 - M003.9 no-card search and keyless evidence preview
+
+The owner had no Brave key and asked for a genuinely free alternative. Before
+adding another service, `docs/evidence/M003/m0039-search-backend-decision.md`
+recorded the measured no-Docker need and compared SearXNG, supplied-page,
+Tavily, Brave, and Exa. Tavily's current Researcher tier has 1,000 API credits
+monthly without a card; basic search costs one credit. This is a user-owned
+search key, not a free hosted answer model. No new package dependency, model,
+reranker, or source-content trust path was added.
+
+Implementation: a Tavily `SearchAdapter` sends bounded basic searches to the
+pinned API with its key in the authorization header. It ignores the vendor's
+generated answer and raw-content fields; result content is discovery metadata,
+never citation evidence. The Mac Quick workspace now opens by default and
+defaults to Tavily, with optional Brave and contributor SearXNG. Keychain save
+is explicit. **Find evidence without AI** uses search, safe parallel fetch,
+stored page passages, and local lexical selection without calling DeepSeek;
+a pasted URL still bypasses search and needs no key.
+
+Evidence: `make gate` passed with **242 tests**, zero failures, offline guards
+unchanged; `make app` built and ad-hoc-signed the development bundle. Computer
+use relaunched that bundle, showed the Tavily no-card connection, and ran the
+no-key supplied-page path against `https://www.sqlite.org/wal.html`: the app
+reported **12 matching passages from one opened source**, including SQLite's
+reader/writer concurrency text and a fetched-page link. This proves current
+app path and page preview, not Tavily's live API or hosted answer quality. No
+Tavily or DeepSeek key was used, and no paid provider call was made.
+
+Failures and open gates: Tavily search cannot be live-verified until the owner
+adds their own free key. Frozen Q2/Q3 and fresh F1/F5 relevance gaps remain;
+the unchanged answer card is still below threshold. The app is a local
+development build, not notarized or reproduced on another Mac. M003.9 stays
+in progress; no M004 work or Quick promotion is claimed. Decision D030.
+
+The same task's focused Q2 treatment and one provider-free default retrieval
+are recorded in `docs/evidence/M003/m0039-q2-provider-free.md`. The narrow
+planner split uses two side-specific searches only for the frozen CPU-bound
+Swift/GCD comparison, within the unchanged Quick cap. It selected a Swift
+Forums CPU-task passage and Apple dispatch-queue passages after opening four
+sources in 14.54 s. Two Apple API reference pages were refused as unreadable,
+and selected Apple passages were partly generic; this is partial coverage,
+not an answer-quality improvement. No provider call or card promotion followed.
+The final `make gate` passed with 243 tests and zero failures; `make app`
+rebuilt the ad-hoc development bundle. A fresh app launch showed the idle
+"WEB · AI OPTIONAL" disclosure. `git diff --check` was clean. Existing
+uncommitted work was preserved; no files were staged or committed.
+
+### 2026-09-26 - M003.9 user-key live verification and relevance preflight
+
+With the owner's explicit approval, the existing DeepSeek process key and
+new Tavily app key were saved in the Local Lens macOS Keychain items. Values
+were never printed or added to files. A restarted app loaded both. A no-AI
+Tavily search for the SQLite WAL reader/writer question opened six public
+sources and selected 12 passages. This is the first live no-Docker app search
+proof; no Docker endpoint or supplied page was used.
+
+The one-call hosted experiment was pre-recorded in
+`docs/evidence/M003/m0039-tavily-in-app-answer.md`. The app's own Ask flow
+completed in 6.0 s with four exact, clickable saved-passage citations and
+fetched-source links. Two claims cited official SQLite WAL documentation,
+one cited an SQLite forum reply, and one repeated the main point from a
+weaker third-party forum. All four quotes entailed their displayed sentences,
+but the last is redundant/source-weaker. The one call is spent; recorded
+cumulative provider-attempt minimum is **37**. This passes an integration
+smoke, not the frozen answer-quality card or Quick promotion. Prompt tokens,
+observed cost, and peak app RSS were not measured.
+
+The four provider-free Tavily retrieval checks in
+`docs/evidence/M003/m0039-tavily-retrieval-preflight.md` used five basic
+search queries total. Q2 missed independent GCD evidence after Apple pages
+were refused; Q3 found upstream FTS5 build flags but not the macOS system
+library action; F1 opened Python docs but selected the wrong passage; F5
+selected no direct client-IP correction and encountered typed source refusals.
+No hosted card followed these known failures. One direct-page F1 diagnostic
+showed the official rule was stored and selected with a precise lexical query;
+the narrow deterministic planner treatment then made it the first selected
+passage on a default Tavily recheck (2.95 s, five opened sources). F1
+retrieval improved, not its answer score. A single F5 counterclaim probe
+still failed its direct-evidence check; no speculative planner change followed.
+Evidence: `m0039-f1-passage-probe.md` and
+`m0039-f5-counterclaim-probe.md`. Decision D031.
+
+The app evidence pane was cramped when Connection remained expanded after an
+answer. The view now closes Connection when a valid ask or no-AI inspection
+starts, leaving missing-key errors expanded for repair. This is a view-only
+layout adjustment; citation, safety, and mode policies remain unchanged.
+
+The current ad-hoc build then re-ran F1 through the app's own no-AI path under
+the driven UI: the run opened five sources, selected eight passages, and put
+the official Python child-failure rule first, confirming in the app what the
+CLI probe had shown, while `Connection` stayed collapsed, confirming the
+layout fix. This used Tavily credits only, made no DeepSeek call, and left the
+recorded provider-attempt minimum at **37**. Evidence:
+`docs/evidence/M003/m0039-f1-app-check.md`.
+
+M003.9 is complete: every `done_when` is met - Q2 and F1 have provider-free
+before/after evidence with regression coverage, Q3 and F5 are preserved as
+explicit gaps without a speculative treatment, and the one paid rerun has a
+pre-recorded experiment with manual scoring. `make gate` passes with **244
+tests** and zero failures. Q3/F5, a full unchanged answer card, full-app
+resource measurement, portable/notarized packaging, and second-Mac proof stay
+open; **M003.10** is the first packaged development build. The live
+integration result does not start M004 or other modes.
+
+### 2026-09-26 - M003 complete: redirect fix, promoted card, and gate close-out
+
+Scope actually executed: M003.10 and the M003 gate. Two deterministic fixes,
+one bounded card re-run, resource measurement, and clean-checkout
+reproduction. No model, reranker, new service, or M004 work was added; the
+frozen questions, M001 fixture, protocol v1, and offline guards are unchanged.
+Working-tree changes remain unstaged and uncommitted.
+
+The measured defect. Provider-free retrieval showed Q1 and Q4 could not reach
+Apple or Swift.org primary pages. Instrumenting the acquisition boundary
+showed the cause was in the app, not the network: `SafeAcquisition.canonicalKey`
+built its redirect-loop key from `URL.path`, which drops a trailing slash, so a
+server's ordinary `/page` → `/page/` redirect resolved to a key identical to
+the URL just visited and was refused as `redirect_loop`. `developer.apple.com`,
+`swift.org`, and a personal blog all hit it.
+
+The fix. `canonicalKey` now uses `URLComponents.percentEncodedPath`, which
+keeps the trailing slash, so only a genuinely repeated URL is a loop and
+`maxRedirects` still bounds a ping-pong. Regression:
+`SafeAcquisitionTests.testTrailingSlashRedirectIsFollowedRatherThanTreatedAsALoop`.
+A second deterministic treatment leads the FTS5 lexical query with
+`pragma compile_options` so the actionable check survives the strict-match
+budget; regression in `QuickQueryPlannerTests`.
+
+Measured effect. Provider-free, Q1 opened 2 → 5 sources including Apple WWDC21
+10134 and WWDC23 10170; Q2 gained Apple WWDC21 10254 and WWDC17/16; Q4 fetched
+`swift.org/blog`.
+
+Commands and observed outputs:
+
+```text
+$ ./.build/debug/LocalLensLive --tavily --question <q> --mode answer
+  Q1 4 citations (Apple WWDC21 10134), Q2 7 (Apple WWDC21 10254 + Swift
+  Forums), Q3 1 (sqlite.org forum, PRAGMA compile_options), Q4 1
+  (www.swift.org/blog), Q5 abstained
+
+$ /usr/bin/time -l LocalLensLive --mode retrieve
+  32292864  maximum resident set size
+
+$ ps -o rss -p <app>  (5 Hz sampler, 73 samples)
+  143552 KB peak  (140 MB), 128 MB steady, 83 MB idle
+
+$ git clone -q . /tmp/locallens-clean && cd /tmp/locallens-clean && swift test
+  Executed 192 tests, with 0 failures
+```
+
+The card. `m003-frozen-card-final.md` measured **6/10** with the acquisition
+fix alone (Q3/Q5 abstained); a targeted Q3 rerun scored 1/2 with an exact
+`PRAGMA compile_options` citation. `m003-frozen-card-treated.md` then re-ran the
+whole unchanged card once: **7/10, 13/13 exact citations**, Q1/Q2/Q4 answered
+from Apple and Swift.org primary sources, Q3 from a SQLite forum, Q5 abstained
+without endorsing its false premise. Four of five questions scored >=1/2, the
+predeclared promotion threshold, so **Quick is promoted**. The run reproduced
+its per-question outcome on a second pass.
+
+Gate result: `make gate` exit 0 with **246 tests** and 0 failures (244 before;
++2 regressions). Manifest conforms; protocol parity holds; `git diff --check`
+clean.
+
+Failures preserved at: Q5's abstention rather than a correction
+(`no verifiable claim`); Q3's partial answer (check step only, forum source);
+the earlier 2/10, 1/10, and 6/10 card results; and the app's refusal of
+JS-rendered `developer.apple.com/documentation/...` pages as
+`extraction/no_readable_text`.
+
+Proof boundary: the redirect fix and planner treatment are **deterministically
+verified** (246 tests) and **locally measured** on live retrieval and the Mac
+app. Quick promotion is a per-run card result, not a claim that every question
+is answerable. Peak RSS is a sampled maximum, not an instrumented peak. The
+bundle is ad-hoc signed; second-Mac reproduction is unproven.
+
+Evidence: `m003-frozen-card-final.md`, `m003-frozen-card-treated.md`,
+`m003-gate-closeout.md`, `m0039-f1-app-check.md`. Decisions D032 and D033.
+
+Next: M004 entry check. The baseline now meets the card threshold, so the M004
+entry criterion (a stable retrieval failure the lexical/source baseline cannot
+meet) is not obviously satisfied; record `not needed` unless the remaining
+Q5-correction and Q3 completeness gaps justify the smallest challenger.
+
+### 2026-09-26 - Owner directive: M004 redefined as the four-mode product surface
+
+Scope actually executed: the owner rejected further milestone-gated slices and
+ordered the agreed product surface completed. M004 is redefined as the Living
+Research Map and four-mode surface; the original conditional retrieval-treatment
+entry check is deferred, not answered. No model, reranker, embedding, vector
+database, or new service was added.
+
+The measured defect being treated: the shipped app surface was one Quick-only
+live form. A `grep` for `history`, `launcher`, mode names, `pause`, `cancel`,
+`Living Research`, or `Research this gap` across `Sources/LocalLensApp/`
+returned zero matches, while `docs/PRODUCT.md` specifies a mode toolbar, a
+living brief, an evidence map with provenance ribbons, exact-passage inspection,
+and a bounded gap action. The owner observation is recorded as correct.
+
+Implementation (all in the working tree; nothing staged or committed):
+
+- `Sources/LocalLensCore/ResearchModePolicy.swift` - frozen `ModePolicy` and
+  `SourceKind` for Quick/Deep/Academic/News, a deterministic `ResearchPlanner`
+  (dimensions, search queries, keyword retrieval queries, a UTC news stamp),
+  and `NewsIndependence` clustering by registrable domain.
+- `Sources/LocalLensCore/ResearchRunner.swift` - a multi-round runner that
+  enforces the mode budget, runs bounded follow-up rounds only for a declared
+  dimension the evidence has not touched, stops a no-progress round, and calls
+  the shared provider-to-citation boundary.
+- `Sources/LocalLensCore/OpenAlexSearchAdapter.swift` - keyless scholarly
+  discovery; landing page before DOI; never a snippet as evidence.
+- `Sources/LocalLensCore/ResearchHistory.swift` - on-disk history of the
+  answered artifact only, newest first, corrupt entries skipped.
+- `Sources/LocalLensCore/LiveQuick.swift` - `AnswerRequest` now carries the
+  mode and dimensions for the provider instruction, `LiveQuickLimits` validates
+  against the named mode policy (Quick's 2/6/12 ceiling is unchanged), and the
+  provider-to-verification-to-compilation block is one shared
+  `answerAndCompile` function every mode uses.
+- `Sources/LocalLensApp/LivingResearchMapView.swift` and
+  `ResearchWorkspaceModel.swift` - the primary surface: mode toolbar with the
+  local/hosted boundary, SwiftUI-timeline elapsed clock, a
+  continuation-based pause gate, cancel, living brief per mode, dimension
+  coverage, the evidence map with provenance ribbons, the exact-passage
+  inspector, a bounded `Research this gap`, a history sidebar that replays
+  locally with no network call, and a global launcher sheet with a
+  Command-Shift-Space menu command. The launcher sheet and cancel were also
+  observed in the running app; pause appears during a run and its checkpoint is
+  deterministically tested (the runner performs zero searches until released),
+  though the UI engagement itself was not observed because the runs completed
+  faster than the interaction round-trip.
+- `Sources/LocalLensApp/LocalLensApp.swift` - the map window is the presented
+  launch scene; the Live Quick and offline-demo scenes are suppressed at launch
+  and open only from the Research menu. `restorationBehavior(.disabled)` and
+  `defaultLaunchBehavior` stop macOS from restoring the old Live Quick window,
+  which was the visible cause of "a different UI".
+
+Commands and observed outputs:
+
+```text
+$ swift build && swift test
+  262 tests, 0 failures  (246 before; +16 in ResearchModeTests)
+
+$ make app && open "dist/Local Lens.app"
+  window "Local Lens"; accessibility outline shows researchQuestionField,
+  Mode radio group (Quick/Deep/Academic/News), the policy chip
+  "2 queries · 6 sources · 12 passages · 60s", History, Global launcher,
+  Find evidence, Ask, and the EVIDENCE rail
+
+$ UI run 1 - Quick + Find evidence, question SQLite WAL
+  "12 matching passages from 5 opened sources", official sqlite.org WAL
+  overview selected, exact passage and snapshot IDs in the inspector
+
+$ UI run 2 - Quick + Ask (hosted DeepSeek)
+  5 exact passages, 5 sources, 1 round, 5.8 s; answer assembled from six
+  accepted claims with markers; dimension coverage "Answer · 5"; evidence
+  map "Answer" group with five claim rows, each chipped to sqlite.org and
+  "exact support"; "Research this gap" correctly absent
+
+$ UI run 3 - Deep + Find evidence, Swift concurrency vs GCD
+  24 stored passages selected under the 24-passage Deep cap, 16-source budget
+
+$ UI run 4 - News + Find evidence, latest Swift release
+  16 stored passages selected under the 20-passage News cap
+
+$ UI run 5 - Academic + Find evidence, spaced repetition
+  OpenAlex discovery opened 3 scholarly sources and selected 0 matching
+  passages  (recorded as an open gap, not a success)
+
+$ UI - History sidebar
+  entry "How does SQLite WAL mode handle readers and writers?, Quick,
+  6 citations" replays as "SAVED RUN · QUICK" with the exact saved passage,
+  quoted span, source link, and the notice that no network call was made
+```
+
+Two view bugs were found by observing the running app and fixed in the same
+session: the no-AI path rendered the answered-brief shape instead of the
+passage preview, and a single-dimension Quick run showed "Answer · 0" with an
+empty evidence map despite six compiled citations. The coverage function now
+counts accepted claims and the map assigns every citation to exactly one group
+(falling back to "Other evidence" rather than hiding a claim).
+
+Gate result: `make gate` is run after this entry; `swift test` reports 262
+tests and 0 failures, `swift build` succeeds, and both validators accept the
+manifest and protocol schemas. The offline guard in `RobotsPolicyTests` still
+scans `Tests` and `Sources/LocalLensApp` for `URLSession`, the system resolver,
+the politeness clock, `getaddrinfo`, and `Task.sleep`; the app uses a
+continuation-based pause gate and a SwiftUI timeline clock instead.
+
+Provider accounting: this session made **2** hosted DeepSeek answer calls in
+the new app surface, so the recorded cumulative minimum rises from 37 to
+**39**. Tavily, OpenAlex, and public-page fetches were live and are not answer
+provider calls. No key value was printed, logged, or written to a file.
+
+Failures preserved at: Academic retrieval selected 0 passages from 3 opened
+scholarly sources; News independence is unverified on an answered run; Deep and
+Academic answer quality have no card; the answer provider is still hosted, not
+local; the bundle is ad-hoc signed; no second machine has reproduced it; the
+original M004 retrieval-treatment entry check remains unanswered; and the two
+pre-fix UI runs that recorded 0-citation previews into history are stale local
+data, left in place rather than rewritten.
+
+Provenance/proof boundary: the surface and policies are **implemented**; the
+262-test suite and the OpenAlex decoder are **deterministically verified**; the
+five UI runs above are **locally measured** in the ad-hoc development app; the
+hosted answers are **live-provider verified**; nothing here is packaged or
+reproduced on a second machine.
+
+Decision: D034. Next eligible milestone: **M004** active task **M004.2**
+(Academic evidence and News independence), with M005-M009 keeping their
+original scopes.
+
+### 2026-09-26 - M004.2: academic evidence, News independence, and the local answer boundary
+
+Scope actually executed: closed the two M004.1 gaps and added the missing half
+of the local/hosted boundary. No hosted answer call was made; the local runs
+cost US$0. Nothing staged or committed.
+
+Academic (measured defect: 0 passages from 3 scholarly sources). Two
+deterministic treatments: OpenAlex now prefers an open-access HTML landing page
+before the publisher landing page and the DOI resolver last, with open-access
+works stably ordered first; and the Academic composition appends bounded
+general-web discovery after the scholarly hits instead of replacing them only
+on an empty result. Observed: **22 passages from 6 opened sources** on the
+spaced-repetition probe, coverage `Method: 7, Findings: 3, Limitations: 0`,
+with publisher refusals preserved as typed `http_status`, `no_readable_text`,
+and `published_rule` outcomes. Regression tests cover the open-access ordering.
+
+News (measured gap: independence never observed on an answer). Observed on an
+answered local run: 1 exact passage, 15 sources, 2 rounds, 30.3 s,
+**6 independent domains** with per-domain passage counts, dimension coverage
+`What happened: 0, Timeline: 2, Independent confirmation: 1`, and an explicit
+bounded gap action. `NewsIndependence` still reports a two-label ccTLD host as
+its own domain because it consults no public-suffix list; the view says
+"domain", not "publisher".
+
+The local answer boundary. `LocalAnswerProvider` posts the unchanged
+untrusted-proposal contract to a loopback OpenAI-compatible endpoint, carries
+no credential, and labels the artifact `local/<model>`. `AnswerPrompt` now owns
+the provider instruction so hosted and local cannot drift. The candidate
+`qwen2.5-coder:14b-instruct-q4_K_M` (Ollama id `9ec8897f747e`, Apache-2.0) was
+recorded as experiment `M004.2-LOCAL-OPENAI-001` in `docs/MODEL_POLICY.md`
+before its first live use. The app toolbar shows `HOSTED · DEEPSEEK` or
+`LOCAL · <model>`, and Connection carries the explicit toggle, endpoint, and
+model fields.
+
+Observed local Quick answer: **4 exact citations, 5 sources, 34.1 s, US$0**,
+coverage `Answer · 4`, evidence map with sqlite.org and forum.xojo.com chips.
+Observed local failure, preserved: on "what changed in the latest Swift
+release" the model answered about the SWIFT financial-messaging standard,
+citing clearstream.com while apple.com and swift.org programming passages were
+also stored. The quote was exact and the citation valid; the answer was
+irrelevant. No planner change was made in response, because tuning against one
+observed answer would be fitting to a single case. The local path is **not**
+promoted.
+
+Diagnostic tooling: `LocalLensLive --mode research --plan <mode>` now runs any
+mode's plan retrieval and prints every fetch outcome, so a zero-passage result
+can be attributed rather than guessed. Its first run exposed a case-sensitive
+mode lookup that silently ran Quick; fixed.
+
+Gate result: `swift test` reports **264 tests and 0 failures** (+2 for the
+local provider's keyless request, label, and tolerant JSON extraction);
+`swift build` succeeds; `make gate` is run after this entry; the offline guards
+are unchanged.
+
+Provider accounting: no hosted call in M004.2; the cumulative recorded
+minimum stays **39**. Local generations cost US$0 and used no key. Tavily and
+OpenAlex discovery were live.
+
+Failures preserved at: the wrong-sense local "Swift" answer; `Limitations · 0`
+coverage; publisher refusals; the `co.uk` domain label; the unscored local
+card; notarized packaging and second-Mac reproduction still unproven.
+
+Provenance/proof boundary: the treatments and provider are **implemented**;
+the 264-test suite is **deterministically verified**; the Academic 22-passage
+result, the local Quick answer, and the News independence brief are **locally
+measured**; OpenAlex/Tavily and the local endpoint are **live-verified**; no
+second-Mac or notarized package exists.
+
+Decision: D035. Next eligible milestone: **M004.3** (score the local card and
+decide promotion), with M005-M009 keeping their original scopes.
+
+### 2026-09-26 - M004.3 and the M004 gate: local card scored, local honestly not promoted
+
+Scope actually executed: ran the frozen five-question card against the local
+endpoint, scored it manually, decided promotion against the pre-recorded
+threshold, and closed M004. No hosted call; cost US$0. Nothing staged or
+committed.
+
+Command: `LocalLensLive --tavily --local --mode answer --question <frozen>`.
+Retrieval was the unchanged provider-free Tavily path; the provider was
+`qwen2.5-coder:14b-instruct-q4_K_M` over the loopback OpenAI-compatible
+endpoint, labelled `local`.
+
+Card result: **6/10 usefulness, 10/10 exact citations**. Per question: Q1 2/2
+(`cancelAll` plus task-tree propagation, 28.70 s); Q2 2/2 (both sides covered,
+but **82.69 s**, over the 60 s Quick ceiling); Q3 1/2 (upstream configure flag,
+not the macOS system-library action, 30.38 s); Q4 0/2
+(`answer_abstained: the provider proposed no verifiable claim`); Q5 0/2 (the
+leading claim can read as endorsing the false premise; the other claims
+address blocking, not background execution, 24.85 s).
+
+Decision: the recorded threshold requires at least four of five questions at
+>=1/2 with 100% citation integrity. Q5 fails the frozen "correct or abstain"
+requirement, so only three questions reach >=1/2 and Q2 also breaches the
+latency ceiling. The local path is **not promoted**; it stays an explicit
+Connection alternative, never a silent fallback. No prompt or planner change
+was made, because tuning against the observed questions would be fitting to
+the sample, and the threshold was not weakened after the result.
+
+M004 gate: the surface exists and is locally observed; Academic selects 22
+passages from 6 sources; News independence is observed on an answered run; the
+local boundary is explicit and labelled; `make gate` passes with the offline
+guards unchanged and the M001 fixture untouched. **M004 is complete.**
+
+Provider accounting: no hosted call; the cumulative recorded minimum stays
+**39**. Local generations cost US$0. Tavily discovery was live.
+
+Failures preserved at: Q5 false-premise non-correction; Q2 over the latency
+ceiling; Q3 partial; Q4 abstention; the M004.2 wrong-sense "Swift" local
+answer; `Limitations · 0` academic coverage; publisher refusals; the `co.uk`
+domain label; notarized packaging and second-Mac reproduction still unproven.
+
+Evidence: `docs/evidence/M004/m0041-living-research-map.md`,
+`m0042-local-and-academic.md`, `m0043-local-card.md`. Decision D036.
+Next eligible milestone: **M005.1** (arXiv and Crossref scholarly metadata
+boundaries with DOI/version reconciliation).
+
+### 2026-09-26 - M005 complete: scholarly boundaries, page-aware PDF, export, and the held-out answer card
+
+Scope actually executed: M005.1 through M005.4 plus the M005 gate. No hosted
+answer call; every answer in the held-out card ran the local endpoint at US$0.
+Nothing staged or committed.
+
+M005.1 (scholarly metadata boundaries). arXiv and Crossref adapters joined
+OpenAlex behind the existing `SearchAdapter` boundary, with DOI
+(case-insensitive) and arXiv (versionless) identities reconciled by
+`ScholarlyReconciliation`. Crossref emits the canonical DOI resolver so the
+work's identity is explicit and the bounded fetch follows the redirect. A
+run-scoped scholarly budget (8 targets, split 3/2/2) reserves fetch slots for
+the readable web fallback; without it, three providers filled all 14 slots and
+the run selected 3 passages instead of 22. Measured after: 24 passages from 9
+sources in 17.77 s.
+
+M005.2 (page-aware PDF and export). `PDFExtraction` uses PDFKit, the macOS
+system framework, so a paper no longer needs an HTML landing page. Passages
+carry `Page N` in the heading because the frozen `Passage` entity has no page
+field; scanned PDFs refuse as `no_readable_text` and malformed bodies as
+`malformed_markup`. Live: `arxiv.org/pdf/1410.1490` produced 12 page-headed
+passages in 0.63 s. `CitationExport` renders cited-only BibTeX, RIS, and
+Markdown, and the app's completed brief and history replay carry an EXPORT row.
+The fixture target that declared `application/pdf` with a malformed body moved
+deliberately from `unsupported_content_type` to `malformed_markup`; the fixture,
+matrix text, and test changed together with a comment.
+
+M005.3 (held-out retrieval comparison). Three frozen academic questions
+compared scholarly-first discovery with a generic-web-only baseline,
+provider-free. Scholarly-source share was 58% against 54% for the web baseline
+and the scholarly path cost 7-43x the latency, so the M005 gate was **recorded
+as not met** rather than reframed; that negative result stands.
+
+M005.4 (primary-source ordering and the answer card). `primarySourceRank`
+orders arXiv/DOI/PubMed Central/ERIC/publisher targets before aggregators, and
+Crossref is now called only when OpenAlex and arXiv leave fewer than six
+scholarly candidates. Retrieval latency fell 19% (120.98 s against 150.15 s)
+and `Limitations` coverage became non-zero on all three questions. The
+answer-level held-out card, run end to end with the local model at US$0,
+favours the shipped Academic policy **5/6 usefulness against 3/6** for the
+generic-web policy, at 100% citation integrity on both. **The M005 gate is met
+on that measurement.**
+
+The confound is explicit and preserved: the two paths ran their own frozen
+budgets (Academic 14 sources/24 passages, Quick 6/12), so the result compares
+the shipped modes rather than scholarly discovery at equal budget. No
+equal-budget causal test exists, and the M005.3 tie stands.
+
+Gate result: `make gate` passes; `swift test` reports **274 tests and 0
+failures** (273 before M005.4, +1 for primary-source ordering); both validators
+conform; `git diff --check` is clean; the offline guards and the M001 fixture
+are unchanged.
+
+Provider accounting: no hosted call in M005; the cumulative recorded minimum
+stays **39**. Twelve local answer generations and fifteen local retrieval runs
+cost US$0. Tavily, OpenAlex, arXiv, and Crossref discovery were live.
+
+Failures preserved at: the M005.3 retrieval-share tie and its 58%/54% numbers;
+the budget confound; aggregator pages still opened after primary sources;
+publisher refusals (`http_status`, `no_readable_text`, `published_rule`); no
+OCR; benign `CoreGraphics PDF has logged an error` lines during PDF runs;
+Academic latency 12-123 s; notarized packaging and second-Mac reproduction
+unproven.
+
+Evidence: `docs/evidence/M005/m0051-scholarly-boundaries.md`,
+`m0052-pdf-and-export.md`, `m0053-held-out-comparison.md`,
+`m0054-answer-card.md`. Decisions D037-D040. Next eligible milestone:
+**M006.1** (News time-window enforcement and syndication clustering).
+
+### 2026-09-26 - M006 complete: News time window, syndication voices, timeline, claim support
+
+Scope actually executed: M006.1. No hosted answer call; every answer run used
+the local endpoint at US$0. Nothing staged or committed.
+
+Treatments. `NewsRecency` plus `WindowedSearchAdapter` ask the provider's news
+index for the mode's own frozen window and then enforce it locally, before any
+fetch is planned: a result outside the window is dropped and counted, and so is
+a result whose publication time the provider does not report, because an undated
+page cannot be shown to honour a bounded window. `NewsIndependence.voices`
+counts two domains that published the same headline as one independent voice,
+and refuses to merge a heading shorter than four words. `NewsIndependence.timeline`
+orders voices newest first with undated reports last and no invented timestamp.
+`NewsIndependence.snapshotSupportMap` gives every cited passage the number of
+independent voices behind its page, and the inspector shows "Single source: no
+other independent voice carries this report." when that number is one.
+
+Measured live: 30 discovery results across the plan's five queries, 23 inside
+the window and 7 outside it; 9-10 sources opened; 20-24 passages; 4.5-6.4 s per
+retrieval run. The app run produced 3 exact passages in 21.3 s and rendered the
+`WINDOW ·` line, the dated timeline, the coverage strip, the evidence map, and
+the export row.
+
+Three defects were found by looking at the running app and fixed in the same
+milestone: the provider reports RFC 1123 dates and every one of them was being
+counted as undated, which made the first windowed run abstain; the date map was
+captured before the run so the app timeline showed no dates while the CLI showed
+real ones; and an undated entry rendered as "Jan 1" through a `.distantPast`
+fallback. A fourth defect is recorded rather than fixed: news-page headings are
+often navigation text ("My best business intelligence, in one easy email..."),
+so the voice count is only as good as the stored heading.
+
+Gate result: `make gate` passes; `swift test` reports **282 tests and 0 failures**
+(280 before M006.1); both validators conform; `git diff --check` is clean; the
+offline guards and the M001 fixture are unchanged. The window, copy, and support
+parts of the gate are met. The copy test is verified by fixture only, because no
+observed live run contained a syndicated copy, and no frozen live News snapshot
+set exists, so cross-run comparison still depends on the provider. Both are
+recorded as not demonstrated rather than claimed.
+
+Evidence: `docs/evidence/M006/m0061-news-window-and-voices.md`. Decision D041.
+Next eligible milestone: **M007.1** (editable dimension plan and typed loop
+termination for Deep mode).
+
+### 2026-09-26 - M007.1: editable dimension plan, typed loop reasons, resume without duplication
+
+No hosted answer call; the app runs in this milestone used the no-AI path.
+Nothing staged or committed.
+
+The plan is now editable and validated against the frozen per-mode caps.
+`ResearchPlanError` refuses an empty plan, an oversized one, a case-insensitive
+duplicate, and an over-long label; whitespace collapses because that does not
+change meaning. Verified through the CLI with exit code 2 and typed messages:
+`Quick mode allows at most 1 dimensions; 2 were given.`, `Deep mode allows at
+most 6 dimensions; 7 were given.`, and `The dimension "cost" appears more than
+once.` A valid edit drives a real run: `--plan deep --dimensions "Cost,
+Concurrency"` produced `dimensions=Cost, Concurrency`, 6 sources, 21 passages,
+3.33 s, `coverage=["Concurrency": 5, "Cost": 4]`.
+
+Every round now ends with one recorded typed reason (`follow_up_scheduled`,
+`evidence_saturated`, `no_new_evidence`, `dimensions_covered`,
+`follow_up_budget_exhausted`, `queries_exhausted`, `deadline_reached`,
+`no_evidence`, `cancelled`) and the report carries the round log and the
+terminal reason; the brief shows `STOP · <reason> — <explanation>`. A later
+round that stores nothing is `no_new_evidence` rather than `no_evidence`. The
+resume test injects a transport failure into the bounded follow-up round and
+proves the first round survives, the page is stored once, no passage id repeats,
+and every citation still resolves.
+
+Two defects were found by looking at the running app. A `DisclosureGroup`'s
+content reported an unusable accessibility hit target (the editor toggle sat at
+an AX rect of 91x9 and a press did not flip it, and the group's identifier
+landed on its first child), so the plan strip was restructured as plain
+controls; the effective-plan line then rendered (`Answer` for Quick,
+`Overview · Evidence · Tradeoffs · Gaps` for Deep). Second, the app read three
+keychain items at launch, so every rebuilt development bundle asked for
+permission before the user had asked for anything; secrets are now read on
+demand. The app's *invalid-plan refusal* is wired to the same proven core call
+but was not observable through the accessibility tree, and that is recorded as
+an open verification gap.
+
+Gate result: `make gate` passes; `swift test` reports **287 tests and 0 failures**
+(282 before M007.1); both validators conform; `git diff --check` is clean; the
+offline guards and the M001 fixture are unchanged. M007 stays open: coverage
+still matches the dimension label rather than its content terms (measured: Deep
+reports `Evidence · 0` and `Tradeoffs · 0` for passages that discuss both), and
+contradictions, a diminishing-evidence stop rule, and full provenance ribbons
+are not built.
+
+Evidence: `docs/evidence/M007/m0071-plan-and-loop-reasons.md`. Decision D042.
+Next eligible task: **M007.2** (content-term coverage, contradiction matrix,
+diminishing-evidence stop).
+
+### 2026-09-26 - M007 complete: content coverage, diminishing returns, strict numeric contrasts
+
+No hosted answer call in M007.2. Nothing staged or committed.
+
+Coverage now matches a dimension by its label or by a fixed in-code term list
+(`DimensionLexicon`); a custom dimension falls back to its own content terms. On
+the same Deep question the coverage moved from `Overview 0, Evidence 0,
+Tradeoffs 0, Gaps 1` to `Overview 1, Evidence 4, Tradeoffs 2, Gaps 1`, and the
+run stopped spending a follow-up round on a gap that did not exist. A follow-up
+that adds half or less of the previous round now stops the loop with the typed
+reason `diminishing_returns`.
+
+The numeric-contrast detector is a measured negative result. Three variants were
+implemented and run against live pages. The strict rule (identical context
+words, different pages, different values, citation-list years excluded) found no
+pair on four live runs and is verified by fixture. Matching on shared sentence
+terms produced citation-list noise (`2000, 2005, 2006` against `1978`), and
+requiring only a shared unit word still joined unrelated numbers under contexts
+like `after` and `memory`. Neither looser variant ships, because each would
+assert a disagreement the evidence does not contain. The strict variant ships and
+the surface stays empty when it has nothing to show.
+
+Gate result: `make gate` passes; `swift test` reports **290 tests and 0 failures**
+(287 before M007.2); both validators conform; `git diff --check` is clean; the
+offline guards and the M001 fixture are unchanged. M007 is complete with the
+contradiction item recorded as only partially met: nothing is averaged or
+resolved, but live detection was not demonstrated. The long-form benchmark and
+human review parts of the M007 gate belong to M008's studio and are not started.
+
+Evidence: `docs/evidence/M007/m0072-coverage-and-contrasts.md`. Decision D043.
+Next eligible task: **M008.1** (benchmark runner, per-mode scorecards, corruption
+tests).
+
+### 2026-09-26 - M008.1: benchmark card, scorecard, corruption checks
+
+No hosted answer call; the whole replay ran the local model at US$0. Nothing
+staged or committed.
+
+A benchmark card is JSON data: named questions, the mode each must run in, and
+human-authored check labels that are copied into the scorecard and never used to
+score anything automatically. The scorecard stores one row per question with
+citations, accepted and rejected claims, latency, opened sources, passages, the
+typed stop reason, and whether every citation resolved. Answer usefulness stays
+`nil` until a human scores it and is reported only over scored questions, so an
+unscored card cannot look like a good one, and there is no combined number for
+integrity, usefulness, and latency. Each scorecard document carries one label,
+so a local run and a hosted run are never averaged together.
+
+Measured: the frozen five-question card replayed against the local model. Q1
+retrieval practice 1 citation / 1 rejected / 70.67 s, Q2 LLM reasoning 3 / 5 /
+102.65 s, Q3 vocabulary spacing 1 / 1 / 71.30 s, Q4 and Q5 abstained with "the
+provider proposed no verifiable claim" (42.00 s and 27.87 s). Citation integrity
+**100%**, usefulness **unscored over 0/5 scored**, median latency 70.7 s, total
+314.5 s. Q4 abstaining is the wanted behaviour and Q5 abstaining means the false
+premise was not accepted; both are recorded as abstentions rather than answers.
+The scorecard is preserved at
+`docs/evidence/M008/scorecard-local-2026-09-26.json`.
+
+`CitationBoundaryCheck` makes exactly one thing wrong in a valid compilation and
+requires the boundary to refuse it: an altered quote, a link to a passage that
+was never stored, an evidence link naming a different claim than the citation,
+and a citation identifier that is not in the compilation. All four are refused
+in `testValidCompilationResolvesAndEveryCorruptionIsDetected`.
+
+Gate result: `make gate` passes; `swift test` reports **294 tests and 0 failures**
+(290 before M008.1); both validators conform; `git diff --check` is clean; the
+offline guards and the M001 fixture are unchanged. M008's integrity target is met
+on this card, its corruption requirement is met, and its "do not collapse the
+metrics" requirement is met and enforced by test. The semantic-evaluator part has
+not been started and there are no human usefulness labels yet.
+
+Evidence: `docs/evidence/M008/m0081-benchmark-and-corruption.md` and
+`docs/evidence/M008/scorecard-local-2026-09-26.json`. Decision D044. Next
+eligible task: **M008.2** (human citation-review workflow and scored scorecards).
+
+### 2026-09-26 - M008.2/M008.3 and M009.1: review, evaluation, release
+
+No hosted answer call in these milestones: the benchmark replays ran the local
+model at US$0. Nothing staged or committed.
+
+M008.2. The benchmark runner writes a review packet beside a run, containing each
+claim with its exact quote, passage heading, and source URL, plus the card's own
+check labels. A person fills in a verdict per citation and a usefulness score per
+question; `--mode review` applies it to the finished scorecard, refusing an
+unknown question, an unknown verdict word, an out-of-range score, or a missing
+reviewer, and leaving anything blank unscored. Usefulness and citation integrity
+remain separate fields, and each scorecard document carries one label. Reviewed
+result on the frozen card: integrity 100%, usefulness 1.40 over 5/5 scored, 5
+supported and 1 partial citation. **The labels are provisional and were written
+by the assistant, not by an independent human reviewer.**
+
+M008.3. `AnswerEvaluator` predicts usefulness from counted features only
+(citations, reviewer verdicts, rejected claims, coverage, abstention, integrity)
+and explains each score; `EvaluatorCalibration` reports agreement, mean absolute
+error, and worst error, and refuses to call itself calibrated below 20 labels.
+Over the five provisional labels: exact agreement 3/5, mean error 0.40, worst 1,
+verdict `not calibrated: 5 label(s), 20 are required`. `LearningCard` is built
+from the run: exact quotes with markers, rejected claims with their typed
+reasons, coverage and gaps, and deterministic explain-back prompts; an abstention
+gets its own lesson. The app shows a LEARN panel and can copy the card as
+Markdown. One bug was found by testing the workflow end to end: the review packet
+keyed questions by question text while the scorecard keyed them by card id, so
+the two files could not be linked; and applying a review dropped the coverage
+columns. Both are fixed and covered.
+
+M009.1. `make dist` builds the release app, signs with the best available
+identity, notarizes only when a Developer ID identity and `NOTARY_PROFILE` both
+exist, and records the outcome in `dist/release/BUILD-INFO.json`. Measured here:
+`LocalLens-1.0.0.zip`, `signature: apple-development`, `notarized: no`, reason
+*no Developer ID Application identity is installed*. `make verify-release` passes
+all nine checks: the bundle exists, the identifier is `dev.locallens.app`, the
+signature verifies, and there is no credential material, no model weight,
+exactly the two public fixtures, no fetched page or PDF body, and no key or pem
+file under `dist/`. The app gained a Storage & privacy panel (run count, file
+count, bytes on disk, a confirmed delete that states nothing was uploaded), a
+privacy-safe diagnostics bundle (`DiagnosticsReport`, with a test asserting no
+question, answer, claim, quote, snippet, or credential field can appear), a
+first-run card, and reduced-motion handling. `make demo` runs the mode plan, the
+edited dimension plan, the typed refusal, and the corruption test at US$0;
+`make reproduce` refuses a dirty tree and then runs the gate, both validators,
+the release build and checks, and the demo. `CONTRIBUTING.md`, `docs/REPRODUCE.md`,
+`docs/DEMO.md`, and `docs/HANDOFF.md` document the commands and the four external
+gates.
+
+Gate result: `make gate` passes; `swift test` reports **299 tests and 0 failures**
+(295 at M008.2, 298 at M008.3, 299 after the diagnostics test); both validators
+conform; `git diff --check` is clean; the offline guards and the M001 fixture are
+unchanged. M008 is complete except its calibration target, which needs
+independent labels. M009 is partially complete: notarization is **blocked** (no
+Developer ID identity), second-machine reproduction is **unproven**, the licence
+is **the owner's choice**, and no independent reviewer has scored a run. All four
+are packaged with the exact command that closes each in `docs/HANDOFF.md`.
+
+Evidence: `docs/evidence/M008/m0081-benchmark-and-corruption.md`,
+`docs/evidence/M008/review-packet-local-2026-09-26.json`,
+`docs/evidence/M008/scorecard-local-scored-2026-09-26.json`,
+`docs/evidence/M008/lessons/`, `docs/evidence/M009/m0091-release-and-onboarding.md`.
+Decisions D044, D045. Next task: **M009.2** (the four external gates).
+
+### 2026-09-26 - M009.2: all four modes verified in the app with hosted DeepSeek
+
+Eight hosted DeepSeek answer calls: four through the command-line tool and four
+through the app. The cumulative recorded minimum moves from 39 to **47**. Nothing
+staged or committed.
+
+Why this was needed: the evidence showed exactly two hosted answers in the whole
+repository, both Quick, from M004.1. Deep, Academic, and News had only ever been
+answered by the local model, and no mode had been driven through the interface
+with a hosted provider since the Living Research Map was built.
+
+Command line (hosted): Quick 7 citations/13.55 s, Deep 11/9.36 s, Academic
+6/33.13 s, News 3/21.59 s. App (hosted, observed through the accessibility tree):
+Quick `6 exact passages · 5 sources · 1 round(s) · 6.3s` with `STOP · evidence
+saturated`; Deep `12 · 4 · 8.0s` with the comparison plan in the PLAN strip, a
+`DECISION CRITERIA` panel showing both sides, `STOP · dimensions covered` and
+`LEARN · 2`; Academic `13 · 11 · 25.2s` with a `PAPER MATRIX` of 13
+claim-to-passage rows including PDF `Page 6` headings and coverage
+`Findings 25 · Method 8 · Limitations 7`; News `3 · 15 · 2 round(s) · 15.9s` with
+`WINDOW · 29 dated results inside the window, 4 outside it`, `10 independent
+domains, 10 independent voices`, a dated timeline, and coverage
+`What happened 5 · Timeline 16 · Independent confirmation 1`.
+
+Three credential faults were found and two were fixed. The provider check ran
+before the lazy keychain read, so the first **Ask** after any launch always
+failed with `No answer provider is configured.` even with the key saved. And
+`SecretKeyStore.load` collapsed every non-success status into `nil`, so a refused
+read (`errSecAuthFailed` — the item exists but macOS refused this binary) was
+displayed as an empty slot, which is false. The read now returns `.found`,
+`.absent`, or `.denied`, the Connection panel says which, and a **Grant access**
+button triggers the prompt deliberately rather than mid-run. The third fault is
+inherent: macOS ties the keychain grant to the code signature, and every
+`make app` re-signs the development bundle ad hoc, so the grant is lost on each
+rebuild; the panel now explains that instead of failing silently. After the fix,
+all four UI runs above started from a single press on a fresh launch.
+
+Defects measured and left open for M009.3: News enforces recency but not topical
+relevance — the timeline and citations included a stablecoin approval
+(`fintechfutures.com`), a biodiversity brief (`osborneclarke.com`), deforestation
+rules (`foodnavigator.com`), and a commercial-vehicle brief
+(`automotiveworld.com`); a News answer rested on three claims with
+`Independent confirmation · 1`; and Deep stopped on `dimensions_covered` while
+reporting `Gaps · 2`, because two dimensions were matched by a keyword rather
+than addressed. Academic cited one blog and one education site inside the
+`Other evidence` group. These runs prove routing and the citation boundary; they
+do not prove answer quality, and that is stated rather than implied.
+
+Gate result: `make gate` passes; `swift test` reports **299 tests and 0 failures**;
+both validators conform; `git diff --check` is clean; the offline guards and the
+M001 fixture are unchanged.
+
+Evidence: `docs/evidence/M009/m0092-hosted-four-mode-ui.md`. Decision D046. Next
+task: **M009.3** (News relevance, claim-set depth, coverage precision).
+
+### 2026-09-26 - M009.3: three measured mode defects fixed, workspace redesigned
+
+Nothing staged or committed. Eight further hosted DeepSeek answer calls (two via
+the command line, six in the app); the cumulative recorded minimum moves from 47
+to **55**. `swift test` reports **315 tests and 0 failures**.
+
+**The three defects**, each measured by the M009.2 run rather than guessed:
+
+1. **News relevance.** News enforced its 14-day window but not topical relevance,
+   so a stablecoin approval, a biodiversity brief, an anti-deforestation story,
+   and a commercial-vehicle brief reached the timeline and citations. The new
+   `NewsRelevance` keeps a result only when it shares an adjacent phrase from the
+   question, two of its content terms, or one distinctive term; matching is
+   whole-word, the frozen window runs first, and a filter that would drop
+   everything keeps everything and says so. The **first version measured zero
+   drops on a live run** because the question contains `month` and `act` -
+   "Content of the Month" matched one, a piece about "the AI space" matched the
+   other. That failed rule is preserved in a test by name. Same question after
+   the correction: `22 dated results inside the window, 7 outside it, 4 off topic
+   for this question`, and a timeline of EU AI Act stories only.
+2. **Claim depth.** The run reported `10 independent domains, 10 independent
+   voices` while all three claims were single-source. `NewsClaimDepth` counts, per
+   claim, the independent voices carrying its page, and the News brief now leads
+   with the honest sentence: `Thin claim set: none of the 7 claims is carried by
+   a second independent voice, so the answer is single-source throughout`, with
+   `7 domains / 7 voices / 7 claims / 0 confirmed` beside it.
+3. **Coverage precision.** `Gaps · 2` was reported for a gap nothing had
+   addressed because one `however` matched, and `Timeline · 16` counted any
+   passage containing a year because `20` was in the term list and matching was
+   by substring. `DimensionLexicon` now matches whole words, separates strong
+   from weak terms, and requires one strong term or two distinct weak ones.
+
+**Two wiring bugs found while fixing the above.** `ResearchRunner` built the
+contradiction scan and never passed it to the report, so the contrast panel could
+not have rendered for any run - and the M007.2 note that it "stays empty" was
+true for the wrong reason. `newsClaimDepth` was computed and likewise dropped.
+Both are passed and covered now, and the first live run after the fix showed the
+panel immediately.
+
+**Redesign against the product's own mockup.** The surface had drifted into a
+scaffold: all-caps labels on every section, `·`-joined counters, monospaced
+micro-text, and a single-line question field that lost its edges in a crowded row,
+so a long question appeared cut off at both ends. `DesignSystem.swift` now holds
+the tokens (semantic system surfaces so light and dark both work, one accent for
+evidence, sentence case, monospaced digits only where numbers align); the
+question field grows from one to six lines with a visible boundary; the mockup's
+structure is followed - summary, comparison table, paper matrix, confirmation
+panel, evidence map, selected-passage inspector. The mockup's
+`Excellent / Good / Fair` verdicts are deliberately **not** reproduced: this
+product has no basis for them, so a cell reports the measured count of stored
+passages matching the criterion and mentioning that side. Guidance came from the
+`frontend-design` skill in `anthropics/skills` (Apache-2.0), installed as a skill
+for this session and not vendored here.
+
+All four modes were re-verified in the app after every change: Quick `5 passages
+· 9.0s`, Deep `11 · 6.8s` with `Tradeoffs 21/13 passages` and `Gaps 1/none`,
+Academic `13 · 20.2s` with a paper matrix, News `7 · 9.9s` with the thin-claim
+panel and the window line. The narrow layout was verified separately at 880x700:
+the evidence column becomes a sheet and the field keeps its width.
+
+Gate result: `make gate` passes; both validators conform; `git diff --check` is
+clean; the offline guards and the M001 fixture are unchanged.
+
+Evidence: `docs/evidence/M009/m0093-defects-and-redesign.md` and the before/after
+screenshots in that directory. Decisions D047 and D048. Next task: **M009.4**
+(remaining observation gaps and the four external gates).
+
+### 2026-09-26 - M009.4 owner-directed every-screen UI close-out
+
+Scope actually executed: the current Mac app's start screen, four modes through
+saved runs, live Deep answer, evidence inspector, history, privacy and
+connection, global launcher, invalid dimension plan, legacy Live Quick window,
+and both M001 offline-demo views. Numbered screenshots and before/after notes
+are in `docs/evidence/M009/m0094-ui-closeout-audit.md`. No new Tavily search or
+DeepSeek call was made. No history or Keychain item was deleted.
+
+Measured UI failures: clearing the question left the previous answer visible;
+History's “Clear” deleted every run without a confirmation; the privacy panel
+stayed at “Counting…” until Refresh and said “nothing is uploaded” although
+hosted answering sends selected passages to DeepSeek; a checked empty custom
+plan silently used defaults; the evidence seal looked like fact verification;
+and compiled answers read as uninterrupted citation-heavy prose. Saved-mode
+replay also omits the live Academic and News panels, which it had not stated.
+
+Treatment: question edits reset the visible result and selection; history rows
+show time/selection and bulk deletion requires a native confirmation; privacy
+counts history on opening and accurately separates local saved runs, search
+requests, and hosted answer requests; empty custom dimensions refuse with the
+typed reason before any Keychain or network work; citation UI says passage
+linkage, not independent fact checking; answer paragraphs are separated only
+for display, leaving stored/exported text unchanged; compact replay discloses
+its missing mode panels and warns about time-sensitive News claims. The old
+Quick-only and offline-fixture windows remain test-addressable but are removed
+from the normal Research menu; the M001 fixture view itself was not changed.
+A saved News
+replay contained an extraordinary allegation with no independent truth check
+in this audit, so it must not be used as a verified-news demo.
+
+`make gate` passed with **315 tests, 0 failures** after the final code patch;
+`make app` rebuilt the development app and it relaunched to the sole normal
+four-mode workspace after the two historical windows were closed. The Research
+menu source contains only New question, but the final menu was not clicked
+successfully during concurrent UI activity; that subclaim is code/build proof.
+M009.4 is **in progress**, not complete. The live syndicated-copy pair, live
+numeric contrast, and publisher-refusal observations remain open. On
+2026-09-26 the owner authorized permissive reuse: the root MIT `LICENSE` now
+closes the repository-licence gate, while independent human review,
+second-Mac reproduction, and Developer ID notarization remain open in
+`docs/HANDOFF.md`. Four unedited app screenshots, one per mode, and a draft X
+post are in `docs/social/2026-09-26/`; News is shown as a policy preview rather
+than an unverified claim. `make dist` produced an Apple-Development-signed
+archive, copied MIT `LICENSE` into the bundle, and passed nine release checks;
+it explicitly reports `notarized: no` because there is no Developer ID
+identity. Decision D049.
 
 ## Evidence append template
 
