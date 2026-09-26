@@ -21,6 +21,6 @@ independently fact-checked answers.
 > Built Local Lens for Mac: Quick, Deep, Academic and News in one native research app. It fetches pages, saves the passage behind each claim, and lets you inspect citations—not just click numbered links. Search without AI or use a hosted/local model. Citations aren't fact-checks.
 
 Attach the four images in the order above. Post from the owner's account; this
-repository does not publish to X. Add the repository URL in a reply only after
-the public push succeeds. A citation establishes linkage to fetched text, not
+repository does not publish to X. Add [the public repository](https://github.com/msulemans/local-lens)
+in a reply. A citation establishes linkage to fetched text, not
 the source's truth or independence.

@@ -20,53 +20,16 @@ The original M004 retrieval-treatment entry check is deferred with its
 decision still unrecorded. Full record in the 2026-09-26 M004, M005, and M006
 sections below.
 
-Status: **Milestone 001 is complete (gate audit: `docs/evidence/M001/`).
-Milestone 002 (safe live acquisition) is complete: every gate bullet has
-recorded evidence, with the live-corpus portion of bullet (a) recorded as an
-explicit blocker rather than claimed. Milestone 003 (first useful Quick
-release) is the sole active milestone; its first task, M003.1, delivered the
-lexical retrieval boundary (FTS5/BM25 over stored passages), M003.2 delivered
-retrieval-backed citation compilation, M003.3 delivered the deterministic Quick
-pipeline, M003.4 delivered the native deterministic Quick view at commit
-`0d160bf`, and M003.5 recorded a live hosted citation slice. M003.6 is
-complete: a current-build in-app hosted answer with two exact citations is
-recorded in `docs/evidence/M003/m0036-current-app-proof.md`, and the unchanged
-card measured 2/10 in `docs/evidence/M003/m0036-frozen-card-rerun.md`. A
-deterministic source-relevance treatment (natural-language web queries
-separated from keyword retrieval queries, with a ranked any-term fill) is
-recorded in `docs/evidence/M003/m0036-source-relevance.md`. M003.7 completed
-its bounded task: the live SearXNG engine set was repaired and pinned in
-`scripts/searxng/settings.yml`, and a deterministic `SourceAuthority`
-discovery ordering was added after the frozen card re-measured **1/10** and
-endorsed the Q5 false premise. A targeted two-call verification projected
-**3/10** with the false-premise endorsement removed. M003.8 is complete as a
-measurement task: five fresh searches and CLI peak RSS are recorded. M003.9
-is complete: the no-Docker Tavily path is live-verified in the Mac app,
-including one hosted four-citation answer, and F1's official passage is
-selected under one narrow deterministic lexical treatment. M003.10 is complete,
-and **M003 is complete with every gate bullet met**: a trailing-slash redirect
-bug that refused Apple and swift.org primary pages as `redirect_loop` was
-fixed with a deterministic, tested change, and the unchanged five-question
-card then measured **7/10 with 13/13 exact citations**
-(`docs/evidence/M003/m003-frozen-card-treated.md`), so **Quick is promoted**
-from the 2/10 M003.6 baseline. Peak app RSS was 140 MB, the app path needs no
-Docker or terminal, and the committed deterministic path reproduces from a
-clean checkout (192 tests). Q5 still abstains rather than correcting its false
-premise; the bundle is ad-hoc signed without second-Mac proof. M002.1
-delivered the search adapter
-boundary with a SearXNG JSON adapter, M002.2 delivered the policy-checked
-acquisition boundary with a frozen refusal matrix, M002.3 delivered the robots
-and politeness boundary, M002.4 delivered the HTML extraction boundary with a
-frozen typed refusal family, M002.5 delivered the content-addressed snapshot
-store with retry-safe deduplication, M002.6 delivered the bounded, per-host
-polite parallel fetch scheduler that composes all four boundaries behind one
-typed per-URL outcome, and M002.7 delivered the extraction diagnostic record
-that makes every extraction outcome, page or refusal, inspectable without
-re-fetching, and M002.8 delivered the approved-live-corpus gate, which can plan
-and judge a live run but holds no transport, so no default or gated test run
-can reach the network. Two hundred and forty-six deterministic tests pass in
-the current working tree; clean-checkout proof is recorded for earlier committed
-milestones.**
+Status: **M000 through M008 are complete at their recorded proof levels;
+M009.4 is the sole active task.** The four-mode native app is implemented,
+live-provider answers and exact-passage citations have been observed, and the
+development distribution passes nine release checks. The final `make gate`
+passed 315 tests with zero failures. The public MIT repository is available at
+`https://github.com/msulemans/local-lens`. This is a development release, not a
+notarized or second-Mac-reproduced binary. M009.4 remains in progress for the
+recorded live observation gaps, independent human calibration, second-Mac
+reproduction, and Developer ID notarization. The chronological entries below
+preserve earlier measured baselines and their proof limits.
 
 This is the canonical chronological record. Future work must read this file
 before selecting a task. A milestone is complete only when its exact gate and
