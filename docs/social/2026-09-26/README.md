@@ -18,7 +18,7 @@ independently fact-checked answers.
 
 ## Ready-to-paste X post
 
-> Built Local Lens for Mac: Quick, Deep, Academic and News in one native research app. It fetches pages, saves the passage behind each claim, and lets you inspect citations—not just click numbered links. Search without AI or use a hosted/local model. Citations aren't fact-checks.
+> Ever click an AI citation and still have to hunt for the sentence? That annoyed me enough to build Local Lens for Mac. It puts the saved passage next to each claim. Ask in Quick, Deep, Academic or News mode—or explore sources without AI. What would you try first?
 
 Attach the four images in the order above. Post from the owner's account; this
 repository does not publish to X. Add [the public repository](https://github.com/msulemans/local-lens)
